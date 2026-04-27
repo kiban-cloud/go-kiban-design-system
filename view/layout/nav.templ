@@ -51,7 +51,7 @@ templ Topbar(cfg Config) {
 }
 
 templ IconRail(cfg Config) {
-	<nav data-sidebar-rail class="w-14 shrink-0 bg-white border-r border-kiban-border flex flex-col items-center py-3 gap-1">
+	<nav class="w-56 shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
 		for _, t := range cfg.Tools {
 			@toolIcon(cfg, t)
 		}
@@ -65,16 +65,17 @@ templ IconRail(cfg Config) {
 templ toolIcon(cfg Config, t Tool) {
 	<a
 		href={ templ.URL(t.Href) }
-		data-sidebar-tool
-		data-tooltip={ t.Label }
 		aria-label={ t.Label }
 		class={
-			"w-9 h-9 flex items-center justify-center rounded-md transition-colors",
-			templ.KV("bg-kiban-primary-soft text-kiban-primary", cfg.ToolKey == t.Key),
-			templ.KV("text-kiban-ink3 hover:text-kiban-ink hover:bg-kiban-surface", cfg.ToolKey != t.Key),
+			"flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm",
+			templ.KV("bg-kiban-primary-soft text-kiban-primary font-medium", cfg.ToolKey == t.Key),
+			templ.KV("text-kiban-ink hover:bg-kiban-surface", cfg.ToolKey != t.Key),
 		}
 	>
-		@t.Icon()
+		<span class="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+			@t.Icon()
+		</span>
+		<span class="truncate">{ t.Label }</span>
 	</a>
 }
 

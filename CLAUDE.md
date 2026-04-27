@@ -65,11 +65,11 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 |---|---|---|
 | `view.Render(c, status, component)` | done | En `view/render.go`. Consumido por crm + rekon. |
 | `layout.Config` | done | Struct con Title, ProjectName, SectionLabel, User, SpaceID, ShellURL, LogoutAction, ToolKey, ActiveKey, Tools, Docs, SubItems. Cada proyecto crea un type alias local (`view_layout.PageData = layout.Config`) y un `enrich(data)` que añade los campos fijos (Tools, etc.) antes de pasar a `Layout`. |
-| `layout.Layout(cfg)` | done | Shell completa: HTML, head, scripts, topbar, sidebar (level 1/2 con slide), main content. |
+| `layout.Layout(cfg)` | done | Shell completa: HTML, head, scripts, topbar, sub-nav (siempre visible) + tools rail (toggleable), main content. |
 | `layout.Topbar(cfg)` | done | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
-| `layout.IconRail(cfg)` | done | Nivel 1: iconos de tools + docs en la parte inferior. Tool activo resaltado. Tooltips en hover. |
-| `layout.SubNav(cfg)` | done | Nivel 2: items de la sección activa. Item activo resaltado. |
-| Slide animation 1↔2 | done | CSS-only en `base.templ` con `.sidebar-slot` + `.sidebar-track`. JS persiste en `localStorage[<ProjectName>-sidebar-level]` (key namespaceada por proyecto). Hamburger toggla. |
+| `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
+| `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
+| Tools rail toggle (slide) | done | CSS-only en `base.templ` con `.sidebar-rail-slot` (width 0 ↔ 14rem). El hamburger toggla el atributo booleano `data-sidebar-rail-open` en el root; JS persiste en `localStorage[<ProjectName>-sidebar-rail-open]` (key namespaceada por proyecto). |
 | Tooltip CSS (`data-tooltip`) | done | Bubble dark-ink, instant on hover/focus, ignora pointer events. CSS en `base.templ`. |
 | intl-tel-input init | done | JS en `base.templ` escanea `[data-phone-input]` al DOMContentLoaded y tras cada htmx swap; sincroniza hiddens (`data-tel-cc`, `data-tel-national`) con el widget. |
 | Spinner CSS (`.ds-spinner`) | done | Spinner kiban-primary, 32×32, en `base.templ`. |

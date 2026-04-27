@@ -73,35 +73,26 @@ templ Base(cfg Config) {
 					animation: kiban-spin 0.8s linear infinite;
 				}
 
-				/* Sidebar levels (GCP-style). [data-sidebar-root] carries
-				   data-sidebar-level="1" or "2"; only one pane shows at a
-				   time. Default is level 2 (the in-tool subnav, since most
-				   page loads land the user inside a tool). The hamburger
-				   in the topbar flips to level 1; clicking a tool icon
-				   flips back to level 2. State persists in localStorage,
-				   namespaced by data-sidebar-project so multiple kiban apps
-				   on the same origin keep separate state.
-
-				   Visual transition: the icon rail and subnav sit side by
-				   side inside .sidebar-track. .sidebar-slot is a fixed-width
-				   window (overflow hidden) into the track. Switching levels
-				   animates two things in parallel — the slot's width
-				   (so the sidebar grows/shrinks) and the track's translateX
-				   (so the active pane scrolls into view). */
-				.sidebar-slot {
+				/* Sidebar (GCP-style). The sub-nav is always visible; the
+				   hamburger toggles the optional tools rail to its left,
+				   which lists the kiban tools with their full labels. The
+				   rail is hidden by default — .sidebar-rail-slot starts at
+				   width 0 and animates to its open width when
+				   [data-sidebar-rail-open] is set on the layout root. The
+				   inner <nav> keeps its full width constantly so the labels
+				   don't reflow during the slide. State persists in
+				   localStorage, namespaced by data-sidebar-project so
+				   multiple kiban apps on the same origin keep separate
+				   state. */
+				.sidebar-rail-slot {
 					flex-shrink: 0;
 					overflow: hidden;
+					width: 0;
 					transition: width 250ms ease;
 				}
-				.sidebar-track {
-					height: 100%;
-					transition: transform 250ms ease;
-					will-change: transform;
+				[data-sidebar-rail-open] .sidebar-rail-slot {
+					width: 14rem;          /* matches the inner IconRail w-56 */
 				}
-				[data-sidebar-level="1"] .sidebar-slot { width: 3.5rem; }   /* matches w-14 */
-				[data-sidebar-level="2"] .sidebar-slot { width: 14rem; }    /* matches w-56 */
-				[data-sidebar-level="1"] .sidebar-track { transform: translateX(0); }
-				[data-sidebar-level="2"] .sidebar-track { transform: translateX(-3.5rem); }
 
 				/* CSS-only tooltip: any element carrying data-tooltip="…" gets
 				   a small dark bubble to its right on hover/focus. Instant,
@@ -210,24 +201,28 @@ templ Base(cfg Config) {
 					});
 				})();
 
-				// Sidebar level switching (GCP-style). The layout root has
-				// data-sidebar-level="1" (tool icons) or "2" (in-tool subnav).
-				// Hamburger toggles between them; tool-icon click goes to 2.
-				// Persisted in localStorage namespaced by data-sidebar-project
-				// so multiple kiban apps on the same origin keep separate state.
+				// Sidebar tools-rail toggle. The sub-nav is always visible;
+				// the hamburger flips a boolean attribute on the layout
+				// root that controls whether the tools rail slides in/out.
+				// State persists in localStorage, namespaced by
+				// data-sidebar-project so multiple kiban apps on the same
+				// origin keep separate state.
 				(function () {
 					var root = document.querySelector('[data-sidebar-root]');
 					if (!root) return;
 					var project = root.getAttribute('data-sidebar-project') || 'kiban';
-					var KEY = project + '-sidebar-level';
-					function setLevel(level) {
-						root.setAttribute('data-sidebar-level', level);
-						try { localStorage.setItem(KEY, level); } catch (_) {}
+					var KEY = project + '-sidebar-rail-open';
+					function setOpen(open) {
+						if (open) {
+							root.setAttribute('data-sidebar-rail-open', '');
+						} else {
+							root.removeAttribute('data-sidebar-rail-open');
+						}
+						try { localStorage.setItem(KEY, open ? '1' : '0'); } catch (_) {}
 					}
 					try {
-						var saved = localStorage.getItem(KEY);
-						if (saved === '1' || saved === '2') {
-							root.setAttribute('data-sidebar-level', saved);
+						if (localStorage.getItem(KEY) === '1') {
+							root.setAttribute('data-sidebar-rail-open', '');
 						}
 					} catch (_) { /* localStorage blocked — session-only */ }
 					document.addEventListener('click', function (e) {
@@ -235,14 +230,7 @@ templ Base(cfg Config) {
 						var hamb = e.target.closest('[data-sidebar-show-tools]');
 						if (hamb) {
 							e.preventDefault();
-							var current = root.getAttribute('data-sidebar-level');
-							setLevel(current === '1' ? '2' : '1');
-							return;
-						}
-						var tool = e.target.closest('[data-sidebar-rail] [data-sidebar-tool]');
-						if (tool) {
-							// Don't preventDefault — the link should still navigate.
-							setLevel('2');
+							setOpen(!root.hasAttribute('data-sidebar-rail-open'));
 						}
 					});
 				})();
@@ -257,16 +245,18 @@ templ Layout(cfg Config) {
 			class="min-h-screen flex flex-col"
 			data-sidebar-root
 			data-sidebar-project={ cfg.ProjectName }
-			data-sidebar-level="2"
 		>
 			@Topbar(cfg)
 			<div class="flex flex-1 min-h-0">
-				<div class="sidebar-slot">
-					<div class="sidebar-track flex">
-						@IconRail(cfg)
-						@SubNav(cfg)
-					</div>
+				<!-- Tools rail (level 1). Hidden by default; sliding open
+				     when [data-sidebar-rail-open] is on the root. The
+				     fixed-width inner <nav> keeps content from reflowing
+				     during the width animation. -->
+				<div class="sidebar-rail-slot">
+					@IconRail(cfg)
 				</div>
+				<!-- Sub-nav (level 2). Always visible. -->
+				@SubNav(cfg)
 				<main class="flex-1 overflow-x-hidden">
 					<div class="p-8 max-w-[1400px]">
 						{ children... }
