@@ -70,6 +70,7 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
 | Tools rail toggle (slide) | done | CSS-only en `base.templ` con `.sidebar-rail-slot` (width 0 ↔ 14rem). El hamburger toggla el atributo booleano `data-sidebar-rail-open` en el root; JS persiste en `localStorage[<ProjectName>-sidebar-rail-open]` (key namespaceada por proyecto). |
+| Navigation loader (`#nav-loader`) | done | Overlay full-screen mostrado al hacer click en cualquier `<a data-nav-loader>` (los items del tool rail lo llevan automáticamente). Cubre el wait del navegador mientras la siguiente página carga — útil cuando se cambia entre tools de backends distintos. Skip para clicks con modificadores, target=_blank, anchors `#…`, y links HTMX. Auto-hide via `pageshow` para no quedarse pegado en restores de bfcache. |
 | Tooltip CSS (`data-tooltip`) | done | Bubble dark-ink, instant on hover/focus, ignora pointer events. CSS en `base.templ`. |
 | intl-tel-input init | done | JS en `base.templ` escanea `[data-phone-input]` al DOMContentLoaded y tras cada htmx swap; sincroniza hiddens (`data-tel-cc`, `data-tel-national`) con el widget. |
 | Spinner CSS (`.ds-spinner`) | done | Spinner kiban-primary, 32×32, en `base.templ`. |

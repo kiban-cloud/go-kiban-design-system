@@ -94,6 +94,24 @@ templ Base(cfg Config) {
 					width: 14rem;          /* matches the inner IconRail w-56 */
 				}
 
+				/* Navigation loader: full-screen overlay shown while a
+				   browser navigation is in flight (e.g. the user clicked a
+				   tools-rail link to a different backend). The .is-visible
+				   class is added by the click handler below; the overlay is
+				   removed on `pageshow` so back/forward cache restores
+				   don't leave a frozen loader on screen. */
+				.nav-loader {
+					display: none;
+					position: fixed;
+					inset: 0;
+					z-index: 1000;
+					align-items: center;
+					justify-content: center;
+					background: rgba(255, 255, 255, 0.85);
+					backdrop-filter: blur(2px);
+				}
+				.nav-loader.is-visible { display: flex; }
+
 				/* CSS-only tooltip: any element carrying data-tooltip="…" gets
 				   a small dark bubble to its right on hover/focus. Instant,
 				   themed to match the kiban palette, ignores pointer events
@@ -121,6 +139,17 @@ templ Base(cfg Config) {
 		</head>
 		<body class="bg-white text-kiban-ink antialiased">
 			{ children... }
+			<!-- Navigation loader: full-screen, hidden by default. Shown by
+			     the click handler below when the user clicks a link tagged
+			     with [data-nav-loader]. The new page's HTML restarts this
+			     element in its hidden state, so no explicit hide-on-load
+			     is needed (except for back/forward cache, handled below). -->
+			<div id="nav-loader" class="nav-loader" aria-hidden="true" role="status">
+				<div class="flex flex-col items-center gap-4">
+					<div class="ds-spinner"></div>
+					<div class="text-sm text-kiban-ink3">Cargando…</div>
+				</div>
+			</div>
 			<script>
 				// Global row-click delegation: any element with [data-href] acts
 				// like a link, but only on a "real" click — we skip the
@@ -231,8 +260,50 @@ templ Base(cfg Config) {
 						if (hamb) {
 							e.preventDefault();
 							setOpen(!root.hasAttribute('data-sidebar-rail-open'));
+							return;
+						}
+						// Click on any tool inside the rail → collapse it.
+						// Once the user has picked a tool, only the in-tool
+						// sub-nav is relevant; persisting closed state also
+						// means the next page (full browser nav to a
+						// different backend) loads with the rail hidden.
+						if (e.target.closest('.sidebar-rail-slot a')) {
+							setOpen(false);
 						}
 					});
+				})();
+
+				// Navigation loader: when the user clicks a link tagged with
+				// [data-nav-loader] (e.g. a tools-rail entry that swaps to a
+				// different backend), show the full-screen overlay so the
+				// "browser is loading the next page" wait isn't a frozen
+				// black hole. We skip the overlay for opens-in-new-tab,
+				// modifier-clicked, and HTMX-handled clicks — those don't
+				// actually navigate the current page away. The pageshow
+				// handler hides the overlay when a back/forward cache restore
+				// brings the user back to a page where the overlay was last
+				// visible.
+				(function () {
+					var loader = document.getElementById('nav-loader');
+					if (!loader) return;
+					function show() { loader.classList.add('is-visible'); }
+					function hide() { loader.classList.remove('is-visible'); }
+					document.addEventListener('click', function (e) {
+						if (e.button !== 0) return;                  // not a left click
+						if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+						if (e.defaultPrevented) return;              // handler upstream already cancelled
+						var link = e.target.closest && e.target.closest('a[data-nav-loader]');
+						if (!link) return;
+						if (link.target === '_blank') return;        // opens in new tab
+						var href = link.getAttribute('href') || '';
+						if (!href || href.charAt(0) === '#') return; // anchor on same page
+						if (/^javascript:/i.test(href)) return;
+						// HTMX-handled link → it swaps a partial, not a full
+						// nav. Don't show the loader.
+						if (link.hasAttribute('hx-get') || link.hasAttribute('hx-post')) return;
+						show();
+					});
+					window.addEventListener('pageshow', hide);
 				})();
 			</script>
 		</body>

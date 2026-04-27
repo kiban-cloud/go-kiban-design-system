@@ -65,6 +65,7 @@ templ IconRail(cfg Config) {
 templ toolIcon(cfg Config, t Tool) {
 	<a
 		href={ templ.URL(t.Href) }
+		data-nav-loader
 		aria-label={ t.Label }
 		class={
 			"flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm",
