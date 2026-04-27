@@ -63,29 +63,32 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `view.Render(c, status, component)` | done | En `view/render.go`. |
-| `layout.Layout(cfg)` | planned | Shell completa: HTML, head, scripts, topbar, sidebar (level 1/2), main content. `cfg` es `LayoutConfig` con Title, SectionName, ToolKey, ActiveKey, User, SpaceID, ShellURL, Tools, SubItems, LogoutAction. |
-| `layout.Topbar(cfg)` | planned | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
-| `layout.IconRail(cfg)` | planned | Nivel 1: iconos de tools + docs en la parte inferior. Tool activo resaltado. Tooltips en hover. |
-| `layout.SubNav(cfg)` | planned | Nivel 2: items de la sección activa. Item activo resaltado. |
-| Slide animation 1↔2 | planned | CSS-only en `base.templ` con `.sidebar-slot` + `.sidebar-track`. JS persiste en `localStorage[<project>-sidebar-level]`. Hamburger toggla. |
-| Tooltip CSS (`data-tooltip`) | planned | Bubble dark-ink, instant on hover/focus, ignora pointer events. |
+| `view.Render(c, status, component)` | done | En `view/render.go`. Consumido por crm + rekon. |
+| `layout.Config` | done | Struct con Title, ProjectName, SectionLabel, User, SpaceID, ShellURL, LogoutAction, ToolKey, ActiveKey, Tools, Docs, SubItems. Cada proyecto crea un type alias local (`view_layout.PageData = layout.Config`) y un `enrich(data)` que añade los campos fijos (Tools, etc.) antes de pasar a `Layout`. |
+| `layout.Layout(cfg)` | done | Shell completa: HTML, head, scripts, topbar, sidebar (level 1/2 con slide), main content. |
+| `layout.Topbar(cfg)` | done | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
+| `layout.IconRail(cfg)` | done | Nivel 1: iconos de tools + docs en la parte inferior. Tool activo resaltado. Tooltips en hover. |
+| `layout.SubNav(cfg)` | done | Nivel 2: items de la sección activa. Item activo resaltado. |
+| Slide animation 1↔2 | done | CSS-only en `base.templ` con `.sidebar-slot` + `.sidebar-track`. JS persiste en `localStorage[<ProjectName>-sidebar-level]` (key namespaceada por proyecto). Hamburger toggla. |
+| Tooltip CSS (`data-tooltip`) | done | Bubble dark-ink, instant on hover/focus, ignora pointer events. CSS en `base.templ`. |
+| intl-tel-input init | done | JS en `base.templ` escanea `[data-phone-input]` al DOMContentLoaded y tras cada htmx swap; sincroniza hiddens (`data-tel-cc`, `data-tel-national`) con el widget. |
+| Spinner CSS (`.ds-spinner`) | done | Spinner kiban-primary, 32×32, en `base.templ`. |
 
 ### Iconos (`view/icons/`)
 
 | Componente | Estado |
 |---|---|
-| `icons.Home`, `icons.Users`, `icons.ShoppingBag`, `icons.GitMerge`, `icons.CreditCard`, `icons.Code`, `icons.Database`, `icons.BookOpen`, `icons.FileText` | planned |
-| `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar` | planned |
+| `icons.Home`, `icons.Users`, `icons.ShoppingBag`, `icons.GitMerge`, `icons.CreditCard`, `icons.Code`, `icons.Database`, `icons.BookOpen`, `icons.FileText` | done |
+| `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar` | done |
 
-Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind.
+Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
 
 ### Inputs (`view/input/`)
 
 | Componente | Estado | Notas |
 |---|---|---|
 | `input.Text(name, label, value, errMsg, required)` | planned | Border `kiban-border`, focus `kiban-primary`, error → `border-red-400`. Helper text rojo bajo el input cuando `errMsg != ""`. |
-| `input.Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg, required)` | planned | Wrapper de intl-tel-input. Renderiza un `<input type="tel">` visible (sin `name`) + dos `<input type="hidden">` (countryCode + phone). El init JS en `layout/base.templ` les asocia el widget y sincroniza los hiddens en `countrychange`/`input`. |
+| `input.Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg, required)` | planned | Wrapper de intl-tel-input. Renderiza un `<input type="tel">` visible (sin `name`) + dos `<input type="hidden">` (countryCode + phone). El init JS ya está en `layout/base.templ` y escanea `[data-phone-input]` automáticamente. |
 | `input.Select(name, label, value, errMsg, options, required)` | planned | `options []SelectOption{Value, Label}`. |
 | `input.Checkbox(name, label, value, enabled)` | planned | **`value="true"` obligatorio** — Gin no parsea "on" como bool. |
 | `input.Toggle(name, label, value, enabled)` | planned | Checkbox semántico, switch visual. |
@@ -113,15 +116,17 @@ Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables
 | `badge.Status(code, label)` | planned | Pill con colores derivados del código (`PAID`→emerald, `PENDING`→amber, `EXPIRED`→red, etc.). Override por proyecto si necesario. |
 | `badge.Type(label, variant)` | planned | Variant: `success`, `info`, `warning`, `error`, `neutral`. |
 | `flash.Success(msg)`, `flash.Error(msg)`, `flash.Warning(msg)` | planned | Banners post-mutación. |
-| `spinner.Default()` | planned | Spinner kiban-primary. CSS class `ds-spinner` definida en `base.templ`. |
-| `tooltip` | planned | No es un componente sino un patrón: añade `data-tooltip="texto"` a cualquier elemento. CSS in `base.templ`. |
+| `spinner` (CSS class `.ds-spinner`) | done | Definida en `view/layout/base.templ`. Uso: `<div class="ds-spinner" role="status"></div>`. (No hay templ helper aún — sólo la clase CSS.) |
+| `tooltip` | done | Patrón CSS-only: añade `data-tooltip="texto"` a cualquier elemento. CSS en `base.templ`. |
 
 ### Tables (`view/table/`)
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `table.Table(headers, rows, opts)` | planned | `opts`: `BulkSelect`, `RowHref` (data-href para click delegation). |
-| `table.Pagination(view, baseURL)` | planned | Anterior/Siguiente botones HTMX. `view`: estado de paginación (Page, HasPrev, HasNext, ItemsPerPage). |
+| `table.PaginationConfig` | done | Struct con Page, HasPrev, HasNext, PageURL func(int) string, Target, Indicator. Caller construye con un closure sobre su `pageURL` local para preservar filtros entre páginas. |
+| `table.Pagination(cfg)` | done | Anterior/Siguiente botones HTMX. Estados disabled-styled cuando edge. `cfg.PageURL` callback para que el caller maneje filter state. |
+| `table.EmptyState(title, hint)` | done | Card centrada con border-top, "Aún no tenemos X qué mostrar". `hint` opcional. |
+| `table.Table(headers, rows, opts)` | planned | Componente generico de table chrome. `opts`: `BulkSelect`, `RowHref`. Per-row rendering sigue siendo per-project (las columnas varían). |
 | `table.BulkActionBar(opts)` | planned | Barra `:has(input:checked)` que aparece cuando hay selecciones. Botones de acción dentro. |
 
 ### Drawer / overlay (`view/drawer/`)
@@ -142,9 +147,9 @@ Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `binding.FieldErrors(err) map[string]string` | planned | Mapea `validator.ValidationErrors` → claves = nombre del tag `form:"…"`, valores = mensaje en español. |
-| `init()` en el package | planned | Registra `TagNameFunc` en el validator de Gin para que use `form:"…"` como key. Corre automáticamente al importar. |
-| `binding.MessageFor(tag, param)` | planned | Helper para extender messages a tags custom (ej. `regexCURP`, `regexRFC`). |
+| `binding.FieldErrors(err) map[string]string` | done | Mapea `validator.ValidationErrors` → claves = nombre del tag `form:"…"`, valores = mensaje en español. Soporta tags `required`, `email`, `min`, `max`, `len`, `url`, `oneof`, `gt`, `gte`, `eqfield`. |
+| `init()` en el package | done | Registra `TagNameFunc` en el validator de Gin para que use `form:"…"` como key. Corre automáticamente al importar el package. |
+| `binding.MessageFor(tag, param)` (extensible) | planned | Helper para extender messages a tags custom (ej. `regexCURP`, `regexRFC`). Hoy `messageFor` es interno. |
 
 ### HTMX helpers (`htmx/`)
 
@@ -158,8 +163,10 @@ Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `authcookie.Middleware(authorizeUC, loginURL string) gin.HandlerFunc` | planned | Lee cookies `kiban_session` + `kiban_space_id`, valida vía `IAuthorizationAuthorizeWithSessionUseCase` de go-kiban, setea `controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT` en el contexto. En falla emite `HX-Redirect` (HTMX) o `c.Redirect` (browser). |
-| `authcookie.GetAuthorization(c)` | planned | Atajo al lookup en contexto. |
+| `authcookie.New(uc, loginURL) *Middleware` | done | Constructor con dependencias explícitas. Cada proyecto lo wirea según su DI: rekon llama directo en el container; crm lo envuelve en una struct con tag `inject:""` que delega tras `SetupAfterInjection`. |
+| `(*Middleware).Middleware() gin.HandlerFunc` | done | El gin handler. Lee cookies `kiban_session` + `kiban_space_id`, valida vía `IAuthorizationAuthorizeWithSessionUseCase` de go-kiban, setea `controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT`. En falla emite `HX-Redirect` (HTMX) o `c.Redirect` (browser). |
+| `authcookie.GetAuthorization(c)` | done | Re-exporta `controller_core_middleware.GetAuthorization` para que los htmx controllers no tengan que importar go-kiban directamente. |
+| `authcookie.CookieSession`, `CookieSpaceID` | done | Constantes con los nombres de las cookies. |
 
 ## Convenciones
 

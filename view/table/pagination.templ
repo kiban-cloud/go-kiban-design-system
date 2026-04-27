@@ -1,0 +1,46 @@
+package table
+
+import "fmt"
+
+// Pagination renders Anterior/Siguiente buttons that swap a partial via
+// HTMX. The disabled state is fully styled (kiban-ink4 muted text) so the
+// edges of the result set are visually obvious.
+templ Pagination(cfg PaginationConfig) {
+	<div class="flex items-center justify-between pt-4 text-sm">
+		<div class="text-kiban-ink3">Página { fmt.Sprint(cfg.Page) }</div>
+		<div class="flex gap-2">
+			if cfg.HasPrev {
+				<button
+					type="button"
+					hx-get={ cfg.PageURL(cfg.Page - 1) }
+					hx-target={ cfg.Target }
+					hx-swap="innerHTML"
+					hx-push-url="true"
+					hx-indicator={ cfg.Indicator }
+					hx-disabled-elt="this"
+					class="bg-white border border-kiban-border rounded-md px-4 py-2 hover:border-kiban-ink3 disabled:opacity-50 disabled:cursor-wait"
+				>
+					‹ Anterior
+				</button>
+			} else {
+				<button type="button" disabled?={ true } class="bg-white border border-kiban-border rounded-md px-4 py-2 text-kiban-ink4 cursor-not-allowed">‹ Anterior</button>
+			}
+			if cfg.HasNext {
+				<button
+					type="button"
+					hx-get={ cfg.PageURL(cfg.Page + 1) }
+					hx-target={ cfg.Target }
+					hx-swap="innerHTML"
+					hx-push-url="true"
+					hx-indicator={ cfg.Indicator }
+					hx-disabled-elt="this"
+					class="bg-kiban-primary text-white rounded-md px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
+				>
+					Siguiente ›
+				</button>
+			} else {
+				<button type="button" disabled?={ true } class="bg-kiban-primary text-white rounded-md px-4 py-2 opacity-40 cursor-not-allowed">Siguiente ›</button>
+			}
+		</div>
+	</div>
+}

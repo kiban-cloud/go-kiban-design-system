@@ -1,0 +1,13 @@
+package table
+
+// EmptyState is the centered "nothing to show" card used at the bottom of
+// every list page when the result set is empty. Title is bold, hint is
+// muted; both translate cleanly across kiban contexts.
+templ EmptyState(title, hint string) {
+	<div class="border-t border-kiban-border py-20 text-center">
+		<div class="text-lg font-heading font-medium text-kiban-ink">{ title }</div>
+		if hint != "" {
+			<div class="text-sm text-kiban-ink3 mt-1 max-w-lg mx-auto">{ hint }</div>
+		}
+	</div>
+}

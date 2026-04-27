@@ -1,0 +1,278 @@
+package layout
+
+templ Base(cfg Config) {
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ cfg.Title } · { cfg.ProjectName }</title>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script>
+				// Tokens sourced from kiban.design-system/src/design-tokens/design-tokens.json
+				tailwind.config = {
+					theme: {
+						extend: {
+							colors: {
+								kiban: {
+									primary: "#0047FF",
+									"primary-soft": "rgba(0, 71, 255, 0.08)",
+									ink: "#1A2035",
+									ink2: "#474747",
+									ink3: "#606875",
+									ink4: "#9096A3",
+									border: "#E8E8E8",
+									surface: "#F2F2F2",
+								},
+							},
+							fontFamily: {
+								sans: ["Inter", "system-ui", "sans-serif"],
+								heading: ["Manrope", "Inter", "sans-serif"],
+							},
+							fontSize: {
+								base: ["14px", "20px"],
+							},
+							borderRadius: {
+								sm: "2px",
+								DEFAULT: "4px",
+								md: "6px",
+							},
+						},
+					},
+				};
+			</script>
+			<script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+			<!-- intl-tel-input: phone-number widget. Init JS at the bottom of
+			     <body>, deferred to DOMContentLoaded so this lib is loaded
+			     by the time it runs. -->
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.min.css"/>
+			<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js" defer></script>
+			<link rel="preconnect" href="https://rsms.me/"/>
+			<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&display=swap" rel="stylesheet"/>
+			<style>
+				body { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; color: #1A2035; }
+				h1, h2, h3, .font-heading { font-family: 'Manrope', 'Inter', sans-serif; }
+
+				/* htmx loading indicator — opacity-driven so it fades in/out while a
+				   request is in flight on an element with hx-indicator pointing here.
+				   The semi-transparent background of the overlay naturally greys out
+				   whatever content sits behind it. */
+				.htmx-indicator { opacity: 0; transition: opacity 180ms ease-in-out; pointer-events: none; }
+				.htmx-request .htmx-indicator,
+				.htmx-request.htmx-indicator { opacity: 1; pointer-events: auto; }
+
+				@keyframes kiban-spin { to { transform: rotate(360deg); } }
+				.ds-spinner {
+					width: 32px; height: 32px;
+					border: 3px solid rgba(0, 71, 255, 0.15);
+					border-top-color: #0047FF;
+					border-radius: 50%;
+					animation: kiban-spin 0.8s linear infinite;
+				}
+
+				/* Sidebar levels (GCP-style). [data-sidebar-root] carries
+				   data-sidebar-level="1" or "2"; only one pane shows at a
+				   time. Default is level 2 (the in-tool subnav, since most
+				   page loads land the user inside a tool). The hamburger
+				   in the topbar flips to level 1; clicking a tool icon
+				   flips back to level 2. State persists in localStorage,
+				   namespaced by data-sidebar-project so multiple kiban apps
+				   on the same origin keep separate state.
+
+				   Visual transition: the icon rail and subnav sit side by
+				   side inside .sidebar-track. .sidebar-slot is a fixed-width
+				   window (overflow hidden) into the track. Switching levels
+				   animates two things in parallel — the slot's width
+				   (so the sidebar grows/shrinks) and the track's translateX
+				   (so the active pane scrolls into view). */
+				.sidebar-slot {
+					flex-shrink: 0;
+					overflow: hidden;
+					transition: width 250ms ease;
+				}
+				.sidebar-track {
+					height: 100%;
+					transition: transform 250ms ease;
+					will-change: transform;
+				}
+				[data-sidebar-level="1"] .sidebar-slot { width: 3.5rem; }   /* matches w-14 */
+				[data-sidebar-level="2"] .sidebar-slot { width: 14rem; }    /* matches w-56 */
+				[data-sidebar-level="1"] .sidebar-track { transform: translateX(0); }
+				[data-sidebar-level="2"] .sidebar-track { transform: translateX(-3.5rem); }
+
+				/* CSS-only tooltip: any element carrying data-tooltip="…" gets
+				   a small dark bubble to its right on hover/focus. Instant,
+				   themed to match the kiban palette, ignores pointer events
+				   so it doesn't block clicks on adjacent items. */
+				[data-tooltip] { position: relative; }
+				[data-tooltip]:hover::after,
+				[data-tooltip]:focus-visible::after {
+					content: attr(data-tooltip);
+					position: absolute;
+					left: calc(100% + 10px);
+					top: 50%;
+					transform: translateY(-50%);
+					background: #1A2035;
+					color: #fff;
+					padding: 4px 10px;
+					border-radius: 4px;
+					font-size: 12px;
+					line-height: 1.4;
+					white-space: nowrap;
+					pointer-events: none;
+					z-index: 100;
+					box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				}
+			</style>
+		</head>
+		<body class="bg-white text-kiban-ink antialiased">
+			{ children... }
+			<script>
+				// Global row-click delegation: any element with [data-href] acts
+				// like a link, but only on a "real" click — we skip the
+				// navigation when the user is finishing a text selection or
+				// dragging, so cells stay selectable. Also skips clicks that
+				// bubbled from a native interactive child (a / button / input /
+				// …) so those handle themselves.
+				(function () {
+					var DRAG_THRESHOLD_PX = 5;
+					var downX = 0, downY = 0;
+					document.addEventListener('mousedown', function (e) {
+						downX = e.clientX;
+						downY = e.clientY;
+					});
+					document.addEventListener('click', function (e) {
+						var el = e.target.closest && e.target.closest('[data-href]');
+						if (!el) return;
+						if (e.target.closest('a, button, input, textarea, select, label')) return;
+						if (Math.abs(e.clientX - downX) > DRAG_THRESHOLD_PX
+							|| Math.abs(e.clientY - downY) > DRAG_THRESHOLD_PX) return;
+						var sel = window.getSelection && window.getSelection();
+						if (sel && sel.toString().length > 0) return;
+						window.location.href = el.getAttribute('data-href');
+					});
+				})();
+
+				// intl-tel-input init: scan for [data-phone-input] containers
+				// and attach the widget to each. Called once on DOM ready and
+				// again after any HTMX swap so dynamically-added contact rows
+				// or form-preview re-renders pick up new inputs. Each init
+				// keeps the two hidden inputs (countryCode + national phone)
+				// in sync with the widget so the form payload stays exactly
+				// the shape the backend already expects.
+				(function () {
+					var UTILS = 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js';
+					function initOne(container) {
+						var visible = container.querySelector('[data-tel-visible]');
+						if (!visible || !window.intlTelInput) return;
+						if (visible.dataset.itiInitialized === '1') return;
+						visible.dataset.itiInitialized = '1';
+
+						var ccInput = container.querySelector('[data-tel-cc]');
+						var nationalInput = container.querySelector('[data-tel-national]');
+						var initial = visible.dataset.telInitial || '';
+
+						var iti = window.intlTelInput(visible, {
+							initialCountry: 'mx',
+							preferredCountries: ['mx', 'us', 'ca', 'es', 'fr'],
+							separateDialCode: true,
+							loadUtilsOnInit: UTILS,
+						});
+
+						function sync() {
+							var data = iti.getSelectedCountryData();
+							if (ccInput) ccInput.value = data && data.dialCode ? data.dialCode : '';
+							if (nationalInput) nationalInput.value = (visible.value || '').replace(/\D/g, '');
+						}
+
+						visible.addEventListener('countrychange', sync);
+						visible.addEventListener('input', sync);
+
+						if (initial && iti.promise && typeof iti.promise.then === 'function') {
+							iti.promise.then(function () {
+								try { iti.setNumber(initial); } catch (_) {}
+								sync();
+							});
+						} else {
+							sync();
+						}
+					}
+					function scan() {
+						if (!window.intlTelInput) return;
+						document.querySelectorAll('[data-phone-input]').forEach(initOne);
+					}
+					document.addEventListener('DOMContentLoaded', function () {
+						scan();
+						document.body.addEventListener('htmx:afterSwap', scan);
+					});
+				})();
+
+				// Sidebar level switching (GCP-style). The layout root has
+				// data-sidebar-level="1" (tool icons) or "2" (in-tool subnav).
+				// Hamburger toggles between them; tool-icon click goes to 2.
+				// Persisted in localStorage namespaced by data-sidebar-project
+				// so multiple kiban apps on the same origin keep separate state.
+				(function () {
+					var root = document.querySelector('[data-sidebar-root]');
+					if (!root) return;
+					var project = root.getAttribute('data-sidebar-project') || 'kiban';
+					var KEY = project + '-sidebar-level';
+					function setLevel(level) {
+						root.setAttribute('data-sidebar-level', level);
+						try { localStorage.setItem(KEY, level); } catch (_) {}
+					}
+					try {
+						var saved = localStorage.getItem(KEY);
+						if (saved === '1' || saved === '2') {
+							root.setAttribute('data-sidebar-level', saved);
+						}
+					} catch (_) { /* localStorage blocked — session-only */ }
+					document.addEventListener('click', function (e) {
+						if (!e.target.closest) return;
+						var hamb = e.target.closest('[data-sidebar-show-tools]');
+						if (hamb) {
+							e.preventDefault();
+							var current = root.getAttribute('data-sidebar-level');
+							setLevel(current === '1' ? '2' : '1');
+							return;
+						}
+						var tool = e.target.closest('[data-sidebar-rail] [data-sidebar-tool]');
+						if (tool) {
+							// Don't preventDefault — the link should still navigate.
+							setLevel('2');
+						}
+					});
+				})();
+			</script>
+		</body>
+	</html>
+}
+
+templ Layout(cfg Config) {
+	@Base(cfg) {
+		<div
+			class="min-h-screen flex flex-col"
+			data-sidebar-root
+			data-sidebar-project={ cfg.ProjectName }
+			data-sidebar-level="2"
+		>
+			@Topbar(cfg)
+			<div class="flex flex-1 min-h-0">
+				<div class="sidebar-slot">
+					<div class="sidebar-track flex">
+						@IconRail(cfg)
+						@SubNav(cfg)
+					</div>
+				</div>
+				<main class="flex-1 overflow-x-hidden">
+					<div class="p-8 max-w-[1400px]">
+						{ children... }
+					</div>
+				</main>
+			</div>
+		</div>
+	}
+}
