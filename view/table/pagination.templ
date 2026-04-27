@@ -5,6 +5,7 @@ import "fmt"
 // Pagination renders Anterior/Siguiente buttons that swap a partial via
 // HTMX. The disabled state is fully styled (kiban-ink4 muted text) so the 
 // edges of the result set are visually obvious.
+// Pagination is a shared component that is used to paginate a list of items.
 templ Pagination(cfg PaginationConfig) {
 	<div class="flex items-center justify-between pt-4 text-sm">
 		<div class="text-kiban-ink3">Página { fmt.Sprint(cfg.Page) }</div>
