@@ -41,7 +41,7 @@ view/
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
   table/                table, table row, pagination, bulk-action bar
-  drawer/               slide-in side panel (filters), modal
+  drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). Shared FooterActions / Action structs; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 tab strip
@@ -171,11 +171,36 @@ Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-render
 
 ### Drawer / overlay (`view/drawer/`)
 
+Convenciones del paquete:
+- **Open / close** vía `window.kibanOpenOverlay(id)` / `kibanCloseOverlay(id)` (definidos en `view/layout/base.templ`). El caller cablea su trigger con `onclick="kibanOpenOverlay('the-id')"`; el componente se ocupa del close (close button + backdrop click + Escape global).
+- **Escape** cierra solo el overlay topmost visible (por orden de `[data-kiban-overlay]:not(.hidden)` en el DOM) — multiple overlays apilados se cierran uno a la vez, igual que el comportamiento nativo del browser.
+- **Sizes** compartidos: `sm` (max-w-sm) / `md` (max-w-md, default) / `lg` (max-w-lg) / `xl` (max-w-xl). String vacío cae a `md` (excepto Confirm, que cae a `sm`).
+- **Z-index**: SidePanel = 40, Modal/Confirm = 50.
+- **Footer actions** vía `FooterActions{PrimaryAction *Action, SecondaryActions []Action}`. PrimaryAction renderiza a la derecha (default variant `primary`); SecondaryActions a la izquierda en orden, default variant `secondary`. Si no hay acciones, no se renderiza el footer.
+- **Action variants** alineados con la categoría buttons (futura): `primary` (kiban-primary), `secondary` (outline border-kiban-border, default para anchors), `danger` (red-600 — usar para confirms destructivos).
+
+#### `Action` (struct compartido)
+
+```go
+type Action struct {
+    Label    string             // visible text
+    Variant  string             // "primary"|"secondary"|"danger"; default per slot
+    Href     string             // when non-empty: <a href=Href>; otherwise <button>
+    Type     string             // "button"|"submit" (default "button"); only for button mode
+    Form     string             // for Type="submit": submits external form by id
+    OnClick  string             // raw inline JS (e.g. "kibanCloseOverlay('id')" para dismiss tras submit)
+    Attrs    templ.Attributes   // HTMX escape hatch (hx-post / hx-target / …)
+    Disabled bool
+}
+```
+
+#### Componentes
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `drawer.SidePanel(id, title, body)` | planned | Slide-in desde la derecha. Backdrop click cierra. |
-| `drawer.Modal(id, title, body, footer)` | planned | Centrado, backdrop oscuro. |
-| `drawer.Confirm(id, message, confirmLabel)` | planned | Wrapper sobre Modal con dos botones. (Alternativa simple: usar `hx-confirm` nativo de HTMX.) |
+| `drawer.SidePanel(cfg SidePanelConfig)` | done | Slide-in desde la derecha. `cfg.ID` + `Title` + `Size` + `FooterActions`. Body via templ children, padding `px-6 py-4` aplicado al body (caller no se preocupa por el gutter). Patrón típico para filter-drawers: el caller renderiza un `<form id="filter-form">` en el body y la PrimaryAction usa `Type:"submit"` + `Form:"filter-form"` + `OnClick:"kibanCloseOverlay('id')"` para submit-and-dismiss. |
+| `drawer.Modal(cfg ModalConfig)` | done | Centrado, backdrop oscuro (`bg-black/40`). Mismos campos que SidePanel + `Icon templ.Component` opcional renderizado a la izquierda del título (caller pasa el block fully styled — patrón típico kiban: `<div class="w-8 h-8 rounded-full bg-kiban-primary-soft text-kiban-primary flex items-center justify-center"><svg…/></div>`). Para flujos HTMX-form-bound (modal con submit): wrapeá el `@drawer.Modal(...)` entero en un `<form hx-post=… hx-on::after-request="if(event.detail.successful){ kibanCloseOverlay('id'); }">`. |
+| `drawer.Confirm(cfg ConfirmConfig)` | done | Preset de Modal con shape fijo: title (opcional) + message + cancel/confirm buttons. Default size `sm`. `cfg.PrimaryAction` (full Action) es el botón de confirm; setear `Variant:"danger"` para deletes. Cancel se cablea automáticamente al `kibanCloseOverlay(id)`; label default "Cancelar". Para "are you sure?"-level simple usar `hx-confirm` nativo de HTMX; usar Confirm cuando se necesita styling kiban + HTMX wiring custom + título largo. |
 
 ### Tabs (`view/tabs/`)
 

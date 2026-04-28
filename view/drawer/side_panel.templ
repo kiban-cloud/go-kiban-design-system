@@ -1,0 +1,55 @@
+package drawer
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
+// SidePanel is the right-edge slide-in overlay used for filter panels and
+// secondary detail views across the kiban backoffices. It renders a fixed
+// full-viewport container with a darkened backdrop on the left and a
+// `<aside>` panel on the right (`max-w-md` by default; override via
+// `cfg.Size`).
+//
+// Structure:
+//
+//	header (title + close button, fixed)
+//	body   (templ children, scrollable: flex-1 overflow-y-auto)
+//	footer (rendered only when cfg.FooterActions is non-empty)
+//
+// The body slot is templ children — pass any content (form, fields,
+// nested cards, etc.). Padding `px-6 py-4` is applied to the scrollable
+// body wrapper so children render at consistent gutter without each
+// caller having to add it themselves.
+//
+// Open / close:
+//   - Caller wires the trigger button with
+//     `onclick="kibanOpenOverlay('the-id')"`.
+//   - Close button + backdrop click both call `kibanCloseOverlay`.
+//   - Escape key closes the topmost visible overlay (handled globally
+//     by the listener in view/layout/base.templ).
+//
+// Filter-drawer pattern: pass an external `Form` id on the
+// PrimaryAction so a `<button type="submit" form="filter-form">` inside
+// the footer submits the user's `<form id="filter-form">` rendered
+// inside the body. Combine with `OnClick: "kibanCloseOverlay('id')"`
+// to dismiss the panel after submit.
+templ SidePanel(cfg SidePanelConfig) {
+	<div data-kiban-overlay id={ cfg.ID } class="hidden fixed inset-0 z-40">
+		<div { overlayBackdropAttrs(cfg.ID, "bg-black/30")... }></div>
+		<aside
+			class={
+				"absolute right-0 top-0 h-full w-full bg-white shadow-xl flex flex-col",
+				sizeClass(cfg.Size),
+			}
+		>
+			<div class="flex items-center justify-between px-6 py-4 border-b border-kiban-border shrink-0">
+				<div class="font-heading font-medium text-lg">{ cfg.Title }</div>
+				<button { overlayCloseAttrs(cfg.ID)... }>
+					@icons.Close()
+				</button>
+			</div>
+			<div class="flex-1 overflow-y-auto px-6 py-4">
+				{ children... }
+			</div>
+			@renderFooterActions(cfg.FooterActions)
+		</aside>
+	</div>
+}

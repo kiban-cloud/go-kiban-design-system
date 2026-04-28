@@ -1,0 +1,56 @@
+package drawer
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
+// Modal is the centered overlay for short-form dialogs: confirmations
+// with rich body, single-action prompts, JS-driven flows like the
+// withdraw-funds dialog in rekon. Rendered as a fixed full-viewport
+// container with a darker backdrop (`bg-black/40`) and a centered card
+// (`max-w-md` default; override via `cfg.Size`).
+//
+// Structure:
+//
+//	header (optional icon + title + close button)
+//	body   (templ children; padding `px-6 py-5 space-y-3`)
+//	footer (rendered only when cfg.FooterActions is non-empty)
+//
+// Icon: cfg.Icon is rendered to the left of the title when non-nil.
+// The caller supplies the FULLY-styled icon block — the typical kiban
+// pattern is a `w-8 h-8 rounded-full bg-kiban-primary-soft
+// text-kiban-primary flex items-center justify-center` wrapper around
+// the SVG. Pass nil when no icon.
+//
+// HTMX-form-bound modals: wrap the entire `@drawer.Modal(...)` call in
+// a `<form hx-post=… hx-on::after-request="…close on success…">`. The
+// form contains the modal chrome but the close button and backdrop are
+// `type="button"` (or non-button elements) so they don't submit. The
+// PrimaryAction with `Type: "submit"` submits the wrapping form.
+//
+// Open / close: same JS helpers and Escape behaviour as SidePanel.
+templ Modal(cfg ModalConfig) {
+	<div data-kiban-overlay id={ cfg.ID } class="hidden fixed inset-0 z-50 flex items-center justify-center">
+		<div { overlayBackdropAttrs(cfg.ID, "bg-black/40")... }></div>
+		<div
+			class={
+				"relative bg-white rounded-md shadow-xl w-full mx-4",
+				sizeClass(cfg.Size),
+			}
+		>
+			<div class="px-6 py-4 border-b border-kiban-border flex items-center justify-between">
+				<div class="flex items-center gap-3 min-w-0">
+					if cfg.Icon != nil {
+						@cfg.Icon
+					}
+					<div class="font-heading font-medium text-lg">{ cfg.Title }</div>
+				</div>
+				<button { overlayCloseAttrs(cfg.ID)... }>
+					@icons.Close()
+				</button>
+			</div>
+			<div class="px-6 py-5 space-y-3">
+				{ children... }
+			</div>
+			@renderFooterActions(cfg.FooterActions)
+		</div>
+	</div>
+}

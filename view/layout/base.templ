@@ -305,6 +305,30 @@ templ Base(cfg Config) {
 					});
 					window.addEventListener('pageshow', hide);
 				})();
+
+				// Overlay helpers for the design-system drawer package
+				// (SidePanel / Modal / Confirm). Each overlay's outer
+				// container carries [data-kiban-overlay] + an id; the
+				// caller wires their trigger button with
+				// onclick="kibanOpenOverlay('the-id')" and the component
+				// itself wires close (close button + backdrop click) via
+				// kibanCloseOverlay. Escape closes the topmost visible
+				// overlay only — multiple stacked overlays unwind one at
+				// a time, matching native browser-modal behaviour.
+				window.kibanOpenOverlay = function (id) {
+					var el = document.getElementById(id);
+					if (el) el.classList.remove('hidden');
+				};
+				window.kibanCloseOverlay = function (id) {
+					var el = document.getElementById(id);
+					if (el) el.classList.add('hidden');
+				};
+				document.addEventListener('keydown', function (e) {
+					if (e.key !== 'Escape') return;
+					var visible = document.querySelectorAll('[data-kiban-overlay]:not(.hidden)');
+					if (!visible.length) return;
+					visible[visible.length - 1].classList.add('hidden');
+				});
 			</script>
 		</body>
 	</html>
