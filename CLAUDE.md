@@ -36,7 +36,7 @@ view/
     icons.templ         (alternativa: ver view/icons/)
   icons/                set compartido de iconos SVG (currentColor stroke)
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
-  button/               primary, secondary, destructive, icon
+  button/               Button(Options) — variant via Options.Variant
   card/                 Card (chrome wrapper) + Section (sub-section divider)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
@@ -112,12 +112,9 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `button.Primary(opts)` | done | CTA principal (`bg-kiban-primary`, text white). Soporta HTMX y estado disabled. |
-| `button.Secondary(opts)` | done | Outline (`border-kiban-border`, fondo blanco). Soporta HTMX y estado disabled. |
-| `button.Destructive(opts)` | done | Acción destructiva (`bg-red-600`). Soporta HTMX y estado disabled. |
-| `button.Icon(opts)` | done | Botón cuadrado de icono con fallback a `icons.More` cuando `opts.Icon` es desconocido. |
+| `button.Button(p Options)` | done | Único template. `Options.Variant`: `primary` (default), `secondary`, `destructive`, `icon`. Icono opcional con `Icon` + `IconPosition` (`left`/`right`). Variante `icon`: usar `AriaLabel` (o `Title`); `Icon` elige el glifo (`filter`, `sort`, `close`, …). |
 
-`Opts` (struct) incluye: `Label`, `Icon`, `Type` (`button|submit|reset`, default `button`), `Disabled`, `Class`, `Form`, `AriaLabel`, `Title`, `HxPost`/`HxGet`/`HxTarget`/`HxSwap`/`HxConfirm`/`HxIndicator`/`HxDisabledElt`.
+`Options`: `Label`, `Icon`, `IconPosition`, `Variant`, `IsSubmit`, `IsReset`, `Disabled`, `ExtraClass`, `Form`, `AriaLabel`, `Title`, `Attrs templ.Attributes`. HTMX y cualquier atributo extra van en `Attrs` (mismo patrón que `view/input`). Helpers públicos: `button.BuildClass`, `button.NonEmptyAttrs`.
 
 ### Display (`view/card/`, `view/badge/`, `view/flash/`, `view/spinner/`, `view/tooltip/`)
 

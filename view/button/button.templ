@@ -2,95 +2,29 @@ package button
 
 import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 
-templ Primary(opts Opts) {
+// Button is the only template: set [Options.Variant] to primary, secondary,
+// destructive, or icon. Pass HTMX and other attributes via [Options.Attrs].
+templ Button(p Options) {
 	<button
-		type={ opts.normalizedType() }
-		class={ joinClasses("inline-flex items-center justify-center gap-2 rounded-md bg-kiban-primary px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50", opts.Class) }
-		disabled?={ opts.Disabled }
-		form={ opts.Form }
-		hx-post={ opts.HxPost }
-		hx-get={ opts.HxGet }
-		hx-target={ opts.HxTarget }
-		hx-swap={ opts.HxSwap }
-		hx-confirm={ opts.HxConfirm }
-		hx-indicator={ opts.HxIndicator }
-		hx-disabled-elt={ opts.HxDisabledElt }
+		type={ htmlButtonType(p) }
+		class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
+		aria-label={ effectiveAriaLabelForVariant(p) }
+		title={ effectiveTitleForVariant(p) }
+		disabled?={ p.Disabled }
+		form={ p.Form }
+		if NonEmptyAttrs(p.Attrs) {
+			{ p.Attrs... }
+		}
 	>
-		if opts.hasIcon() && !opts.iconAtRight() {
-			@iconByName(opts.Icon)
+		if shouldRenderLeftIcon(p) {
+			@iconByName(p.Icon)
 		}
-		{ opts.Label }
-		if opts.hasIcon() && opts.iconAtRight() {
-			@iconByName(opts.Icon)
+		if p.normalizedVariant() != "icon" {
+			{ p.Label }
 		}
-	</button>
-}
-
-templ Secondary(opts Opts) {
-	<button
-		type={ opts.normalizedType() }
-		class={ joinClasses("inline-flex items-center justify-center gap-2 rounded-md border border-kiban-border bg-white px-4 py-2 text-sm font-medium text-kiban-ink transition-colors hover:border-kiban-ink3 hover:bg-kiban-surface disabled:cursor-not-allowed disabled:opacity-50", opts.Class) }
-		disabled?={ opts.Disabled }
-		form={ opts.Form }
-		hx-post={ opts.HxPost }
-		hx-get={ opts.HxGet }
-		hx-target={ opts.HxTarget }
-		hx-swap={ opts.HxSwap }
-		hx-confirm={ opts.HxConfirm }
-		hx-indicator={ opts.HxIndicator }
-		hx-disabled-elt={ opts.HxDisabledElt }
-	>
-		if opts.hasIcon() && !opts.iconAtRight() {
-			@iconByName(opts.Icon)
+		if shouldRenderRightIcon(p) {
+			@iconByName(p.Icon)
 		}
-		{ opts.Label }
-		if opts.hasIcon() && opts.iconAtRight() {
-			@iconByName(opts.Icon)
-		}
-	</button>
-}
-
-templ Destructive(opts Opts) {
-	<button
-		type={ opts.normalizedType() }
-		class={ joinClasses("inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50", opts.Class) }
-		disabled?={ opts.Disabled }
-		form={ opts.Form }
-		hx-post={ opts.HxPost }
-		hx-get={ opts.HxGet }
-		hx-target={ opts.HxTarget }
-		hx-swap={ opts.HxSwap }
-		hx-confirm={ opts.HxConfirm }
-		hx-indicator={ opts.HxIndicator }
-		hx-disabled-elt={ opts.HxDisabledElt }
-	>
-		if opts.hasIcon() && !opts.iconAtRight() {
-			@iconByName(opts.Icon)
-		}
-		{ opts.Label }
-		if opts.hasIcon() && opts.iconAtRight() {
-			@iconByName(opts.Icon)
-		}
-	</button>
-}
-
-templ Icon(opts Opts) {
-	<button
-		type={ opts.normalizedType() }
-		class={ joinClasses("inline-flex h-9 w-9 items-center justify-center rounded-md border border-kiban-border bg-white text-kiban-ink transition-colors hover:border-kiban-ink3 hover:bg-kiban-surface disabled:cursor-not-allowed disabled:opacity-50", opts.Class) }
-		aria-label={ opts.effectiveAriaLabel() }
-		title={ opts.effectiveTitle() }
-		disabled?={ opts.Disabled }
-		form={ opts.Form }
-		hx-post={ opts.HxPost }
-		hx-get={ opts.HxGet }
-		hx-target={ opts.HxTarget }
-		hx-swap={ opts.HxSwap }
-		hx-confirm={ opts.HxConfirm }
-		hx-indicator={ opts.HxIndicator }
-		hx-disabled-elt={ opts.HxDisabledElt }
-	>
-		@iconByName(opts.Icon)
 	</button>
 }
 
