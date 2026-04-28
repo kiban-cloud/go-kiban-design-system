@@ -1,0 +1,30 @@
+package card
+
+// Section is one labelled block inside a Card. Renders a heading
+// (`title`) + optional subtitle on top, then the templ children
+// underneath as the body. When two or more Sections sit as direct
+// siblings inside the same Card, the second-and-later ones automatically
+// gain a `pt-4 border-t border-kiban-border` divider, producing the
+// stacked-with-rules layout used on form pages and detail screens.
+//
+// The auto-divider relies on Tailwind's `first:` modifier: the first
+// `card.Section` rendered inside a parent gets `pt-0` + `border-t-0`,
+// the rest get the divider classes. If non-Section content (e.g. a
+// flash banner) is rendered before the first Section, the first Section
+// will incorrectly pick up a top border — keep flash banners outside
+// the Card or use a single-Section layout in that case.
+//
+// Body spacing inside a Section is `space-y-5`, matching the form rhythm
+// already used by the rekon backoffice forms; if you need a different
+// rhythm wrap your children in a div with the spacing you want.
+templ Section(title, subtitle string) {
+	<div class="space-y-5 pt-4 border-t border-kiban-border first:pt-0 first:border-t-0">
+		<div class="space-y-1">
+			<div class="font-heading font-medium text-base text-kiban-ink">{ title }</div>
+			if subtitle != "" {
+				<div class="text-sm text-kiban-ink3">{ subtitle }</div>
+			}
+		</div>
+		{ children... }
+	</div>
+}

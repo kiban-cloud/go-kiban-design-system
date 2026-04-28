@@ -37,13 +37,13 @@ view/
   icons/                set compartido de iconos SVG (currentColor stroke)
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
   button/               primary, secondary, destructive, icon
-  card/                 card, section (titled card)
-  badge/                status pill, type badge
+  card/                 Card (chrome wrapper) + Section (sub-section divider)
+  badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
+  flash/                Banner (generic) + Success / Error / Warning / Info wrappers
   table/                table, table row, pagination, bulk-action bar
   drawer/               slide-in side panel (filters), modal
-  flash/                success / error / warning banners
-  spinner/              loading indicator
-  tooltip/              CSS tooltip (data-tooltip="…")
+  spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
+  tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 tab strip
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
@@ -121,14 +121,42 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 
 ### Display (`view/card/`, `view/badge/`, `view/flash/`, `view/spinner/`, `view/tooltip/`)
 
+Convenciones del grupo:
+- **Variantes** comparten vocabulario en card / badge / flash: `success` (emerald), `warning` (amber), `danger` (red), `info` (kiban-primary tint), `neutral` (kiban-surface). En `flash` el destructivo se llama `error` por consistencia con el sentimiento de los banners; el resto de los componentes usan `danger`. Strings vacíos caen al default razonable (`neutral` para badge, `info` para flash, sin variant para card).
+- **HTMX-agnóstico**: ninguno de estos componentes inyecta atributos hx-*. Si un caso de uso requiere HTMX (swap parcial de un Card después de una mutación, etc.), envuelve el componente en un `<div hx-*>` o un `<section id>` al lado del callsite.
+
+#### `view/card/`
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `card.Card` | planned | White, border `kiban-border`, rounded-md, padding 6. |
-| `card.Section(title, subtitle)` | planned | Card con header (heading + texto secundario). |
-| `badge.Status(code, label)` | planned | Pill con colores derivados del código (`PAID`→emerald, `PENDING`→amber, `EXPIRED`→red, etc.). Override por proyecto si necesario. |
-| `badge.Type(label, variant)` | planned | Variant: `success`, `info`, `warning`, `error`, `neutral`. |
-| `flash.Success(msg)`, `flash.Error(msg)`, `flash.Warning(msg)` | planned | Banners post-mutación. |
-| `spinner` (CSS class `.ds-spinner`) | done | Definida en `view/layout/base.templ`. Uso: `<div class="ds-spinner" role="status"></div>`. (No hay templ helper aún — sólo la clase CSS.) |
+| `card.Card(variant string)` | done | Chrome blanca: `bg-white border border-kiban-border rounded-md p-6 space-y-5`. `variant` swappa el color del borde (`success`/`warning`/`danger`/`info`); el body se queda neutral — para mensajes de estado loud usá `flash.*`. Acepta cualquier contenido como templ children. Si necesitás `id` (HTMX target, anchor link, CSS selector), envolvé el `Card` en un `<section id="…">`. |
+| `card.Section(title, subtitle string)` | done | Sub-sección DENTRO de un `Card`. Header (heading + subtitle opcional) + body via templ children. Cuando hay 2+ Sections como hijos directos del mismo Card, las que no son first-child reciben `pt-4 border-t border-kiban-border` automáticamente vía Tailwind `first:`. Para card de UNA sola sección no uses Section — `Card { contenido inline }` ya alcanza. Subtitle es plain text; para subtítulos con HTML rico (links, asteriscos coloreados) renderizalos inline en el body. |
+
+#### `view/badge/`
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `badge.Variant(label, variant, size string)` | done | Pill genérico. `variant`: `success`/`warning`/`danger`/`info`/`neutral` (vacío = `neutral`). `size`: `sm` (`px-2 py-1 text-xs`, default para celdas de tabla) o `md` (`px-3 py-1 text-sm`, headers de detail). Siempre que el código de status sea project-only, llamá `Variant` directo y mapeá el código a un variant en el callsite. |
+| `badge.Status(code, label, size string)` | done | Wrapper de conveniencia para los códigos compartidos por más de un proyecto kiban. Llama `VariantForCode(code)` y delega a `Variant`. Códigos cubiertos hoy: `PAID/PENDING/EXPIRED/CANCELLED` (lifecycle de pagos), `VALIDATED/TO_VALIDATE` (validación de payment-methods), `ACTIVE/COMPLETED/PROCESSING/FAILED/REJECTED/DRAFT` (varios). Códigos desconocidos caen a `neutral` (no rompen el render). |
+| `badge.VariantForCode(code) string` | done | Lookup compartido `code → variant`. Públicamente accesible para que un proyecto pueda combinar el lookup con su propio override. **Sólo agregar códigos que se reutilicen en >1 proyecto** — los códigos project-only viven en mappings locales en cada proyecto. |
+
+#### `view/flash/`
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `flash.Banner(variant, msg string)` | done | Banner full-width genérico. `variant`: `success`/`error`/`warning`/`info` (vacío = `info`). `msg` es plain text — si necesitás HTML (links, formato), renderizá inline el div con las clases del variant correspondiente. |
+| `flash.Success(msg string)` | done | Wrapper tipado: confirmaciones post-mutación ("Cliente guardado", "Pago registrado", …). |
+| `flash.Error(msg string)` | done | Wrapper tipado: operaciones fallidas y bloqueos ("No tienes permiso", "No pudimos guardar", …). |
+| `flash.Warning(msg string)` | done | Wrapper tipado: warnings suaves donde el usuario puede continuar pero debería leer algo ("Banco Donde no está configurado todavía", …). |
+| `flash.Info(msg string)` | done | Wrapper tipado: mensajes informativos neutrales — el catch-all cuando nada salió mal pero hay algo que comunicar. |
+
+Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-renderizan con la siguiente request / HTMX swap. Esto coincide con cómo los controllers ya piensan en `FlashSuccess`/`FlashError` en sus views.
+
+#### Spinner / Tooltip (CSS-only, no templ helpers)
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `spinner` (CSS class `.ds-spinner`) | done | Definida en `view/layout/base.templ`. Uso: `<div class="ds-spinner" role="status"></div>`. No hay templ helper — la clase CSS es la API. |
 | `tooltip` | done | Patrón CSS-only: añade `data-tooltip="texto"` a cualquier elemento. CSS en `base.templ`. |
 
 ### Tables (`view/table/`)

@@ -1,0 +1,32 @@
+package card
+
+// Card renders the bare card chrome: white background, kiban-border (or a
+// status-coloured border via `variant`), `rounded-md`, `p-6`, and a
+// `space-y-5` rhythm between top-level children. Pass any content as
+// templ children — typed sections via `Section`, free-form HTML, or
+// inputs / buttons / flash banners as siblings.
+//
+// `variant` (see types.go for the supported strings):
+//   - ""        kiban-border (default)
+//   - success   emerald-200
+//   - warning   amber-200
+//   - danger    red-200
+//   - info      kiban-primary tint
+//
+// The colour swap only changes the border. Body content stays neutral —
+// loud, banner-style "this whole card is an error" cases belong in
+// `flash.Error` / `flash.Warning`, not in a coloured Card.
+templ Card(variant string) {
+	<div
+		class={
+			"bg-white border rounded-md p-6 space-y-5",
+			templ.KV("border-kiban-border", variant == "" || variant == "default"),
+			templ.KV("border-emerald-200", variant == "success"),
+			templ.KV("border-amber-200", variant == "warning"),
+			templ.KV("border-red-200", variant == "danger"),
+			templ.KV("border-kiban-primary/40", variant == "info"),
+		}
+	>
+		{ children... }
+	</div>
+}

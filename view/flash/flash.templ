@@ -1,0 +1,51 @@
+package flash
+
+// Banner renders a single full-width notification rectangle. Caller
+// decides the variant; the component picks border-/bg-/text- triples
+// from the shared kiban palette so the visual is consistent across
+// pages. `msg` is plain text — use card.Card with a danger/warning
+// variant if you need rich body content (multi-line summary, action
+// link, etc.).
+//
+// `variant` accepts: "success" | "error" | "warning" | "info" (empty
+// falls back to "info" so an unset variant doesn't render an
+// unstyled banner).
+templ Banner(variant, msg string) {
+	<div
+		class={
+			"rounded-md border px-4 py-3 text-sm",
+			templ.KV("border-emerald-200 bg-emerald-50 text-emerald-700", variant == "success"),
+			templ.KV("border-red-200 bg-red-50 text-red-700", variant == "error"),
+			templ.KV("border-amber-200 bg-amber-50 text-amber-700", variant == "warning"),
+			templ.KV("border-kiban-primary/30 bg-kiban-primary-soft text-kiban-primary", variant == "info" || variant == ""),
+		}
+	>
+		{ msg }
+	</div>
+}
+
+// Success is the typed wrapper for confirmations after a successful
+// mutation ("Cliente guardado", "Pago registrado", …).
+templ Success(msg string) {
+	@Banner("success", msg)
+}
+
+// Error is the typed wrapper for failed operations and hard-block
+// states ("No tienes permiso", "No pudimos guardar el cliente", …).
+templ Error(msg string) {
+	@Banner("error", msg)
+}
+
+// Warning is the typed wrapper for soft warnings — the user can
+// proceed but should know something is off ("Banco Donde no está
+// configurado todavía", "Algunos contactos quedaron pendientes", …).
+templ Warning(msg string) {
+	@Banner("warning", msg)
+}
+
+// Info is the typed wrapper for neutral informative messages — the
+// catch-all when nothing went wrong but the user should read
+// something before continuing.
+templ Info(msg string) {
+	@Banner("info", msg)
+}
