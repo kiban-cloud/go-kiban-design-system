@@ -1,0 +1,50 @@
+package tabs
+
+// Strip renders a horizontal row of in-page tab links. The active tab
+// (the one whose `Key` matches `activeKey`) gets highlighted with the
+// kiban-primary text colour and a tight underline that spans only the
+// label width — kept distinct from the pill-style highlighting used by
+// `layout.SubNav` for top-level app navigation.
+//
+// Layout details:
+//
+//   - The strip itself is a `flex gap-2` row. No bottom rail under the
+//     whole strip — the only visual separator at the bottom is the
+//     active tab's narrow underline.
+//   - Each tab is an `<a>` (full padding for click target) wrapping an
+//     `inline-block <span>` that carries the underline. Putting the
+//     border on the inner span (not the anchor) makes the underline
+//     hug the text width, not the padded clickable area.
+//   - Every tab — active or inactive — reserves the same 2px
+//     `border-b-2` height (inactive uses `border-transparent`) so the
+//     row doesn't shift vertically when the active tab changes.
+//
+// HTMX support: `TabItem.Attrs` is spread onto the `<a>` element. Pair
+// with `hx-push-url="true"` so HTMX-driven swaps still update the
+// browser URL bar (and the `Href` attribute provides the no-JS
+// fallback).
+templ Strip(items []TabItem, activeKey string) {
+	<div class="flex gap-2">
+		for _, t := range items {
+			<a
+				href={ templ.URL(t.Href) }
+				class={
+					"px-4 py-3 text-sm transition-colors",
+					templ.KV("text-kiban-primary", t.Key == activeKey),
+					templ.KV("text-kiban-ink3 hover:text-kiban-ink", t.Key != activeKey),
+				}
+				{ t.Attrs... }
+			>
+				<span
+					class={
+						"inline-block border-b-2 pb-1",
+						templ.KV("border-kiban-primary", t.Key == activeKey),
+						templ.KV("border-transparent", t.Key != activeKey),
+					}
+				>
+					{ t.Label }
+				</span>
+			</a>
+		}
+	</div>
+}

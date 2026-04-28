@@ -45,7 +45,7 @@ view/
   drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse action.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
-  tabs/                 tab strip
+  tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
 middleware/
@@ -202,9 +202,12 @@ Convenciones del paquete:
 
 ### Tabs (`view/tabs/`)
 
+In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell que usa el estilo pill). Tabs usan underline-style para "switch view inside this page", pills mean "switch tools/sections in the app". Mantener visualmente diferenciados evita confundir state in-page con navegación global.
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `tabs.Strip(items, activeKey)` | planned | Lista horizontal de tabs. `items []TabItem{Key, Label, Href}`. Item activo resaltado. |
+| `tabs.TabItem` (struct) | done | Una entrada del strip: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav), `Attrs templ.Attributes` (opcional, HTMX escape hatch — spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). Mismo patrón que `action.Action.Attrs`. |
+| `tabs.Strip(items []TabItem, activeKey string)` | done | Row horizontal `flex gap-2`. Active tab → `text-kiban-primary` + underline `border-b-2 border-kiban-primary` ajustado al ancho del texto (no al padding del anchor — el underline vive en un `<span class="inline-block">` interno, no en el `<a>`). Inactive → `text-kiban-ink3 hover:text-kiban-ink` con `border-transparent` (preserva 2px para que la fila no se mueva al cambiar de active). Sin rail bottom debajo de toda la strip — el único separador visual es el underline del tab activo. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. |
 
 ### Form binding (`binding/`)
 
