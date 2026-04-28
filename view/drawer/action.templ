@@ -1,47 +1,18 @@
 package drawer
 
-// renderAction renders a single Action as either an `<a>` (when Href is
-// set) or a `<button>` (otherwise). `defaultVariant` supplies the colour
-// scheme when the action's own Variant is empty — typically "primary"
-// for the PrimaryAction slot and "secondary" for SecondaryActions.
-//
-// The `OnClick`, `Form`, and HTMX `Attrs` fields are merged into a single
-// templ.Attributes map and spread onto the element — see the comment on
-// `actionAttrs` for why we sidestep `onclick={…}` interpolation.
-templ renderAction(a Action, defaultVariant string) {
-	if a.Href != "" {
-		<a
-			href={ templ.URL(a.Href) }
-			class={ actionClass(a.Variant, defaultVariant) }
-			{ actionAttrs(a)... }
-		>
-			{ a.Label }
-		</a>
-	} else {
-		<button
-			type={ buttonType(a.Type) }
-			disabled?={ a.Disabled }
-			class={ actionClass(a.Variant, defaultVariant) }
-			{ actionAttrs(a)... }
-		>
-			{ a.Label }
-		</button>
-	}
-}
+import "github.com/kiban-cloud/go-kiban-design-system/view/action"
 
-// renderFooterActions emits the bottom action row for SidePanel and Modal:
+// renderFooter emits the bottom action row for SidePanel and Modal:
 // `border-t border-kiban-border` divider, secondary actions on the left,
-// primary action on the right. Renders nothing when both slots are empty
+// primary action on the right. Renders nothing when the Group is empty
 // so the divider line doesn't appear when there's no footer.
-templ renderFooterActions(actions FooterActions) {
-	if actions.hasFooter() {
-		<div class="px-6 py-4 border-t border-kiban-border flex gap-3 justify-end shrink-0">
-			for _, a := range actions.SecondaryActions {
-				@renderAction(a, "secondary")
-			}
-			if actions.PrimaryAction != nil {
-				@renderAction(*actions.PrimaryAction, "primary")
-			}
+//
+// The actual button row lives in `view/action`; this helper just adds
+// the drawer-flavoured chrome (border-t, padding, shrink-0) around it.
+templ renderFooter(g action.Group) {
+	if !g.IsEmpty() {
+		<div class="px-6 py-4 border-t border-kiban-border shrink-0">
+			@action.RenderGroup(g)
 		</div>
 	}
 }

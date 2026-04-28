@@ -1,6 +1,9 @@
 package drawer
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/action"
+	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
+)
 
 // Confirm is a fixed-shape Modal preset for "are you sure?" prompts that
 // need richer markup than HTMX's native `hx-confirm` (which is just the
@@ -49,13 +52,8 @@ templ Confirm(cfg ConfirmConfig) {
 			<div class="px-6 py-5">
 				<p class="text-sm text-kiban-ink2">{ cfg.Message }</p>
 			</div>
-			<div class="px-6 py-4 border-t border-kiban-border flex gap-3 justify-end shrink-0">
-				@renderAction(Action{
-					Label:   confirmCancelLabel(cfg.SecondaryActionLabel),
-					Variant: "secondary",
-					OnClick: "kibanCloseOverlay('" + cfg.ID + "')",
-				}, "secondary")
-				@renderAction(cfg.PrimaryAction, "primary")
+			<div class="px-6 py-4 border-t border-kiban-border shrink-0">
+				@action.RenderGroup(confirmGroup(cfg))
 			</div>
 		</div>
 	</div>

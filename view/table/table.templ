@@ -1,0 +1,43 @@
+package table
+
+// Table renders the standard kiban list-page table chrome: a top border
+// rule, the `<table>` element, the `<thead>` row built from
+// `cfg.Headers`, and an empty `<tbody>` whose contents the caller fills
+// via templ children. Per-row markup is the caller's responsibility (see
+// the `Row` helper for the canonical hover / cursor / data-href pattern).
+//
+// Bulk-select: when `cfg.BulkSelect` is true, a `<th class="w-10">` is
+// prepended with a "select all" checkbox that toggles every
+// `input[name="ids"]` sibling inside the form. The per-row checkbox
+// cells are still the caller's responsibility — usually emitted via
+// `Row(href, bulkValue)` which renders the matching `<td>` for free.
+//
+// Headers are plain text today (`[]string`). Sortable headers (with a
+// chevron-down indicator next to the label) will reuse the existing
+// `view/icons.ChevronDown` icon when added in a future iteration.
+templ Table(cfg TableConfig) {
+	<div class="border-t border-kiban-border">
+		<table class="w-full text-sm">
+			<thead>
+				<tr class="border-b border-kiban-border">
+					if cfg.BulkSelect {
+						<th class="w-10 py-3 px-4">
+							<input
+								type="checkbox"
+								aria-label="Seleccionar todos"
+								onchange="var checked=this.checked;this.closest('form').querySelectorAll('input[name=ids]').forEach(function(c){c.checked=checked;});"
+								class="cursor-pointer"
+							/>
+						</th>
+					}
+					for _, h := range cfg.Headers {
+						<th class="text-left font-medium text-kiban-ink2 py-3 px-4">{ h }</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				{ children... }
+			</tbody>
+		</table>
+	</div>
+}

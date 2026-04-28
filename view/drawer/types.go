@@ -16,58 +16,21 @@
 //     "sm" → max-w-sm, "" or "md" → max-w-md, "lg" → max-w-lg,
 //     "xl" → max-w-xl. Empty string falls back to "md".
 //
-//   - A FooterActions block (SidePanel and Modal) with a single optional
-//     PrimaryAction on the right and zero-or-more SecondaryActions to its
-//     left. Footer renders only when at least one slot is non-empty.
+//   - A `FooterActions action.Group` — primary + secondaries — rendered as
+//     a row at the bottom. `Action` and `Group` live in `view/action/`
+//     because they are reused outside the drawer (e.g. by
+//     `table.BulkActionBar`); this package re-exposes neither so callers
+//     should import `view/action` directly.
 //
 // Open/close JS lives in base.templ so consumers don't need to ship their
 // own toggling logic. Each overlay carries `data-kiban-overlay` so the
 // Escape-key listener can find the topmost visible one.
 package drawer
 
-import "github.com/a-h/templ"
-
-// Action is one button or link in the footer of a drawer / modal / confirm.
-//
-// Render rules:
-//   - When Href != "", renders as `<a href=Href>`. Otherwise renders as
-//     `<button>` with Type defaulting to "button".
-//   - Variant ("primary" | "secondary" | "danger") picks the colour
-//     scheme; the empty string falls through to a slot-specific default
-//     (PrimaryAction → "primary", SecondaryActions → "secondary").
-//   - Type ("button" | "submit") only applies to button mode. Use
-//     "submit" + Form="external-form-id" to submit a form that lives
-//     elsewhere on the page (the typical filter-drawer pattern).
-//   - OnClick is raw inline JS; combine with HTMX Attrs as needed
-//     (e.g. `OnClick="kibanCloseOverlay('id')"` to dismiss the overlay
-//     after submit).
-//   - Attrs is the HTMX escape hatch — spread directly onto the element.
-//   - Disabled emits the HTML `disabled` attribute and applies the
-//     muted-style classes via the variant's `disabled:` modifiers.
-type Action struct {
-	Label    string
-	Variant  string
-	Href     string
-	Type     string
-	Form     string
-	OnClick  string
-	Attrs    templ.Attributes
-	Disabled bool
-}
-
-// FooterActions configures the footer row of a SidePanel or Modal.
-// PrimaryAction is rendered on the right (rightmost when there are
-// secondaries); SecondaryActions render to its left in the order given.
-// Footer renders only when at least one slot is set.
-type FooterActions struct {
-	PrimaryAction    *Action
-	SecondaryActions []Action
-}
-
-// hasFooter reports whether FooterActions has anything to render.
-func (f FooterActions) hasFooter() bool {
-	return f.PrimaryAction != nil || len(f.SecondaryActions) > 0
-}
+import (
+	"github.com/a-h/templ"
+	"github.com/kiban-cloud/go-kiban-design-system/view/action"
+)
 
 // SidePanelConfig drives SidePanel. Body is rendered as templ children;
 // when FooterActions is non-empty, a footer row is appended below the
@@ -76,7 +39,7 @@ type SidePanelConfig struct {
 	ID            string
 	Title         string
 	Size          string
-	FooterActions FooterActions
+	FooterActions action.Group
 }
 
 // ModalConfig drives Modal. Body is rendered as templ children. Icon is
@@ -95,7 +58,7 @@ type ModalConfig struct {
 	Title         string
 	Size          string
 	Icon          templ.Component
-	FooterActions FooterActions
+	FooterActions action.Group
 }
 
 // ConfirmConfig drives Confirm — a fixed-shape Modal preset for "are you
@@ -112,7 +75,7 @@ type ConfirmConfig struct {
 	Title                string
 	Message              string
 	Size                 string
-	PrimaryAction        Action
+	PrimaryAction        action.Action
 	SecondaryActionLabel string
 }
 
@@ -138,36 +101,6 @@ func confirmSizeClass(size string) string {
 		return "max-w-sm"
 	}
 	return sizeClass(size)
-}
-
-// actionClass returns the Tailwind class string for an Action button/link.
-// `defaultVariant` is the per-slot fallback ("primary" for PrimaryAction,
-// "secondary" for SecondaryActions, etc.); applied only when the action's
-// Variant field is empty.
-func actionClass(variant, defaultVariant string) string {
-	v := variant
-	if v == "" {
-		v = defaultVariant
-	}
-	const base = "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium"
-	switch v {
-	case "primary":
-		return base + " bg-kiban-primary text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
-	case "danger":
-		return base + " bg-red-600 text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
-	default: // "secondary" + unknown values
-		return base + " bg-white border border-kiban-border text-kiban-ink hover:border-kiban-ink3 disabled:opacity-50"
-	}
-}
-
-// buttonType maps a possibly-empty Action.Type to the actual HTML attribute
-// value: empty string defaults to "button" so a button never accidentally
-// inherits the surrounding form's submit behaviour.
-func buttonType(t string) string {
-	if t == "" {
-		return "button"
-	}
-	return t
 }
 
 // overlayCloseAttrs builds the spread-able attribute set for the chrome's
@@ -201,25 +134,6 @@ func overlayBackdropAttrs(id, bgClass string) templ.Attributes {
 	}
 }
 
-// actionAttrs merges an Action's user-supplied HTMX `Attrs` with its
-// `OnClick` and `Form` fields into a single attribute set ready for
-// `{ … }` spread. Same rationale as overlayCloseAttrs: avoids templ's
-// onclick-type check by routing through Attributes instead of the
-// `onclick={…}` syntax.
-func actionAttrs(a Action) templ.Attributes {
-	out := templ.Attributes{}
-	for k, v := range a.Attrs {
-		out[k] = v
-	}
-	if a.OnClick != "" {
-		out["onclick"] = a.OnClick
-	}
-	if a.Form != "" {
-		out["form"] = a.Form
-	}
-	return out
-}
-
 // confirmCancelLabel returns the text for the cancel button on a Confirm
 // dialog, defaulting to "Cancelar" when the caller leaves it blank.
 func confirmCancelLabel(label string) string {
@@ -227,4 +141,22 @@ func confirmCancelLabel(label string) string {
 		return "Cancelar"
 	}
 	return label
+}
+
+// confirmGroup builds the action.Group for a Confirm dialog: a single
+// cancel SecondaryAction (auto-wired to kibanCloseOverlay) and the
+// caller-supplied PrimaryAction. Kept as a Go helper instead of
+// inlining inside the templ so the address-of on the local PrimaryAction
+// copy is unambiguous to the templ-generated code.
+func confirmGroup(cfg ConfirmConfig) action.Group {
+	primary := cfg.PrimaryAction
+	return action.Group{
+		SecondaryActions: []action.Action{
+			{
+				Label:   confirmCancelLabel(cfg.SecondaryActionLabel),
+				OnClick: "kibanCloseOverlay('" + cfg.ID + "')",
+			},
+		},
+		PrimaryAction: &primary,
+	}
 }

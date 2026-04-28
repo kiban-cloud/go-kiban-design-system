@@ -1,0 +1,37 @@
+package table
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/action"
+
+// BulkActionBar is the row of actions that appears above a list table
+// when at least one row checkbox is selected. Visibility is purely
+// CSS-driven via Tailwind's `group-has-[…]/bulk:flex` variant — no JS,
+// no per-instance `<style>` blocks.
+//
+// CONTRACT (caller responsibilities):
+//
+//  1. Wrap the form (containing the table + this bar) in
+//     `<form class="group/bulk">` so Tailwind's named group variant
+//     resolves correctly. Other unrelated `group` ancestors won't
+//     interfere because the variant is scoped to the named "bulk" group.
+//
+//  2. Each per-row checkbox MUST use `name="ids"` (the convention
+//     applied by the `Row` helper's `bulkValue` parameter). The
+//     visibility selector watches for any `input[name=ids]:checked`
+//     inside the same group/bulk.
+//
+//  3. Render the bar somewhere INSIDE the same form as the row
+//     checkboxes — typically just above the `Table`.
+//
+// Layout: optional `Message` on the left, `Actions` on the right via
+// the shared `action.Group`. The bar gets `mb-4` so it sits cleanly
+// above the table without the consumer adding extra spacing.
+templ BulkActionBar(cfg BulkActionBarConfig) {
+	<div class="hidden group-has-[input[name=ids]:checked]/bulk:flex items-center gap-3 bg-kiban-primary-soft border border-kiban-primary/20 rounded-md px-4 py-3 mb-4">
+		if cfg.Message != "" {
+			<div class="flex-1 text-sm text-kiban-ink">{ cfg.Message }</div>
+		} else {
+			<div class="flex-1"></div>
+		}
+		@action.RenderGroup(cfg.Actions)
+	</div>
+}

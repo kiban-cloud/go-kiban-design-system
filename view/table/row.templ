@@ -1,0 +1,46 @@
+package table
+
+// Row renders one `<tr>` in the canonical kiban style — bottom border,
+// hover tint (`hover:bg-kiban-primary-soft`), and click-to-navigate when
+// `href` is non-empty (handled by the global `[data-href]` listener in
+// `view/layout/base.templ`).
+//
+// `href` empty → plain row, no cursor or click navigation.
+// `href` non-empty → row gets `data-href` + `cursor-pointer`. Clicking
+// anywhere in the row navigates to that URL (the layout-level JS does
+// the actual navigation).
+//
+// `bulkValue` empty → no checkbox cell.
+// `bulkValue` non-empty → prepends a `<td>` with
+// `<input type="checkbox" name="ids" value={bulkValue}>`. Pair with
+// `Table(cfg{BulkSelect: true})` so the header carries the matching
+// "select all" toggle.
+//
+// Body cells are rendered via templ children — caller writes their own
+// `<td>` elements with whatever cell content (badges, dates, formatted
+// amounts, action menus, etc.) the column needs.
+//
+// Note: `data-href` triggers navigation on any click inside the row, so
+// embedded clickable elements (links, buttons, action menus) need to
+// stop propagation if their own click should NOT navigate. The
+// click-handling JS in base.templ already skips the navigation when the
+// click originated on an `<a>`, `<button>`, or form input, so the
+// common cases work without extra wiring.
+templ Row(href, bulkValue string) {
+	<tr
+		class={
+			"border-b border-kiban-border hover:bg-kiban-primary-soft transition-colors",
+			templ.KV("cursor-pointer", href != ""),
+		}
+		if href != "" {
+			data-href={ href }
+		}
+	>
+		if bulkValue != "" {
+			<td class="py-4 px-4">
+				<input type="checkbox" name="ids" value={ bulkValue } class="cursor-pointer"/>
+			</td>
+		}
+		{ children... }
+	</tr>
+}

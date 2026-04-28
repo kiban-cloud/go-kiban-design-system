@@ -1,0 +1,57 @@
+package action
+
+// Render renders a single Action as either an `<a>` (when `Href` is set)
+// or a `<button>` (otherwise). `defaultVariant` supplies the colour
+// scheme when the action's own Variant is empty — typically "primary"
+// for a lead action slot, "secondary" for entries in a list of
+// secondary actions.
+//
+// `OnClick`, `Form`, and HTMX `Attrs` are merged into a single
+// templ.Attributes map and spread onto the element; see the comment on
+// `actionAttrs` in types.go for why we sidestep `onclick={…}` interpolation.
+//
+// Render emits no surrounding chrome — the caller (drawer footer, bulk
+// action bar, etc.) is responsible for the layout container around the
+// row of actions.
+templ Render(a Action, defaultVariant string) {
+	if a.Href != "" {
+		<a
+			href={ templ.URL(a.Href) }
+			class={ actionClass(a.Variant, defaultVariant) }
+			{ actionAttrs(a)... }
+		>
+			{ a.Label }
+		</a>
+	} else {
+		<button
+			type={ buttonType(a.Type) }
+			disabled?={ a.Disabled }
+			class={ actionClass(a.Variant, defaultVariant) }
+			{ actionAttrs(a)... }
+		>
+			{ a.Label }
+		</button>
+	}
+}
+
+// RenderGroup renders a Group as a `flex gap-3 justify-end` row:
+// secondaries on the left, primary on the right. Emits nothing when the
+// Group is empty, so consumers can render the surrounding chrome
+// unconditionally and let RenderGroup decide whether the action row
+// itself shows up.
+//
+// Per-slot variant defaults: `Group.PrimaryAction` → "primary",
+// `Group.SecondaryActions[i]` → "secondary". Override per-action via
+// `Action.Variant`.
+templ RenderGroup(g Group) {
+	if !g.IsEmpty() {
+		<div class="flex gap-3 justify-end">
+			for _, a := range g.SecondaryActions {
+				@Render(a, "secondary")
+			}
+			if g.PrimaryAction != nil {
+				@Render(*g.PrimaryAction, "primary")
+			}
+		</div>
+	}
+}
