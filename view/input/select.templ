@@ -1,0 +1,40 @@
+package input
+
+// Select renders a labelled `<select>` whose `<option>`s come from the
+// `options` slice. The currently-selected option is the one whose Value
+// matches `value`; if none match (e.g. empty value at first render) the
+// browser defaults to the first option, so callers usually prepend a
+// placeholder option themselves when an empty initial state is meaningful.
+//
+// Same error/hint contract as Text: errMsg renders red under the control
+// when non-empty and suppresses hint; otherwise hint shows in muted ink.
+templ Select(name, label, value, errMsg, hint string, options []SelectOption, required bool) {
+	<div class="space-y-1">
+		if label != "" {
+			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<select
+			id={ "f-" + name }
+			name={ name }
+			class={
+				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none bg-white",
+				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
+				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
+			}
+		>
+			for _, opt := range options {
+				<option value={ opt.Value } selected?={ value == opt.Value }>{ opt.Label }</option>
+			}
+		</select>
+		if errMsg != "" {
+			<div class="text-xs text-red-600">{ errMsg }</div>
+		} else if hint != "" {
+			<div class="text-xs text-kiban-ink3">{ hint }</div>
+		}
+	</div>
+}

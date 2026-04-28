@@ -1,0 +1,35 @@
+package input
+
+// CheckboxCard is the card-style sibling of Checkbox: a bordered, clickable
+// label with a small checkbox on the left and a title + helper-text block
+// on the right. Used when the binary choice deserves more visual weight
+// than a plain inline checkbox — e.g. notification preferences listed as
+// rows, or any "settings card" pattern.
+//
+// Same `value="true"` rule as Checkbox so Gin's bool binding parses the
+// submission correctly. `attrs` is the HTMX escape hatch.
+templ CheckboxCard(name, title, help string, value, enabled bool, attrs templ.Attributes) {
+	<label
+		class={
+			"flex items-start gap-3 p-3 border border-kiban-border rounded-md",
+			templ.KV("hover:border-kiban-ink3 cursor-pointer", enabled),
+			templ.KV("cursor-not-allowed opacity-60", !enabled),
+		}
+	>
+		<input
+			type="checkbox"
+			name={ name }
+			value="true"
+			checked?={ value }
+			disabled?={ !enabled }
+			class="mt-1 h-4 w-4 rounded border-kiban-border text-kiban-primary focus:ring-kiban-primary"
+			{ attrs... }
+		/>
+		<div class="min-w-0">
+			<div class="text-sm font-medium text-kiban-ink">{ title }</div>
+			if help != "" {
+				<div class="text-xs text-kiban-ink3 mt-0.5">{ help }</div>
+			}
+		</div>
+	</label>
+}

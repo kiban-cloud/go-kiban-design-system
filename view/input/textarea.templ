@@ -1,0 +1,43 @@
+package input
+
+// Textarea renders a labelled `<textarea>`. `rows` is the visible-row count;
+// when 0, it defaults to 3 so callers don't have to think about it. Same
+// label / error / hint contract as Text.
+//
+// `placeholder` sets the placeholder attribute when non-empty (templ emits
+// it always; an empty string just shows nothing — callers don't have to
+// branch). `mono=true` swaps the default font to `font-mono` for content
+// where layout matters (PEM blocks, line-per-email lists, code-ish blobs).
+//
+// Note: textarea content is rendered between the tags (templ escapes it for
+// HTML). Avoid using this for large multi-line secrets — use a domain-specific
+// wrapper that can also drive autocomplete="off" + placeholder behaviour.
+templ Textarea(name, label, value, errMsg, hint string, required bool, rows int, placeholder string, mono bool) {
+	<div class="space-y-1">
+		if label != "" {
+			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<textarea
+			id={ "f-" + name }
+			name={ name }
+			rows={ rowsAttr(rows) }
+			placeholder={ placeholder }
+			class={
+				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
+				templ.KV("font-mono", mono),
+				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
+				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
+			}
+		>{ value }</textarea>
+		if errMsg != "" {
+			<div class="text-xs text-red-600">{ errMsg }</div>
+		} else if hint != "" {
+			<div class="text-xs text-kiban-ink3">{ hint }</div>
+		}
+	</div>
+}

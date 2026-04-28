@@ -13,6 +13,7 @@ import "fmt"
 // Pagination renders Anterior/Siguiente buttons that swap a partial via
 // HTMX. The disabled state is fully styled (kiban-ink4 muted text) so the
 // edges of the result set are visually obvious.
+// Pagination is a shared component that is used to paginate a list of items.
 func Pagination(cfg PaginationConfig) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -41,7 +42,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(cfg.Page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 10, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 11, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -59,7 +60,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.PageURL(cfg.Page - 1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 15, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 16, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -72,7 +73,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Target)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 16, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 17, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -85,7 +86,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Indicator)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 19, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 20, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -119,7 +120,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.PageURL(cfg.Page + 1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 31, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 32, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -132,7 +133,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Target)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 32, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 33, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -145,7 +146,7 @@ func Pagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Indicator)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 35, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/pagination.templ`, Line: 36, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {

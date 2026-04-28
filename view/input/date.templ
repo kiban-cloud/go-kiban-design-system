@@ -1,0 +1,33 @@
+package input
+
+// Date renders a labelled `<input type="date">`. The browser supplies the
+// native date picker; the form value is an ISO-8601 string ("YYYY-MM-DD").
+// Same label / error / hint contract as Text.
+templ Date(name, label, value, errMsg, hint string, required bool) {
+	<div class="space-y-1">
+		if label != "" {
+			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<input
+			id={ "f-" + name }
+			type="date"
+			name={ name }
+			value={ value }
+			class={
+				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
+				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
+				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
+			}
+		/>
+		if errMsg != "" {
+			<div class="text-xs text-red-600">{ errMsg }</div>
+		} else if hint != "" {
+			<div class="text-xs text-kiban-ink3">{ hint }</div>
+		}
+	</div>
+}

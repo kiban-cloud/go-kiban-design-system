@@ -1,0 +1,45 @@
+package input
+
+// Phone wraps intl-tel-input (the JS lib loaded in layout/base.templ). The
+// shape is fixed by what the init JS expects — see `[data-phone-input]`,
+// `[data-tel-visible]`, `[data-tel-cc]`, `[data-tel-national]` in
+// layout/base.templ:
+//
+//   - The visible <input type="tel"> has NO `name` so its raw text never
+//     hits the backend; it's just the field the user types into.
+//   - Two hidden inputs carry the canonical pair (dial code + national
+//     digits) under whatever names the caller supplies — `ccName` and
+//     `phoneName`. Backend forms bind these two fields directly.
+//   - data-tel-initial pre-seeds the widget on edit screens. When both
+//     `ccValue` and `phoneValue` are non-empty we render "+<cc><phone>" so
+//     intl-tel-input parses it (once utils.js loads) and picks the right
+//     country + national portion. When either side is empty, the widget
+//     defaults to its initialCountry (mx).
+//
+// Required is visual-only (asterisk on the label); validation lives
+// server-side. Hint is intentionally not exposed because the widget already
+// shows a country flag + dial code as visual affordance.
+templ Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, required bool) {
+	<div class="space-y-1" data-phone-input>
+		if label != "" {
+			<label class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<input
+			type="tel"
+			data-tel-visible
+			data-tel-initial={ initialDial(ccValue, phoneValue) }
+			placeholder="5512345678"
+			class="w-full"
+		/>
+		<input type="hidden" name={ ccName } value={ ccValue } data-tel-cc/>
+		<input type="hidden" name={ phoneName } value={ phoneValue } data-tel-national/>
+		if errMsg != "" {
+			<div class="text-xs text-red-600">{ errMsg }</div>
+		}
+	</div>
+}

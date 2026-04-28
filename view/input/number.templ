@@ -1,0 +1,43 @@
+package input
+
+// Number renders a labelled `<input type="number">` with optional `min`,
+// `max`, and `step` constraints. min/max/step are passed as strings so the
+// caller can express decimal steps ("0.01") and so empty strings cleanly
+// suppress the attribute (the browser ignores empty min/max/step the same
+// way it ignores absent ones, so we just always emit them — keeps the
+// markup uniform).
+//
+// `value` is a string so the user's raw input can round-trip on a
+// validation re-render without parse-then-format flattening their typing
+// (e.g. trailing zeros after a decimal).
+templ Number(name, label, value, errMsg, hint string, required bool, min, max, step string) {
+	<div class="space-y-1">
+		if label != "" {
+			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<input
+			id={ "f-" + name }
+			type="number"
+			name={ name }
+			value={ value }
+			min={ min }
+			max={ max }
+			step={ step }
+			class={
+				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
+				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
+				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
+			}
+		/>
+		if errMsg != "" {
+			<div class="text-xs text-red-600">{ errMsg }</div>
+		} else if hint != "" {
+			<div class="text-xs text-kiban-ink3">{ hint }</div>
+		}
+	</div>
+}

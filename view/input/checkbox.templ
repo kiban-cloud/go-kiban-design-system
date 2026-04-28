@@ -1,0 +1,42 @@
+package input
+
+// Checkbox renders a plain checkbox + label pair. The explicit `value="true"`
+// is load-bearing: by default browsers send a checked checkbox as `name=on`,
+// but Gin's `bool` binding uses strconv.ParseBool which doesn't accept "on" —
+// without `value="true"` the checkbox would silently bind to false on every
+// submit. With it, the browser sends `name=true` which Gin parses correctly.
+//
+// `enabled=false` renders the input as `disabled` with muted opacity and a
+// `cursor-not-allowed` label so the user can see why they can't toggle it.
+// `disabledHint` is appended after the label as small muted text and only
+// shows when `!enabled`; pass "" when you don't have an explanation to
+// offer (e.g. payment-method toggles include a "no configurado en Rekon"
+// hint to clarify why a method can't be selected).
+//
+// `attrs` is the escape hatch for project-specific behaviour (hx-post,
+// hx-target, hx-include, etc.). The design system stays HTMX-agnostic — it
+// just spreads the attributes onto the `<input>`. Pass `nil` (or
+// `templ.Attributes{}`) when there's no extra wiring.
+templ Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, disabledHint string) {
+	<label
+		class={
+			"flex items-center gap-3",
+			templ.KV("cursor-pointer", enabled),
+			templ.KV("cursor-not-allowed opacity-60", !enabled),
+		}
+	>
+		<input
+			type="checkbox"
+			name={ name }
+			value="true"
+			checked?={ value }
+			disabled?={ !enabled }
+			class="cursor-pointer disabled:cursor-not-allowed"
+			{ attrs... }
+		/>
+		<span class="text-sm text-kiban-ink">{ label }</span>
+		if !enabled && disabledHint != "" {
+			<span class="text-xs text-kiban-ink4">{ disabledHint }</span>
+		}
+	</label>
+}

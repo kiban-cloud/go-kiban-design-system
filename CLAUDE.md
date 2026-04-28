@@ -35,7 +35,7 @@ view/
     nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2)
     icons.templ         (alternativa: ver view/icons/)
   icons/                set compartido de iconos SVG (currentColor stroke)
-  input/                text, phone (intl-tel-input wrapper), select, checkbox, toggle, textarea, hidden, country-code
+  input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
   button/               primary, secondary, destructive, icon
   card/                 card, section (titled card)
   badge/                status pill, type badge
@@ -86,16 +86,27 @@ Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables
 
 ### Inputs (`view/input/`)
 
+Convenciones del paquete (ver godoc de `types.go` para el detalle):
+- Cada control emite `id="f-<name>"` y un `<label for="f-<name>">` correspondiente. Pasá `label=""` para omitir el `<label>` (útil cuando una sección o card más prominente ya cumple ese rol — el componente no emite el tag vacío).
+- `errMsg != ""` → bordes rojos + mensaje en `text-red-600` debajo del control. `errMsg == "" && hint != ""` → mensaje en `text-kiban-ink3`. Nunca aparecen los dos a la vez.
+- `required` es marcador visual (asterisco rojo). HTML5 `required` se omite a propósito — la validación vive server-side.
+- HTMX se inyecta vía `attrs templ.Attributes` en componentes que lo soportan (Checkbox, CheckboxCard, RadioCard, Toggle); el design system se queda HTMX-agnóstico.
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `input.Text(name, label, value, errMsg, required)` | planned | Border `kiban-border`, focus `kiban-primary`, error → `border-red-400`. Helper text rojo bajo el input cuando `errMsg != ""`. |
-| `input.Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg, required)` | planned | Wrapper de intl-tel-input. Renderiza un `<input type="tel">` visible (sin `name`) + dos `<input type="hidden">` (countryCode + phone). El init JS ya está en `layout/base.templ` y escanea `[data-phone-input]` automáticamente. |
-| `input.Select(name, label, value, errMsg, options, required)` | planned | `options []SelectOption{Value, Label}`. |
-| `input.Checkbox(name, label, value, enabled)` | planned | **`value="true"` obligatorio** — Gin no parsea "on" como bool. |
-| `input.Toggle(name, label, value, enabled)` | planned | Checkbox semántico, switch visual. |
-| `input.Textarea(name, label, value, errMsg, required, rows)` | planned | |
-| `input.Hidden(name, value)` | planned | Helper para hidden context fields (page, filter state, etc.). |
-| `input.Date(name, label, value, errMsg, required)` | planned | `<input type="date">`, validación nativa. |
+| `input.Text(name, label, value, errMsg, hint string, required bool)` | done | Texto plano. Mismo contrato error/hint descrito arriba. |
+| `input.Password(name, label, value, errMsg, hint string, required bool, placeholder string)` | done | Como Text pero `type="password"` + `autocomplete="off"`. `placeholder` para renderizar el sentinel "••••••••" cuando ya hay un secreto guardado y el usuario puede dejar el campo en blanco para conservarlo. |
+| `input.Number(name, label, value, errMsg, hint string, required bool, min, max, step string)` | done | `type="number"`. `min`/`max`/`step` como strings para soportar decimales ("0.01") y permitir suprimir el atributo pasando `""`. `value` también string para round-trippar lo que el usuario tipeó tras un error de validación. |
+| `input.Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, required bool)` | done | Wrapper de intl-tel-input. Renderiza `<input type="tel" data-tel-visible>` (sin `name`) + dos `<input type="hidden">` (`data-tel-cc` / `data-tel-national`). El init JS de `layout/base.templ` escanea `[data-phone-input]`. `data-tel-initial` se pre-popula con `+<cc><national>` cuando ambos lados están seteados (edit). |
+| `input.Select(name, label, value, errMsg, hint string, options []SelectOption, required bool)` | done | `options []SelectOption{Value, Label}`. Si necesitas placeholder, prepéndelo como una `SelectOption{Value: "", Label: "Selecciona…"}`. |
+| `input.Date(name, label, value, errMsg, hint string, required bool)` | done | `<input type="date">`, mismo contrato que Text. |
+| `input.File(name, label, accept, hint string, required bool)` | done | `<input type="file">` con `file:` prefix kiban-styleado. `accept` (ej. `.csv,text/csv`) para restringir el picker; pasá `""` para aceptar todo. `required?={required}` se emite (HTML5) para que el browser bloquee submit sin archivo. |
+| `input.Hidden(name, value, id string)` | done | `<input type="hidden">`. Pasá `id=""` cuando no haga falta (la mayoría de los casos); poné `id` cuando el JS necesite leer/escribir el valor en runtime (ej. el script de geolocation que rellena lat/lng antes de submit). |
+| `input.Textarea(name, label, value, errMsg, hint string, required bool, rows int, placeholder string, mono bool)` | done | `rows <= 0` → default 3. `placeholder` se emite siempre (vacío = no se muestra). `mono=true` swappea a `font-mono` para PEM blocks, listas de emails una-por-línea, etc. |
+| `input.Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, disabledHint string)` | done | Checkbox plano + label en línea. **`value="true"` obligatorio** — Gin no parsea "on" como bool. `disabledHint` se renderiza después del label en `text-kiban-ink4` solo cuando `!enabled` (útil para mostrar "— no configurado en …" en toggles disabled). Pasá `""` cuando no haga falta. |
+| `input.CheckboxCard(name, title, help string, value, enabled bool, attrs templ.Attributes)` | done | Card-style: borde + padding + título arriba + helper text en muted abajo. Mismo contrato `value="true"`. `enabled=false` deshabilita y baja opacidad. Útil para listas de preferencias / settings cards. |
+| `input.Toggle(name, label string, value, enabled bool, attrs templ.Attributes)` | done | Checkbox semántico, switch visual (Tailwind `peer-checked` para animar el tracker). Mismo contrato `value="true"` y `attrs` que Checkbox. |
+| `input.RadioCard(name, value, title, subtitle string, checked bool, attrs templ.Attributes)` | done | Card-style radio: borde clickeable, resalta `border-kiban-primary bg-kiban-primary-soft` al checkearse. Múltiples cards con el mismo `name` forman el group. `subtitle` opcional. `attrs` para HTMX cuando la selección dispara un partial re-render del form. |
 
 ### Botones (`view/button/`)
 

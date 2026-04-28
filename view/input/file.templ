@@ -1,0 +1,33 @@
+package input
+
+// File renders an `<input type="file">` with the kiban-styled `file:` prefix
+// (the inline button the browser shows next to the filename). `accept`
+// restricts the picker (e.g. ".csv,text/csv"); pass "" to allow anything.
+//
+// Label is rendered conditionally — pass "" when an enclosing section header
+// already serves as the field title (typical for upload pages where the
+// section header is more prominent than a standard form-field label). Hint
+// renders below the input in muted ink when non-empty.
+templ File(name, label, accept, hint string, required bool) {
+	<div class="space-y-1">
+		if label != "" {
+			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<input
+			id={ "f-" + name }
+			type="file"
+			name={ name }
+			accept={ accept }
+			required?={ required }
+			class="block w-full text-sm text-kiban-ink file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-kiban-primary-soft file:text-kiban-primary file:text-sm file:font-medium hover:file:opacity-90"
+		/>
+		if hint != "" {
+			<div class="text-xs text-kiban-ink3">{ hint }</div>
+		}
+	</div>
+}
