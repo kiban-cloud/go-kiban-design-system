@@ -112,9 +112,9 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `button.Button(p Options)` | done | Único template. `Options.Variant`: `primary` (default), `secondary`, `destructive`, `icon`. Icono opcional con `Icon` + `IconPosition` (`left`/`right`). Variante `icon`: usar `AriaLabel` (o `Title`); `Icon` elige el glifo (`filter`, `sort`, `close`, …). |
+| `button.Button(p Options)` | done | Único template. `Options.Variant`: `primary` (default), `secondary`, `danger`, `icon`. (`destructive` se normaliza a `danger` por compatibilidad.) Atajo `Icon` + `IconPosition` para glifos del registro interno; para iconos nuevos u otros SVGs usar `IconComponent: icons.Algo()` (u otro `templ.Component`). Variante `icon`: usar `AriaLabel` (o `Title`). |
 
-`Options`: `Label`, `Icon`, `IconPosition`, `Variant`, `IsSubmit`, `IsReset`, `Disabled`, `ExtraClass`, `Form`, `AriaLabel`, `Title`, `Attrs templ.Attributes`. HTMX y cualquier atributo extra van en `Attrs` (mismo patrón que `view/input`). Helpers públicos: `button.BuildClass`, `button.NonEmptyAttrs`.
+`Options`: `Label`, `Icon`, `IconPosition`, `IconComponent templ.Component` (opcional; si no es nil, sustituye al registro de `Icon` y permite cualquier icono de `view/icons` u otro fragmento templ), `Variant`, `IsSubmit`, `IsReset`, `Disabled`, `ExtraClass`, `Form`, `AriaLabel`, `Title`, `Attrs templ.Attributes`. HTMX y cualquier atributo extra van en `Attrs` (mismo patrón que `view/input`). Helpers públicos: `button.BuildClass`, `button.NonEmptyAttrs`.
 
 ### Display (`view/card/`, `view/badge/`, `view/flash/`, `view/spinner/`, `view/tooltip/`)
 

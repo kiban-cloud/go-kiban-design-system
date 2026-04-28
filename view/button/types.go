@@ -19,7 +19,10 @@ type Options struct {
 	Label        string
 	Icon         string
 	IconPosition string // left | right (default: left)
-	Variant      string // primary | secondary | destructive | icon
+	// IconComponent optional: any templ component (e.g. icons.Database()). When
+	// non-nil it wins over Icon for the active slot (left/right or icon variant).
+	IconComponent templ.Component
+	Variant       string // primary | secondary | danger | icon
 
 	IsSubmit bool // when true, renders type="submit"
 	IsReset  bool // when true, renders type="reset" (wins over IsSubmit)
@@ -33,9 +36,12 @@ type Options struct {
 }
 
 func (o Options) normalizedVariant() string {
-	switch strings.ToLower(strings.TrimSpace(o.Variant)) {
-	case "primary", "secondary", "destructive", "icon":
-		return strings.ToLower(strings.TrimSpace(o.Variant))
+	v := strings.ToLower(strings.TrimSpace(o.Variant))
+	switch v {
+	case "destructive":
+		return "danger"
+	case "primary", "secondary", "danger", "icon":
+		return v
 	default:
 		return defaultVariant
 	}
@@ -64,6 +70,10 @@ func (o Options) hasIcon() bool {
 	return strings.TrimSpace(o.Icon) != ""
 }
 
+func hasIconComponent(p Options) bool {
+	return p.IconComponent != nil
+}
+
 func (o Options) iconAtRight() bool {
 	return strings.EqualFold(strings.TrimSpace(o.IconPosition), "right")
 }
@@ -88,7 +98,7 @@ func baseClasses(variant string) string {
 	switch strings.ToLower(strings.TrimSpace(variant)) {
 	case "secondary":
 		return "inline-flex items-center justify-center gap-2 rounded-md border border-kiban-border bg-white px-4 py-2 text-sm font-medium text-kiban-ink transition-colors hover:border-kiban-ink3 hover:bg-kiban-surface disabled:cursor-not-allowed disabled:opacity-50"
-	case "destructive":
+	case "danger":
 		return "inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
 	case "icon":
 		return "inline-flex h-9 w-9 items-center justify-center rounded-md border border-kiban-border bg-white text-kiban-ink transition-colors hover:border-kiban-ink3 hover:bg-kiban-surface disabled:cursor-not-allowed disabled:opacity-50"
@@ -117,14 +127,30 @@ func shouldRenderLeftIcon(p Options) bool {
 	if p.normalizedVariant() == "icon" {
 		return true
 	}
-	return p.hasIcon() && !p.iconAtRight()
+	return (p.hasIcon() || hasIconComponent(p)) && !p.iconAtRight()
 }
 
 func shouldRenderRightIcon(p Options) bool {
 	if p.normalizedVariant() == "icon" {
 		return false
 	}
-	return p.hasIcon() && p.iconAtRight()
+	return (p.hasIcon() || hasIconComponent(p)) && p.iconAtRight()
+}
+
+// renderCustomIconLeft is true when the left (or sole icon-variant) slot should
+// render IconComponent instead of the Icon string registry.
+func renderCustomIconLeft(p Options) bool {
+	if !hasIconComponent(p) {
+		return false
+	}
+	if p.normalizedVariant() == "icon" {
+		return true
+	}
+	return !p.iconAtRight()
+}
+
+func renderCustomIconRight(p Options) bool {
+	return hasIconComponent(p) && p.normalizedVariant() != "icon" && p.iconAtRight()
 }
 
 func effectiveAriaLabelForVariant(p Options) string {
