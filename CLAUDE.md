@@ -112,12 +112,12 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `button.Primary(opts)` | planned | bg `kiban-primary`, text white. |
-| `button.Secondary(opts)` | planned | Outline, border `kiban-border`. |
-| `button.Destructive(opts)` | planned | bg `red-600`. |
-| `button.Icon(opts)` | planned | Solo icono, hover suave. |
+| `button.Primary(opts)` | done | CTA principal (`bg-kiban-primary`, text white). Soporta HTMX y estado disabled. |
+| `button.Secondary(opts)` | done | Outline (`border-kiban-border`, fondo blanco). Soporta HTMX y estado disabled. |
+| `button.Destructive(opts)` | done | Acción destructiva (`bg-red-600`). Soporta HTMX y estado disabled. |
+| `button.Icon(opts)` | done | Botón cuadrado de icono con fallback a `icons.More` cuando `opts.Icon` es desconocido. |
 
-`Opts` (struct) lleva: `Label`, `Type` (button/submit), `Disabled`, `HxPost`/`HxGet`/`HxTarget`/`HxSwap`/`HxConfirm`/`HxIndicator`/`HxDisabledElt`, `Class` (extra), `Form` (id of external form).
+`Opts` (struct) incluye: `Label`, `Icon`, `Type` (`button|submit|reset`, default `button`), `Disabled`, `Class`, `Form`, `AriaLabel`, `Title`, `HxPost`/`HxGet`/`HxTarget`/`HxSwap`/`HxConfirm`/`HxIndicator`/`HxDisabledElt`.
 
 ### Display (`view/card/`, `view/badge/`, `view/flash/`, `view/spinner/`, `view/tooltip/`)
 
