@@ -211,11 +211,14 @@ In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell qu
 
 ### Form binding (`binding/`)
 
+**Convención cross-project**: este paquete es la única fuente de traducciones de errores de validator across todos los proyectos kiban. Cuando un proyecto registra un validator tag custom (`regexRFC`, `regexCURP`, `regexCLABE`, etc.), también debe registrar acá el mensaje en español via `RegisterMessage` — así el wording se mantiene consistente entre rekon, crm, y futuros proyectos. **No copy-pastear el switch de mensajes en cada proyecto**: el dispatcher vive acá y se extiende via la función pública `RegisterMessage`.
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `binding.FieldErrors(err) map[string]string` | done | Mapea `validator.ValidationErrors` → claves = nombre del tag `form:"…"`, valores = mensaje en español. Soporta tags `required`, `email`, `min`, `max`, `len`, `url`, `oneof`, `gt`, `gte`, `eqfield`. |
+| `binding.FieldErrors(err) map[string]string` | done | Mapea `validator.ValidationErrors` → claves = nombre del tag `form:"…"`, valores = mensaje en español. Internamente delega a `MessageFor` (incluyendo el fallback a "Valor inválido" para tags desconocidos). |
 | `init()` en el package | done | Registra `TagNameFunc` en el validator de Gin para que use `form:"…"` como key. Corre automáticamente al importar el package. |
-| `binding.MessageFor(tag, param)` (extensible) | planned | Helper para extender messages a tags custom (ej. `regexCURP`, `regexRFC`). Hoy `messageFor` es interno. |
+| `binding.MessageFor(tag, param string) string` | done | Lookup público. Orden: (1) registrados via `RegisterMessage`, (2) tags built-in (`required`, `email`, `min`, `max`, `len`, `url`, `oneof`, `gt`, `gte`, `eqfield`), (3) "Valor inválido" como fallback. Útil cuando el handler necesita el mensaje de un tag fuera del flujo de `FieldErrors` (ej. building API JSON responses). |
+| `binding.RegisterMessage(tag string, formatter func(param string) string)` | done | Registra el mensaje en español para un tag custom. El formatter recibe el `param` del tag (lo que va después del `=` en `binding:"tagName=param"`); ignorar cuando el tag no toma parámetro. **Override**: las registraciones custom ganan sobre los built-ins, así un proyecto puede tweakear el wording de un tag estándar (`required`, etc.) si producto lo pide. **Panics** si `tag == ""` o `formatter == nil` — ambos son bugs de programación que serían silently broken sin el panic. Patrón típico: llamar desde un `init()` o setup en el `cmd/api/main.go` del consumidor, antes de servir requests. |
 
 ### HTMX helpers (`htmx/`)
 
