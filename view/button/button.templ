@@ -1,0 +1,54 @@
+package button
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
+// Button is the only template: set [Options.Variant] to primary, secondary,
+// danger, or icon. Pass HTMX and other attributes via [Options.Attrs].
+templ Button(p Options) {
+	<button
+		type={ htmlButtonType(p) }
+		class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
+		aria-label={ effectiveAriaLabelForVariant(p) }
+		title={ effectiveTitleForVariant(p) }
+		disabled?={ p.Disabled }
+		form={ p.Form }
+		if NonEmptyAttrs(p.Attrs) {
+			{ p.Attrs... }
+		}
+	>
+		if shouldRenderLeftIcon(p) {
+			if renderCustomIconLeft(p) {
+				@p.IconComponent
+			} else {
+				@iconByName(p.Icon)
+			}
+		}
+		if p.normalizedVariant() != "icon" {
+			{ p.Label }
+		}
+		if shouldRenderRightIcon(p) {
+			if renderCustomIconRight(p) {
+				@p.IconComponent
+			} else {
+				@iconByName(p.Icon)
+			}
+		}
+	</button>
+}
+
+templ iconByName(name string) {
+	switch name {
+	case "close":
+		@icons.Close()
+	case "filter":
+		@icons.Filter()
+	case "sort":
+		@icons.Sort()
+	case "hamburger":
+		@icons.Hamburger()
+	case "chevronDown":
+		@icons.ChevronDown()
+	default:
+		@icons.More()
+	}
+}

@@ -37,7 +37,7 @@ view/
   icons/                set compartido de iconos SVG (currentColor stroke)
   action/               Action + Group structs reusados por drawer / table.BulkActionBar / future button package; Render + RenderGroup helpers
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
-  button/               primary, secondary, destructive, icon
+  button/               Button(Options) — variant via Options.Variant
   card/                 Card (chrome wrapper) + Section (sub-section divider)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
@@ -113,12 +113,9 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `button.Primary(opts)` | planned | bg `kiban-primary`, text white. |
-| `button.Secondary(opts)` | planned | Outline, border `kiban-border`. |
-| `button.Destructive(opts)` | planned | bg `red-600`. |
-| `button.Icon(opts)` | planned | Solo icono, hover suave. |
+| `button.Button(p Options)` | done | Único template. `Options.Variant`: `primary` (default), `secondary`, `danger`, `icon`. (`destructive` se normaliza a `danger` por compatibilidad.) Atajo `Icon` + `IconPosition` para glifos del registro interno; para iconos nuevos u otros SVGs usar `IconComponent: icons.Algo()` (u otro `templ.Component`). Variante `icon`: usar `AriaLabel` (o `Title`). |
 
-`Opts` (struct) lleva: `Label`, `Type` (button/submit), `Disabled`, `HxPost`/`HxGet`/`HxTarget`/`HxSwap`/`HxConfirm`/`HxIndicator`/`HxDisabledElt`, `Class` (extra), `Form` (id of external form).
+`Options`: `Label`, `Icon`, `IconPosition`, `IconComponent templ.Component` (opcional; si no es nil, sustituye al registro de `Icon` y permite cualquier icono de `view/icons` u otro fragmento templ), `Variant`, `IsSubmit`, `IsReset`, `Disabled`, `ExtraClass`, `Form`, `AriaLabel`, `Title`, `Attrs templ.Attributes`. HTMX y cualquier atributo extra van en `Attrs` (mismo patrón que `view/input`). Helpers públicos: `button.BuildClass`, `button.NonEmptyAttrs`.
 
 ### Display (`view/card/`, `view/badge/`, `view/flash/`, `view/spinner/`, `view/tooltip/`)
 

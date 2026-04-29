@@ -25,9 +25,11 @@ templ Topbar(cfg Config) {
 			@icons.ChevronDown()
 		</div>
 		<div class="flex-1"></div>
-		<a href={ templ.URL(cfg.ShellURL + "/developers") } class="bg-kiban-primary text-white font-medium text-sm px-4 py-2 rounded-md hover:opacity-90">
-			Developers
-		</a>
+		if cfg.DevelopersURL != "" {
+			<a href={ templ.URL(cfg.DevelopersURL) } class="bg-kiban-primary text-white font-medium text-sm px-4 py-2 rounded-md hover:opacity-90">
+				Developers
+			</a>
+		}
 		<div class="h-8 w-px bg-kiban-border"></div>
 		<div class="relative group">
 			<button class="w-9 h-9 rounded-full bg-kiban-surface border border-kiban-border text-kiban-ink3 text-sm font-medium flex items-center justify-center overflow-hidden">
