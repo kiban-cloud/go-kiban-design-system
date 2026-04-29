@@ -59,6 +59,11 @@ type Config struct {
 	// Routing
 	ShellURL     string // kiban shell base URL (logo link + external tool prefix)
 	LogoutAction string // POST URL that clears auth cookies
+	// DevelopersURL is the topbar "Developers" link target. The button is
+	// opt-in: leave this empty to hide it entirely. Set it (typically to an
+	// in-project route or to the kiban shell's developers hub) to render the
+	// button pointing there.
+	DevelopersURL string
 
 	// Active state
 	ToolKey   string // matches one of Tools[i].Key — highlights the active tool icon
