@@ -8,7 +8,7 @@
 // children. The package is intentionally chrome-only.
 package table
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/action"
+import "github.com/kiban-cloud/go-kiban-design-system/view/button"
 
 // PaginationConfig drives the shared Pagination component. PageURL is a
 // callback so the caller controls how filter state and other context is
@@ -52,7 +52,7 @@ type TableConfig struct {
 // for any `input[name=ids]:checked` inside the same named group.
 //
 // Layout: optional `Message` on the left, `Actions` on the right
-// (rendered through the shared `action.Group`, so primary/secondary
+// (rendered through the shared `button.Group`, so primary/secondary
 // variants and HTMX wiring work the same as in drawer footers).
 type BulkActionBarConfig struct {
 	// Message is the muted helper text on the left of the bar
@@ -64,5 +64,5 @@ type BulkActionBarConfig struct {
 	// action (e.g. "Eliminar seleccionados" with `Variant:"danger"` +
 	// HTMX wiring), but any combination of primary + secondaries is
 	// supported.
-	Actions action.Group
+	Actions button.Group
 }

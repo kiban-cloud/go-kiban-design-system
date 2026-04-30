@@ -8,7 +8,7 @@ package table
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/action"
+import "github.com/kiban-cloud/go-kiban-design-system/view/button"
 
 // BulkActionBar is the row of actions that appears above a list table
 // when at least one row checkbox is selected. Visibility is purely
@@ -31,7 +31,7 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/action"
 //     checkboxes — typically just above the `Table`.
 //
 // Layout: optional `Message` on the left, `Actions` on the right via
-// the shared `action.Group`. The bar gets `mb-4` so it sits cleanly
+// the shared `button.Group`. The bar gets `mb-4` so it sits cleanly
 // above the table without the consumer adding extra spacing.
 func BulkActionBar(cfg BulkActionBarConfig) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -82,7 +82,7 @@ func BulkActionBar(cfg BulkActionBarConfig) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = action.RenderGroup(cfg.Actions).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = button.RenderGroup(cfg.Actions).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -8,16 +8,16 @@ package drawer
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/action"
+import "github.com/kiban-cloud/go-kiban-design-system/view/button"
 
 // renderFooter emits the bottom action row for SidePanel and Modal:
 // `border-t border-kiban-border` divider, secondary actions on the left,
 // primary action on the right. Renders nothing when the Group is empty
 // so the divider line doesn't appear when there's no footer.
 //
-// The actual button row lives in `view/action`; this helper just adds
+// The actual button row lives in `view/button`; this helper just adds
 // the drawer-flavoured chrome (border-t, padding, shrink-0) around it.
-func renderFooter(g action.Group) templ.Component {
+func renderFooter(g button.Group) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -43,7 +43,7 @@ func renderFooter(g action.Group) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = action.RenderGroup(g).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = button.RenderGroup(g).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

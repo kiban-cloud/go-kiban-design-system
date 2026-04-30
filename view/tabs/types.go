@@ -32,7 +32,7 @@ import "github.com/a-h/templ"
 // spread directly onto the `<a>` element so consumers can switch a tab
 // from "full-page nav" (default) to "swap a partial in place" without
 // the design system needing to know about HTMX. Same pattern used by
-// `action.Action`.
+// `button.Options`.
 type TabItem struct {
 	Key   string
 	Label string

@@ -1,18 +1,18 @@
 package drawer
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/action"
+import "github.com/kiban-cloud/go-kiban-design-system/view/button"
 
 // renderFooter emits the bottom action row for SidePanel and Modal:
 // `border-t border-kiban-border` divider, secondary actions on the left,
 // primary action on the right. Renders nothing when the Group is empty
 // so the divider line doesn't appear when there's no footer.
 //
-// The actual button row lives in `view/action`; this helper just adds
+// The actual button row lives in `view/button`; this helper just adds
 // the drawer-flavoured chrome (border-t, padding, shrink-0) around it.
-templ renderFooter(g action.Group) {
+templ renderFooter(g button.Group) {
 	if !g.IsEmpty() {
 		<div class="px-6 py-4 border-t border-kiban-border shrink-0">
-			@action.RenderGroup(g)
+			@button.RenderGroup(g)
 		</div>
 	}
 }

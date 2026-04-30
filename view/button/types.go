@@ -15,6 +15,14 @@ const (
 // Options configures a single [Button]. HTMX and other ad-hoc attributes go
 // through Attrs (same pattern as view/input) so the component stays
 // transport-agnostic.
+//
+// Href makes [Button] render as an `<a>` instead of a `<button>`. This is the
+// "button or link" pattern used by drawer footers, table BulkActionBar, etc.
+// — a control slot that can either submit/click locally or navigate to a
+// route. When Href is set, IsSubmit/IsReset/Form/Disabled are silently
+// ignored because they don't apply to anchors; consumers that need a
+// disabled-link visual should drive it via ExtraClass + aria-disabled in
+// Attrs.
 type Options struct {
 	Label        string
 	Icon         string
@@ -24,12 +32,22 @@ type Options struct {
 	IconComponent templ.Component
 	Variant       string // primary | secondary | danger | icon
 
-	IsSubmit bool // when true, renders type="submit"
-	IsReset  bool // when true, renders type="reset" (wins over IsSubmit)
+	// Href, when non-empty, makes Button render as an `<a>` and skips the
+	// button-only attributes (type/disabled/form). Empty -> renders <button>.
+	Href string
 
-	Disabled    bool
+	IsSubmit bool // when true, renders type="submit" (button only)
+	IsReset  bool // when true, renders type="reset" (wins over IsSubmit; button only)
+
+	// OnClick is raw inline JS for the `onclick` attribute. First-class field
+	// rather than a key in Attrs because the "submit then close overlay"
+	// pattern (`OnClick: "kibanCloseOverlay('id')"`) is common enough across
+	// drawer / modal callsites that the ergonomic shortcut earns its keep.
+	OnClick string
+
+	Disabled    bool // ignored when Href is set (anchors have no disabled attr)
 	ExtraClass  string
-	Form        string
+	Form        string // ignored when Href is set
 	AriaLabel   string
 	Title       string
 	Attrs       templ.Attributes
@@ -121,6 +139,61 @@ func joinClasses(classes ...string) string {
 // NonEmptyAttrs reports whether attrs should be spread onto the element.
 func NonEmptyAttrs(attrs templ.Attributes) bool {
 	return len(attrs) > 0
+}
+
+// resolvedAttrs merges Options.Attrs with the dedicated OnClick field into a
+// single attribute set ready to be spread on the element. Bundling onclick
+// here lets the templ emit it as a plain string attribute — the alternative
+// (`onclick={…}`) would force every consumer through templ.JSFuncCall since
+// templ's strict typing for script attributes requires templ.ComponentScript
+// values.
+func resolvedAttrs(p Options) templ.Attributes {
+	out := templ.Attributes{}
+	for k, v := range p.Attrs {
+		out[k] = v
+	}
+	if strings.TrimSpace(p.OnClick) != "" {
+		out["onclick"] = p.OnClick
+	}
+	return out
+}
+
+func hasHref(p Options) bool {
+	return strings.TrimSpace(p.Href) != ""
+}
+
+// Group is a small ordered collection of buttons sharing a row of controls
+// — typically a drawer/modal footer, a bulk-action bar, or an inline action
+// menu. PrimaryAction renders rightmost (default variant "primary");
+// SecondaryActions render to its left in order (default variant
+// "secondary"). Renderers should treat an empty Group as "render nothing"
+// so consumers can pass an empty Group when a layout has no actions in a
+// particular state.
+//
+// The Group lives in this package (rather than its own) because it's a thin
+// composition over Button — same vocabulary, same variants, same Attrs.
+// Drawer footers and table BulkActionBar consume Group directly.
+type Group struct {
+	PrimaryAction    *Options
+	SecondaryActions []Options
+}
+
+// IsEmpty reports whether the Group has nothing to render. Renderers use
+// this to skip the surrounding chrome (e.g. drawer's `border-t pt-4`
+// divider) when there are no actions to show.
+func (g Group) IsEmpty() bool {
+	return g.PrimaryAction == nil && len(g.SecondaryActions) == 0
+}
+
+// WithDefaultVariant returns a copy of o with Variant filled in when the
+// caller left it empty. Used by RenderGroup so PrimaryAction defaults to
+// "primary" and entries in SecondaryActions default to "secondary" without
+// requiring callers to repeat the variant on every action.
+func WithDefaultVariant(o Options, defaultVariant string) Options {
+	if strings.TrimSpace(o.Variant) == "" {
+		o.Variant = defaultVariant
+	}
+	return o
 }
 
 func shouldRenderLeftIcon(p Options) bool {

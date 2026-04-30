@@ -2,38 +2,82 @@ package button
 
 import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 
-// Button is the only template: set [Options.Variant] to primary, secondary,
-// danger, or icon. Pass HTMX and other attributes via [Options.Attrs].
+// Button renders one action as a `<button>` (default) or `<a>` when
+// [Options.Href] is non-empty. Variant picks the colour scheme; HTMX and
+// other ad-hoc attributes go through [Options.Attrs]. See the Options
+// godoc for the rules around button-only fields when rendering an anchor.
 templ Button(p Options) {
-	<button
-		type={ htmlButtonType(p) }
-		class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
-		aria-label={ effectiveAriaLabelForVariant(p) }
-		title={ effectiveTitleForVariant(p) }
-		disabled?={ p.Disabled }
-		form={ p.Form }
-		if NonEmptyAttrs(p.Attrs) {
-			{ p.Attrs... }
-		}
-	>
-		if shouldRenderLeftIcon(p) {
-			if renderCustomIconLeft(p) {
-				@p.IconComponent
-			} else {
-				@iconByName(p.Icon)
+	if hasHref(p) {
+		<a
+			href={ templ.URL(p.Href) }
+			class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
+			aria-label={ effectiveAriaLabelForVariant(p) }
+			title={ effectiveTitleForVariant(p) }
+			if NonEmptyAttrs(resolvedAttrs(p)) {
+				{ resolvedAttrs(p)... }
 			}
-		}
-		if p.normalizedVariant() != "icon" {
-			{ p.Label }
-		}
-		if shouldRenderRightIcon(p) {
-			if renderCustomIconRight(p) {
-				@p.IconComponent
-			} else {
-				@iconByName(p.Icon)
+		>
+			@buttonInner(p)
+		</a>
+	} else {
+		<button
+			type={ htmlButtonType(p) }
+			class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
+			aria-label={ effectiveAriaLabelForVariant(p) }
+			title={ effectiveTitleForVariant(p) }
+			disabled?={ p.Disabled }
+			form={ p.Form }
+			if NonEmptyAttrs(resolvedAttrs(p)) {
+				{ resolvedAttrs(p)... }
 			}
+		>
+			@buttonInner(p)
+		</button>
+	}
+}
+
+// buttonInner renders the icon + label content shared between the <a> and
+// <button> branches.
+templ buttonInner(p Options) {
+	if shouldRenderLeftIcon(p) {
+		if renderCustomIconLeft(p) {
+			@p.IconComponent
+		} else {
+			@iconByName(p.Icon)
 		}
-	</button>
+	}
+	if p.normalizedVariant() != "icon" {
+		{ p.Label }
+	}
+	if shouldRenderRightIcon(p) {
+		if renderCustomIconRight(p) {
+			@p.IconComponent
+		} else {
+			@iconByName(p.Icon)
+		}
+	}
+}
+
+// RenderGroup renders a Group as a `flex gap-3 justify-end` row:
+// secondaries on the left, primary on the right. Emits nothing when the
+// Group is empty so consumers can render the surrounding chrome
+// unconditionally and let RenderGroup decide whether the action row
+// itself shows up.
+//
+// Per-slot variant defaults: Group.PrimaryAction → "primary",
+// Group.SecondaryActions[i] → "secondary". Override per-action via
+// [Options.Variant].
+templ RenderGroup(g Group) {
+	if !g.IsEmpty() {
+		<div class="flex gap-3 justify-end">
+			for _, a := range g.SecondaryActions {
+				@Button(WithDefaultVariant(a, "secondary"))
+			}
+			if g.PrimaryAction != nil {
+				@Button(WithDefaultVariant(*g.PrimaryAction, "primary"))
+			}
+		</div>
+	}
 }
 
 templ iconByName(name string) {

@@ -35,14 +35,13 @@ view/
     nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2)
     icons.templ         (alternativa: ver view/icons/)
   icons/                set compartido de iconos SVG (currentColor stroke)
-  action/               Action + Group structs reusados por drawer / table.BulkActionBar / future button package; Render + RenderGroup helpers
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
-  button/               Button(Options) — variant via Options.Variant
+  button/               Button(Options) — variant via Options.Variant; renders <button> or <a> (when Href set); Group + RenderGroup for footer/bar rows
   card/                 Card (chrome wrapper) + Section (sub-section divider)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
   table/                Table (chrome) + Row (helper) + BulkActionBar (Tailwind group-has visibility) + Pagination + EmptyState
-  drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse action.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
+  drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse button.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
@@ -111,11 +110,16 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 
 ### Botones (`view/button/`)
 
+Primitiva única para todo control "botón o link" del kit: variantes `primary` / `secondary` / `danger` / `icon`, soporte de iconos (string registry o `templ.Component` arbitrario), modo anchor cuando `Options.Href` está seteado, y `Group` para componer rows de acciones (drawer footers, bulk bars, action sheets) con defaults de variante por slot.
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `button.Button(p Options)` | done | Único template. `Options.Variant`: `primary` (default), `secondary`, `danger`, `icon`. (`destructive` se normaliza a `danger` por compatibilidad.) Atajo `Icon` + `IconPosition` para glifos del registro interno; para iconos nuevos u otros SVGs usar `IconComponent: icons.Algo()` (u otro `templ.Component`). Variante `icon`: usar `AriaLabel` (o `Title`). |
+| `button.Button(p Options)` | done | Único template. `Options.Variant`: `primary` (default), `secondary`, `danger`, `icon`. (`destructive` se normaliza a `danger` por compatibilidad.) Cuando `Options.Href != ""`, renderiza `<a>` y silenciosamente ignora `IsSubmit`/`IsReset`/`Form`/`Disabled` (no aplican a anchors). Atajo `Icon` + `IconPosition` para glifos del registro interno; para iconos nuevos u otros SVGs usar `IconComponent: icons.Algo()` (u otro `templ.Component`). Variante `icon`: usar `AriaLabel` (o `Title`). |
+| `button.Group` (struct) | done | `PrimaryAction *Options` (rightmost, default variant `primary`) + `SecondaryActions []Options` (a la izquierda en orden, default variant `secondary`). Método `IsEmpty()` para que renderers skipeen el chrome cuando no hay nada que mostrar. Reusado por `drawer.SidePanelConfig.FooterActions`, `drawer.ModalConfig.FooterActions`, `drawer.ConfirmConfig.PrimaryAction`, `table.BulkActionBarConfig.Actions`. |
+| `button.RenderGroup(g Group)` | done | Renderiza un Group como `flex gap-3 justify-end` (secondaries izquierda, primary derecha). Emite nada cuando `g.IsEmpty()`. Per-slot defaults aplicados automáticamente vía `WithDefaultVariant`. |
+| `button.WithDefaultVariant(o, def)` | done | Helper público que devuelve `o` con `Variant` reemplazado por `def` cuando el original viene vacío. Útil cuando un componente del DS quiere consumir `Options` y aplicar sus propios defaults sin forzar al caller a repetir el variant. |
 
-`Options`: `Label`, `Icon`, `IconPosition`, `IconComponent templ.Component` (opcional; si no es nil, sustituye al registro de `Icon` y permite cualquier icono de `view/icons` u otro fragmento templ), `Variant`, `IsSubmit`, `IsReset`, `Disabled`, `ExtraClass`, `Form`, `AriaLabel`, `Title`, `Attrs templ.Attributes`. HTMX y cualquier atributo extra van en `Attrs` (mismo patrón que `view/input`). Helpers públicos: `button.BuildClass`, `button.NonEmptyAttrs`.
+`Options`: `Label`, `Icon`, `IconPosition`, `IconComponent templ.Component` (opcional; si no es nil, sustituye al registro de `Icon` y permite cualquier icono de `view/icons` u otro fragmento templ), `Variant`, `Href` (cuando ≠ "" → renderiza `<a>` en vez de `<button>`), `IsSubmit`, `IsReset`, `OnClick` (raw inline JS — patrón típico `kibanCloseOverlay('id')`), `Disabled`, `ExtraClass`, `Form`, `AriaLabel`, `Title`, `Attrs templ.Attributes`. HTMX y cualquier atributo extra van en `Attrs` (mismo patrón que `view/input`). Helpers públicos: `button.BuildClass`, `button.NonEmptyAttrs`, `button.WithDefaultVariant`.
 
 ### Display (`view/card/`, `view/badge/`, `view/flash/`, `view/spinner/`, `view/tooltip/`)
 
@@ -166,18 +170,7 @@ Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-render
 | `table.EmptyState(title, hint)` | done | Card centrada con border-top, "Aún no tenemos X qué mostrar". `hint` opcional. |
 | `table.Table(cfg TableConfig)` | done | Chrome estándar (border-t + table). `cfg.Headers []string` (plain text por ahora; sortable headers con chevron-down se agregan después). `cfg.BulkSelect=true` prepende un `<th>` con checkbox "select all" que togglea todos los `input[name=ids]` siblings via inline JS. Body via templ children: el caller renderiza sus `<tr>` o, mejor, usa `@table.Row(href, bulkValue)` para el chrome estándar. |
 | `table.Row(href, bulkValue string)` | done | `<tr>` con `border-b + hover:bg-kiban-primary-soft`. Cuando `href != ""` agrega `data-href` + `cursor-pointer` (la JS de `view/layout/base.templ` intercepta clicks y navega; los clicks en `a/button/input/textarea/select/label` no disparan navigation, así no compite con anchors anidados). Cuando `bulkValue != ""` prepende un `<td><input type="checkbox" name="ids" value={bulkValue}>` — combinar con `Table.BulkSelect=true` para el toggle de header. |
-| `table.BulkActionBar(cfg BulkActionBarConfig)` | done | Barra de acciones que aparece sobre la tabla cuando hay selecciones. **Visibilidad puramente Tailwind** (sin JS, sin `<style>` por instancia): la barra usa `hidden group-has-[input[name=ids]:checked]/bulk:flex`. **Contrato del caller**: envolver el form que contiene tabla + barra en `<form class="group/bulk">` para que el variant nombrado resuelva. `cfg.Message` muestra texto muted a la izquierda; `cfg.Actions action.Group` renderiza primary + secondaries a la derecha (mismo Action API que drawer). |
-
-### Action (`view/action/`)
-
-Primitiva compartida "botón o link" que reusan los componentes del DS que muestran controles caller-driven en una row de acciones (drawer footers, table BulkActionBar, futuras action sheets / inline action menus). Hace tiempo vivía dentro de `view/drawer/` con nombres footer-flavoured (`Action`, `FooterActions`); se subió acá cuando el segundo consumidor (BulkActionBar) llegó. Razones: tipos neutrales (`Action`, `Group`), evitar dependencias entre componentes para los structs, y dejar lugar para que un futuro `view/button/` use el mismo vocabulario.
-
-| Componente | Estado | Notas |
-|---|---|---|
-| `action.Action` (struct) | done | Una acción rendereada como `<a>` (cuando `Href != ""`) o `<button>`. Campos: `Label`, `Variant` (`primary`/`secondary`/`danger`), `Href`, `Type` (button/submit), `Form` (id de form externo para Type="submit"), `OnClick` (raw inline JS, ej. `kibanCloseOverlay('id')`), `Attrs` (HTMX escape hatch), `Disabled`. Variant vacío → default según el slot (PrimaryAction → primary, SecondaryActions → secondary). |
-| `action.Group` (struct) | done | Colección ordenada de Actions: `PrimaryAction *Action` (rightmost, default primary) + `SecondaryActions []Action` (a la izquierda en orden, default secondary). Método `IsEmpty()` para que renderers skipeen el chrome cuando no hay nada que mostrar. |
-| `action.Render(a Action, defaultVariant string)` | done | Renderea UNA action sin chrome circundante — el caller (drawer footer, bulk bar, etc.) provee el container. `defaultVariant` se aplica solo cuando `a.Variant == ""`. |
-| `action.RenderGroup(g Group)` | done | Renderea un Group como `flex gap-3 justify-end` (secondaries izquierda, primary derecha). Emite nada cuando `g.IsEmpty()`. Per-slot defaults aplicados automáticamente. |
+| `table.BulkActionBar(cfg BulkActionBarConfig)` | done | Barra de acciones que aparece sobre la tabla cuando hay selecciones. **Visibilidad puramente Tailwind** (sin JS, sin `<style>` por instancia): la barra usa `hidden group-has-[input[name=ids]:checked]/bulk:flex`. **Contrato del caller**: envolver el form que contiene tabla + barra en `<form class="group/bulk">` para que el variant nombrado resuelva. `cfg.Message` muestra texto muted a la izquierda; `cfg.Actions button.Group` renderiza primary + secondaries a la derecha (mismo `button.Group` que drawer). |
 
 ### Drawer / overlay (`view/drawer/`)
 
@@ -186,16 +179,16 @@ Convenciones del paquete:
 - **Escape** cierra solo el overlay topmost visible (por orden de `[data-kiban-overlay]:not(.hidden)` en el DOM) — multiple overlays apilados se cierran uno a la vez, igual que el comportamiento nativo del browser.
 - **Sizes** compartidos: `sm` (max-w-sm) / `md` (max-w-md, default) / `lg` (max-w-lg) / `xl` (max-w-xl). String vacío cae a `md` (excepto Confirm, que cae a `sm`).
 - **Z-index**: SidePanel = 40, Modal/Confirm = 50.
-- **Footer actions** vía `action.Group{PrimaryAction *Action, SecondaryActions []Action}` (definido en `view/action/`, ver sección de arriba). PrimaryAction renderiza a la derecha (default variant `primary`); SecondaryActions a la izquierda en orden, default variant `secondary`. Si no hay acciones (`Group.IsEmpty()`), no se renderiza el footer.
-- **Action variants** alineados con la categoría buttons (futura): `primary` (kiban-primary), `secondary` (outline border-kiban-border, default para anchors), `danger` (red-600 — usar para confirms destructivos).
+- **Footer actions** vía `button.Group{PrimaryAction *Options, SecondaryActions []Options}` (definido en `view/button/`, ver sección de arriba). PrimaryAction renderiza a la derecha (default variant `primary`); SecondaryActions a la izquierda en orden, default variant `secondary`. Si no hay acciones (`Group.IsEmpty()`), no se renderiza el footer.
+- **Variantes** del row alineadas con `button.Button`: `primary` (kiban-primary), `secondary` (outline border-kiban-border), `danger` (red-600 — usar para confirms destructivos).
 
 #### Componentes
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `drawer.SidePanel(cfg SidePanelConfig)` | done | Slide-in desde la derecha. `cfg.ID` + `Title` + `Size` + `FooterActions action.Group`. Body via templ children, padding `px-6 py-4` aplicado al body (caller no se preocupa por el gutter). Patrón típico para filter-drawers: el caller renderiza un `<form id="filter-form">` en el body y la PrimaryAction usa `Type:"submit"` + `Form:"filter-form"` + `OnClick:"kibanCloseOverlay('id')"` para submit-and-dismiss. |
-| `drawer.Modal(cfg ModalConfig)` | done | Centrado, backdrop oscuro (`bg-black/40`). Mismos campos que SidePanel (incluido `FooterActions action.Group`) + `Icon templ.Component` opcional renderizado a la izquierda del título (caller pasa el block fully styled — patrón típico kiban: `<div class="w-8 h-8 rounded-full bg-kiban-primary-soft text-kiban-primary flex items-center justify-center"><svg…/></div>`). Para flujos HTMX-form-bound (modal con submit): wrapeá el `@drawer.Modal(...)` entero en un `<form hx-post=… hx-on::after-request="if(event.detail.successful){ kibanCloseOverlay('id'); }">`. |
-| `drawer.Confirm(cfg ConfirmConfig)` | done | Preset de Modal con shape fijo: title (opcional) + message + cancel/confirm buttons. Default size `sm`. `cfg.PrimaryAction action.Action` es el botón de confirm; setear `Variant:"danger"` para deletes. Cancel se cablea automáticamente al `kibanCloseOverlay(id)`; label default "Cancelar". Para "are you sure?"-level simple usar `hx-confirm` nativo de HTMX; usar Confirm cuando se necesita styling kiban + HTMX wiring custom + título largo. |
+| `drawer.SidePanel(cfg SidePanelConfig)` | done | Slide-in desde la derecha. `cfg.ID` + `Title` + `Size` + `FooterActions button.Group`. Body via templ children, padding `px-6 py-4` aplicado al body (caller no se preocupa por el gutter). Patrón típico para filter-drawers: el caller renderiza un `<form id="filter-form">` en el body y la PrimaryAction usa `IsSubmit:true` + `Form:"filter-form"` + `OnClick:"kibanCloseOverlay('id')"` para submit-and-dismiss. |
+| `drawer.Modal(cfg ModalConfig)` | done | Centrado, backdrop oscuro (`bg-black/40`). Mismos campos que SidePanel (incluido `FooterActions button.Group`) + `Icon templ.Component` opcional renderizado a la izquierda del título (caller pasa el block fully styled — patrón típico kiban: `<div class="w-8 h-8 rounded-full bg-kiban-primary-soft text-kiban-primary flex items-center justify-center"><svg…/></div>`). Para flujos HTMX-form-bound (modal con submit): wrapeá el `@drawer.Modal(...)` entero en un `<form hx-post=… hx-on::after-request="if(event.detail.successful){ kibanCloseOverlay('id'); }">`. |
+| `drawer.Confirm(cfg ConfirmConfig)` | done | Preset de Modal con shape fijo: title (opcional) + message + cancel/confirm buttons. Default size `sm`. `cfg.PrimaryAction button.Options` es el botón de confirm; setear `Variant:"danger"` para deletes. Cancel se cablea automáticamente al `kibanCloseOverlay(id)`; label default "Cancelar". Para "are you sure?"-level simple usar `hx-confirm` nativo de HTMX; usar Confirm cuando se necesita styling kiban + HTMX wiring custom + título largo. |
 
 ### Tabs (`view/tabs/`)
 
@@ -203,7 +196,7 @@ In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell qu
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `tabs.TabItem` (struct) | done | Una entrada del strip: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav), `Attrs templ.Attributes` (opcional, HTMX escape hatch — spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). Mismo patrón que `action.Action.Attrs`. |
+| `tabs.TabItem` (struct) | done | Una entrada del strip: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav), `Attrs templ.Attributes` (opcional, HTMX escape hatch — spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). Mismo patrón que `button.Options.Attrs`. |
 | `tabs.Strip(items []TabItem, activeKey string)` | done | Row horizontal `flex gap-2`. Active tab → `text-kiban-primary` + underline `border-b-2 border-kiban-primary` ajustado al ancho del texto (no al padding del anchor — el underline vive en un `<span class="inline-block">` interno, no en el `<a>`). Inactive → `text-kiban-ink3 hover:text-kiban-ink` con `border-transparent` (preserva 2px para que la fila no se mueva al cambiar de active). Sin rail bottom debajo de toda la strip — el único separador visual es el underline del tab activo. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. |
 
 ### Form binding (`binding/`)
