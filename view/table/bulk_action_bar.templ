@@ -1,6 +1,6 @@
 package table
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/action"
+import "github.com/kiban-cloud/go-kiban-design-system/view/button"
 
 // BulkActionBar is the row of actions that appears above a list table
 // when at least one row checkbox is selected. Visibility is purely
@@ -23,7 +23,7 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/action"
 //     checkboxes — typically just above the `Table`.
 //
 // Layout: optional `Message` on the left, `Actions` on the right via
-// the shared `action.Group`. The bar gets `mb-4` so it sits cleanly
+// the shared `button.Group`. The bar gets `mb-4` so it sits cleanly
 // above the table without the consumer adding extra spacing.
 templ BulkActionBar(cfg BulkActionBarConfig) {
 	<div class="hidden group-has-[input[name=ids]:checked]/bulk:flex items-center gap-3 bg-kiban-primary-soft border border-kiban-primary/20 rounded-md px-4 py-3 mb-4">
@@ -32,6 +32,6 @@ templ BulkActionBar(cfg BulkActionBarConfig) {
 		} else {
 			<div class="flex-1"></div>
 		}
-		@action.RenderGroup(cfg.Actions)
+		@button.RenderGroup(cfg.Actions)
 	</div>
 }

@@ -16,11 +16,10 @@
 //     "sm" → max-w-sm, "" or "md" → max-w-md, "lg" → max-w-lg,
 //     "xl" → max-w-xl. Empty string falls back to "md".
 //
-//   - A `FooterActions action.Group` — primary + secondaries — rendered as
-//     a row at the bottom. `Action` and `Group` live in `view/action/`
-//     because they are reused outside the drawer (e.g. by
-//     `table.BulkActionBar`); this package re-exposes neither so callers
-//     should import `view/action` directly.
+//   - A `FooterActions button.Group` — primary + secondaries — rendered as
+//     a row at the bottom. `Group` lives in `view/button/` and is reused
+//     outside the drawer (e.g. by `table.BulkActionBar`); this package
+//     re-exposes nothing, so callers should import `view/button` directly.
 //
 // Open/close JS lives in base.templ so consumers don't need to ship their
 // own toggling logic. Each overlay carries `data-kiban-overlay` so the
@@ -29,7 +28,7 @@ package drawer
 
 import (
 	"github.com/a-h/templ"
-	"github.com/kiban-cloud/go-kiban-design-system/view/action"
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
 )
 
 // SidePanelConfig drives SidePanel. Body is rendered as templ children;
@@ -39,7 +38,7 @@ type SidePanelConfig struct {
 	ID            string
 	Title         string
 	Size          string
-	FooterActions action.Group
+	FooterActions button.Group
 }
 
 // ModalConfig drives Modal. Body is rendered as templ children. Icon is
@@ -58,7 +57,7 @@ type ModalConfig struct {
 	Title         string
 	Size          string
 	Icon          templ.Component
-	FooterActions action.Group
+	FooterActions button.Group
 }
 
 // ConfirmConfig drives Confirm — a fixed-shape Modal preset for "are you
@@ -75,7 +74,7 @@ type ConfirmConfig struct {
 	Title                string
 	Message              string
 	Size                 string
-	PrimaryAction        action.Action
+	PrimaryAction        button.Options
 	SecondaryActionLabel string
 }
 
@@ -143,15 +142,15 @@ func confirmCancelLabel(label string) string {
 	return label
 }
 
-// confirmGroup builds the action.Group for a Confirm dialog: a single
+// confirmGroup builds the button.Group for a Confirm dialog: a single
 // cancel SecondaryAction (auto-wired to kibanCloseOverlay) and the
 // caller-supplied PrimaryAction. Kept as a Go helper instead of
 // inlining inside the templ so the address-of on the local PrimaryAction
 // copy is unambiguous to the templ-generated code.
-func confirmGroup(cfg ConfirmConfig) action.Group {
+func confirmGroup(cfg ConfirmConfig) button.Group {
 	primary := cfg.PrimaryAction
-	return action.Group{
-		SecondaryActions: []action.Action{
+	return button.Group{
+		SecondaryActions: []button.Options{
 			{
 				Label:   confirmCancelLabel(cfg.SecondaryActionLabel),
 				OnClick: "kibanCloseOverlay('" + cfg.ID + "')",

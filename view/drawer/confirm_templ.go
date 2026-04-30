@@ -9,7 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/kiban-cloud/go-kiban-design-system/view/action"
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
 )
 
@@ -162,7 +162,7 @@ func Confirm(cfg ConfirmConfig) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = action.RenderGroup(confirmGroup(cfg)).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = button.RenderGroup(confirmGroup(cfg)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
