@@ -1,0 +1,91 @@
+package comment_input
+
+import (
+	"strconv"
+
+	ds_button "github.com/kiban-cloud/go-kiban-design-system/view/button"
+	ds_card "github.com/kiban-cloud/go-kiban-design-system/view/card"
+	ds_flash "github.com/kiban-cloud/go-kiban-design-system/view/flash"
+	ds_input "github.com/kiban-cloud/go-kiban-design-system/view/input"
+)
+
+// Field renders the full comment-input widget. With opts.WithoutCard=false
+// (default) it wraps everything in a [card.Card]; pass true to emit just
+// the form bits when the consumer is providing its own chrome (drawer,
+// custom card, etc.).
+templ Field(opts Options) {
+	if opts.WithoutCard {
+		@fieldInner(opts)
+	} else {
+		@ds_card.Card("") {
+			@fieldInner(opts)
+		}
+	}
+}
+
+templ fieldInner(opts Options) {
+	{{ id := opts.effectiveID() }}
+	{{ filesName := opts.effectiveFilesName() }}
+	<div
+		data-kiban-comment-input
+		id={ id + "-wrapper" }
+		if opts.MaxSizeBytes > 0 {
+			data-max-size={ strconv.FormatInt(opts.MaxSizeBytes, 10) }
+		}
+	>
+		if opts.effectiveTitle() != "" || opts.effectiveSubtitle() != "" {
+			<div class="pb-2">
+				if opts.effectiveTitle() != "" {
+					<div class="text-base font-heading font-medium text-kiban-ink">{ opts.effectiveTitle() }</div>
+				}
+				if opts.effectiveSubtitle() != "" {
+					<div class="text-sm text-kiban-ink3">{ opts.effectiveSubtitle() }</div>
+				}
+			</div>
+		}
+		if opts.Success != "" || opts.GlobalError != "" {
+			<div class="pt-2 pb-4 space-y-2">
+				if opts.Success != "" {
+					@ds_flash.Success(opts.Success)
+				}
+				if opts.GlobalError != "" {
+					@ds_flash.Error(opts.GlobalError)
+				}
+			</div>
+		}
+		<form
+			id={ id + "-form" }
+			method={ opts.effectiveMethod() }
+			action={ formAction(opts.Action) }
+			enctype="multipart/form-data"
+			class="space-y-4"
+			{ opts.FormAttrs... }
+		>
+			@ds_input.Textarea(
+				opts.effectiveTextName(),
+				"",
+				opts.TextValue,
+				opts.TextError,
+				charsHint(opts.MaxChars),
+				false,
+				4,
+				opts.effectivePlaceholder(),
+				false,
+			)
+			if opts.filesEnabled() {
+				<div class="space-y-2" data-comment-files-block>
+					@ds_input.File(filesName, "Archivos adjuntos", opts.Accept, filesHint(opts), false)
+					<ul data-comment-files-list class="flex flex-wrap gap-2"></ul>
+				</div>
+			}
+			<div class="flex justify-end">
+				@ds_button.Button(ds_button.Options{
+					Label:    opts.effectiveSubmitLabel(),
+					IsSubmit: true,
+					Form:     id + "-form",
+					Attrs:    submitAttrs(id),
+				})
+			</div>
+		</form>
+	</div>
+}

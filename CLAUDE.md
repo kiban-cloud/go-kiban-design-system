@@ -45,6 +45,7 @@ view/
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
+  comment_input/        textarea + chip-style file uploader + submit, all in one composition (used by klin's delivery comments; designed to be reused by future comment flows)
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
 middleware/
@@ -194,10 +195,28 @@ Convenciones del paquete:
 
 In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell que usa el estilo pill). Tabs usan underline-style para "switch view inside this page", pills mean "switch tools/sections in the app". Mantener visualmente diferenciados evita confundir state in-page con navegación global.
 
+**Visual contract (polished SaaS look)**: el strip está envuelto en un `<div class="border-b border-kiban-border">` que dibuja un raíl gris de **1 px** a lo ancho del contenedor. El tab activo tiene un subrayado de **1 px** color `kiban-primary` (mismo grosor que el raíl) ajustado al ancho del label vía un `<span class="inline-block">` interno. Tabs inactivos preservan `border-transparent` 1 px para que la fila no se desplace verticalmente al cambiar el active. Gap entre tabs: `gap-3` (12 px). Active label en `kiban-primary` + `font-medium`; inactive en `kiban-ink3` con `hover:text-kiban-ink`. La regla de "mismo grosor de borde entre raíl y subrayado" está blindada por `TestStrip_ContainerBaselineMatchesActiveBorderWidth` — no bumpear uno sin el otro.
+
 | Componente | Estado | Notas |
 |---|---|---|
-| `tabs.TabItem` (struct) | done | Una entrada del strip: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav), `Attrs templ.Attributes` (opcional, HTMX escape hatch — spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). Mismo patrón que `button.Options.Attrs`. |
-| `tabs.Strip(items []TabItem, activeKey string)` | done | Row horizontal `flex gap-2`. Active tab → `text-kiban-primary` + underline `border-b-2 border-kiban-primary` ajustado al ancho del texto (no al padding del anchor — el underline vive en un `<span class="inline-block">` interno, no en el `<a>`). Inactive → `text-kiban-ink3 hover:text-kiban-ink` con `border-transparent` (preserva 2px para que la fila no se mueva al cambiar de active). Sin rail bottom debajo de toda la strip — el único separador visual es el underline del tab activo. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. |
+| `tabs.TabItem` (struct) | done | Una entrada del strip. Required: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav). Affordances opcionales: `Icon templ.Component` (slot a la izquierda del label, mismo patrón que `button.Options.IconComponent`), `Count int` + `HasCount bool` (badge pill a la derecha — el toggle explícito permite que un `0` real se renderice como "Inbox (0)" sin ambigüedad sentinel-vs-zero), `Disabled bool` (saca el `href`, mete `aria-disabled="true"` + `pointer-events-none` + `opacity-50`), `Title string` (atributo `title=""` nativo — útil para explicar el por qué cuando `Disabled=true`). Escape hatch HTMX: `Attrs templ.Attributes` (spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). |
+| `tabs.Strip(items []TabItem, activeKey string)` | done | Renderiza el strip con el visual contract descrito arriba. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. Múltiples instancias en la misma página son seguras (cada `<a>` lleva su propio `href`/Attrs). |
+
+### Comment input (`view/comment_input/`)
+
+Composición de alto nivel: textarea + chip-style file uploader (con remove individual + marcado de inválido por tamaño) + botón submit, todo bajo un único `<form>`. Encapsula el look-and-feel y la JS de manejo de archivos (DataTransfer para acumular entre picks, re-init en `htmx:afterSwap`) para que cualquier proyecto que necesite un "post a comment" UI lo consuma con un solo callsite. Hoy lo usa klin para los comentarios de entrega; fue diseñado para que rekon (notas en órdenes de pago) / crm (actividad por cliente) / futuros tools tengan la misma UX sin re-implementar.
+
+**Reglas que respeta**:
+- HTMX-agnóstico: el form es POST plano al `Options.Action`. Los consumers que quieran HTMX inyectan los atributos vía `Options.FormAttrs` (mismo patrón que `button.Options.Attrs`, `input.Toggle.attrs`, etc.).
+- CSS-only para el estado de chip inválido: clases rojas + `title="Archivo inválido: …"`. El submit se deshabilita por JS al haber chips inválidos (no se puede solo con CSS porque `disabled` es atributo, no clase). El JS está centralizado en `view/layout/base.templ` y se re-bindea en cada `htmx:afterSwap`, igual que el init de `intl-tel-input`.
+- Reusa `card.Card`, `flash.Success`/`Error`, `input.Textarea`, `input.File`, `button.Button` — cero primitivas nuevas, sólo el chip markup + el wiring de la JS por wrapper.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `comment_input.Options` (struct) | done | Configura el `Field`. Sólo `Action` es required. Defaults razonables para todo lo demás (Title="Nuevo comentario", SubmitLabel="Enviar", Placeholder="Escribe un comentario…", textName="text", filesName="files", id="comment-input"). Toggles importantes: `Multiple bool` para multi-archivo (chip JS acumula entre picks), `MaxSizeBytes int64` para el cap por archivo client-side, `Accept string` para `<input accept>`, `DisableFiles bool` para text-only, `WithoutCard bool` para skipear el `card.Card` chrome (consumer renderiza su propio container), `FormAttrs templ.Attributes` para escape hatch HTMX. Round-trip de error: `TextValue` + `TextError` para draft + per-field error; `GlobalError` para flash banner; `Success` para flash post-submit. `MaxChars int` es informativo (renderiza "Máximo N caracteres" como hint del textarea); el server sigue siendo el de la verdad. |
+| `comment_input.Field(opts Options)` | done | El templ. Emite (en orden): título + subtítulo opcionales, banners de Success/GlobalError si aplica, el `<form>` con `enctype="multipart/form-data"` apuntando a `Action`, textarea, bloque de archivos (`<input type="file">` + `<ul data-comment-files-list>` donde la JS pinta chips), botón submit con `data-kiban-comment-submit` para que la JS lo encuentre y lo deshabilite mientras hay archivos inválidos. El wrapper externo lleva `data-kiban-comment-input` + `data-max-size` (cuando `MaxSizeBytes>0`); la JS de `base.templ` scanea por ese selector. Múltiples instancias en la misma página funcionan: cada wrapper se inicializa una sola vez (flag `dataset.kibanCommentInputInit`) y la JS escopa todo por wrapper, así que no colisionan. |
+
+**Comportamiento de los chips**: cada `change` del file input (a) deduplica por `name+size+lastModified` para evitar agregar dos veces el mismo archivo si el user repick-ea, (b) acumula con un staging interno + reasignación de `input.files` vía `DataTransfer` (esto es lo que permite "agregar más" en sucesivos clicks al picker — el behavior nativo es reemplazar), (c) repinta la lista con un `<li>` por archivo (nombre + tamaño formateado + botón "×"), aplicando estilos rojos + `title` cuando excede `MaxSizeBytes`. El click en "×" saca ese archivo del staging y vuelve a hacer sync. El submit del form se deshabilita automáticamente mientras haya algún chip inválido.
 
 ### Form binding (`binding/`)
 

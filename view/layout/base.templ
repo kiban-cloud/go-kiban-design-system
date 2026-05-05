@@ -230,6 +230,128 @@ templ Base(cfg Config) {
 					});
 				})();
 
+				// Comment-input chip uploader. Each [data-kiban-comment-input]
+				// holds a `<form>` with a `<input type="file">` and a sibling
+				// `<ul data-comment-files-list>`. We mirror selected files as
+				// chips (name + size + remove button) and use a DataTransfer
+				// trick to (a) accumulate across multiple picker opens, since
+				// native input replaces FileList on each change, and (b) let
+				// the user remove a single file without losing the rest. Chips
+				// over the per-file size limit (data-max-size on the wrapper)
+				// render in red with a tooltip and disable the form's submit
+				// button until removed. Re-runs on htmx:afterSwap so HTMX
+				// partials that re-render the input get re-bound.
+				(function () {
+					var KB = 1024;
+					var MB = 1024 * 1024;
+					function humanSize(bytes) {
+						if (bytes >= MB) return (bytes / MB).toFixed(bytes >= 10 * MB ? 0 : 1) + ' MB';
+						if (bytes >= KB) return Math.round(bytes / KB) + ' KB';
+						return bytes + ' B';
+					}
+					function escapeHTML(s) {
+						return String(s).replace(/[&<>"']/g, function (c) {
+							return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+						});
+					}
+					function setupOne(wrapper) {
+						if (wrapper.dataset.kibanCommentInputInit === '1') return;
+						wrapper.dataset.kibanCommentInputInit = '1';
+
+						var input = wrapper.querySelector('input[type="file"]');
+						var list = wrapper.querySelector('[data-comment-files-list]');
+						if (!input || !list) return;
+
+						var maxSize = parseInt(wrapper.getAttribute('data-max-size') || '0', 10);
+						// Internal staging list — mirrors what the input.files
+						// will be after the next reassignment. We rebuild from
+						// here on add / remove so submits send exactly what
+						// the user sees in the chip list.
+						var staged = [];
+
+						function fileKey(f) {
+							return f.name + '|' + f.size + '|' + f.lastModified;
+						}
+						function invalidReason(f) {
+							if (maxSize > 0 && f.size > maxSize) {
+								return 'Archivo inválido: supera el límite de ' + humanSize(maxSize);
+							}
+							return '';
+						}
+						function syncInput() {
+							var dt = new DataTransfer();
+							staged.forEach(function (f) { dt.items.add(f); });
+							input.files = dt.files;
+						}
+						function findSubmit() {
+							var formId = (input.form && input.form.id) || '';
+							if (!formId) return null;
+							return document.querySelector('[data-kiban-comment-submit][form="' + formId + '"], button[type="submit"][form="' + formId + '"]');
+						}
+						function syncSubmit() {
+							var btn = findSubmit();
+							if (!btn) return;
+							var anyInvalid = staged.some(function (f) { return invalidReason(f) !== ''; });
+							if (anyInvalid) {
+								btn.setAttribute('disabled', 'disabled');
+								btn.setAttribute('aria-disabled', 'true');
+							} else {
+								btn.removeAttribute('disabled');
+								btn.removeAttribute('aria-disabled');
+							}
+						}
+						function render() {
+							list.innerHTML = '';
+							staged.forEach(function (f, idx) {
+								var reason = invalidReason(f);
+								var li = document.createElement('li');
+								li.className = 'inline-flex items-center gap-2 px-2 py-1 rounded-md border text-xs ' +
+									(reason
+										? 'border-red-400 bg-red-50 text-red-700'
+										: 'border-kiban-border bg-kiban-surface text-kiban-ink2');
+								if (reason) li.setAttribute('title', reason);
+								li.innerHTML =
+									'<span class="font-medium truncate max-w-[14rem]">' + escapeHTML(f.name) + '</span>' +
+									'<span class="' + (reason ? 'text-red-500' : 'text-kiban-ink3') + '">' + humanSize(f.size) + '</span>' +
+									'<button type="button" aria-label="Quitar" class="ml-0.5 ' + (reason ? 'text-red-500 hover:text-red-700' : 'text-kiban-ink3 hover:text-kiban-ink') + '" data-remove="' + idx + '">&times;</button>';
+								list.appendChild(li);
+							});
+							syncSubmit();
+						}
+
+						input.addEventListener('change', function () {
+							var keys = {};
+							staged.forEach(function (f) { keys[fileKey(f)] = true; });
+							for (var i = 0; i < input.files.length; i++) {
+								var f = input.files[i];
+								var k = fileKey(f);
+								if (!keys[k]) {
+									staged.push(f);
+									keys[k] = true;
+								}
+							}
+							syncInput();
+							render();
+						});
+						list.addEventListener('click', function (e) {
+							var btn = e.target.closest('[data-remove]');
+							if (!btn) return;
+							var idx = parseInt(btn.getAttribute('data-remove'), 10);
+							if (isNaN(idx)) return;
+							staged.splice(idx, 1);
+							syncInput();
+							render();
+						});
+					}
+					function scan() {
+						document.querySelectorAll('[data-kiban-comment-input]').forEach(setupOne);
+					}
+					document.addEventListener('DOMContentLoaded', function () {
+						scan();
+						document.body.addEventListener('htmx:afterSwap', scan);
+					});
+				})();
+
 				// Sidebar tools-rail toggle. The sub-nav is always visible;
 				// the hamburger flips a boolean attribute on the layout
 				// root that controls whether the tools rail slides in/out.

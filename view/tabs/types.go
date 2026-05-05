@@ -28,14 +28,41 @@ import "github.com/a-h/templ"
 // navigates here when no HTMX wiring is present, or HTMX pushes it via
 // `hx-push-url="true"` when configured).
 //
+// Optional affordances:
+//
+//   - `Icon` is an optional templ component (typically from
+//     `view/icons`) rendered to the left of the label. Same convention
+//     as `button.Options.IconComponent`.
+//
+//   - `Count` paired with `HasCount=true` renders a small pill badge
+//     to the right of the label. The two-field pattern (rather than
+//     just `Count int > 0`) lets a real `0` show up in the badge — for
+//     things like "Inbox (0)" — without a sentinel-versus-zero
+//     ambiguity.
+//
+//   - `Disabled=true` greys out the tab and intercepts pointer events
+//     so the click target is a no-op. The tab is rendered as an `<a>`
+//     without `href` (anchors don't have a real `disabled` attribute,
+//     so `pointer-events-none` + `aria-disabled="true"` is the web
+//     pattern). Pair with `Title` to surface the reason in a native
+//     tooltip.
+//
+//   - `Title` sets the `title=""` attribute. Useful when `Disabled`
+//     and the user needs a hint about why.
+//
 // `Attrs` is the optional HTMX escape hatch. When set, attributes are
 // spread directly onto the `<a>` element so consumers can switch a tab
 // from "full-page nav" (default) to "swap a partial in place" without
 // the design system needing to know about HTMX. Same pattern used by
 // `button.Options`.
 type TabItem struct {
-	Key   string
-	Label string
-	Href  string
-	Attrs templ.Attributes
+	Key      string
+	Label    string
+	Href     string
+	Icon     templ.Component
+	Count    int
+	HasCount bool
+	Disabled bool
+	Title    string
+	Attrs    templ.Attributes
 }
