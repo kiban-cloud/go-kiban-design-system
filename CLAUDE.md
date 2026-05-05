@@ -42,6 +42,7 @@ view/
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
   table/                Table (chrome) + Row (helper) + BulkActionBar (Tailwind group-has visibility) + Pagination + EmptyState
   drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse button.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
+  menu/                 Kebab-style action dropdown — icon trigger + panel of <button role="menuitem"> rows. Single-active behaviour (open one closes others); JS in base.templ.
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
@@ -169,7 +170,7 @@ Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-render
 | `table.PaginationConfig` | done | Struct con Page, HasPrev, HasNext, PageURL func(int) string, Target, Indicator. Caller construye con un closure sobre su `pageURL` local para preservar filtros entre páginas. |
 | `table.Pagination(cfg)` | done | Anterior/Siguiente botones HTMX. Estados disabled-styled cuando edge. `cfg.PageURL` callback para que el caller maneje filter state. |
 | `table.EmptyState(title, hint)` | done | Card centrada con border-top, "Aún no tenemos X qué mostrar". `hint` opcional. |
-| `table.Table(cfg TableConfig)` | done | Chrome estándar (border-t + table). `cfg.Headers []string` (plain text por ahora; sortable headers con chevron-down se agregan después). `cfg.BulkSelect=true` prepende un `<th>` con checkbox "select all" que togglea todos los `input[name=ids]` siblings via inline JS. Body via templ children: el caller renderiza sus `<tr>` o, mejor, usa `@table.Row(href, bulkValue)` para el chrome estándar. |
+| `table.Table(cfg TableConfig)` | done | Chrome estándar (border-t + table). `cfg.Headers []string` (plain text por ahora; sortable headers con chevron-down se agregan después). `cfg.HeaderAlignRight []bool` opcional — slice paralelo a `Headers`; cuando el índice está marcado en `true` el `<th>` correspondiente usa `text-right` en vez del default `text-left`. Pensado para columnas de acciones cuya celda body ya está alineada a la derecha (kebab menus, button rows). `nil` o slice corto = todo `text-left` (los callers existentes no se rompen). `cfg.BulkSelect=true` prepende un `<th>` con checkbox "select all" que togglea todos los `input[name=ids]` siblings via inline JS. Body via templ children: el caller renderiza sus `<tr>` o, mejor, usa `@table.Row(href, bulkValue)` para el chrome estándar. |
 | `table.Row(href, bulkValue string)` | done | `<tr>` con `border-b + hover:bg-kiban-primary-soft`. Cuando `href != ""` agrega `data-href` + `cursor-pointer` (la JS de `view/layout/base.templ` intercepta clicks y navega; los clicks en `a/button/input/textarea/select/label` no disparan navigation, así no compite con anchors anidados). Cuando `bulkValue != ""` prepende un `<td><input type="checkbox" name="ids" value={bulkValue}>` — combinar con `Table.BulkSelect=true` para el toggle de header. |
 | `table.BulkActionBar(cfg BulkActionBarConfig)` | done | Barra de acciones que aparece sobre la tabla cuando hay selecciones. **Visibilidad puramente Tailwind** (sin JS, sin `<style>` por instancia): la barra usa `hidden group-has-[input[name=ids]:checked]/bulk:flex`. **Contrato del caller**: envolver el form que contiene tabla + barra en `<form class="group/bulk">` para que el variant nombrado resuelva. `cfg.Message` muestra texto muted a la izquierda; `cfg.Actions button.Group` renderiza primary + secondaries a la derecha (mismo `button.Group` que drawer). |
 
@@ -190,6 +191,22 @@ Convenciones del paquete:
 | `drawer.SidePanel(cfg SidePanelConfig)` | done | Slide-in desde la derecha. `cfg.ID` + `Title` + `Size` + `FooterActions button.Group`. Body via templ children, padding `px-6 py-4` aplicado al body (caller no se preocupa por el gutter). Patrón típico para filter-drawers: el caller renderiza un `<form id="filter-form">` en el body y la PrimaryAction usa `IsSubmit:true` + `Form:"filter-form"` + `OnClick:"kibanCloseOverlay('id')"` para submit-and-dismiss. |
 | `drawer.Modal(cfg ModalConfig)` | done | Centrado, backdrop oscuro (`bg-black/40`). Mismos campos que SidePanel (incluido `FooterActions button.Group`) + `Icon templ.Component` opcional renderizado a la izquierda del título (caller pasa el block fully styled — patrón típico kiban: `<div class="w-8 h-8 rounded-full bg-kiban-primary-soft text-kiban-primary flex items-center justify-center"><svg…/></div>`). Para flujos HTMX-form-bound (modal con submit): wrapeá el `@drawer.Modal(...)` entero en un `<form hx-post=… hx-on::after-request="if(event.detail.successful){ kibanCloseOverlay('id'); }">`. |
 | `drawer.Confirm(cfg ConfirmConfig)` | done | Preset de Modal con shape fijo: title (opcional) + message + cancel/confirm buttons. Default size `sm`. `cfg.PrimaryAction button.Options` es el botón de confirm; setear `Variant:"danger"` para deletes. Cancel se cablea automáticamente al `kibanCloseOverlay(id)`; label default "Cancelar". Para "are you sure?"-level simple usar `hx-confirm` nativo de HTMX; usar Confirm cuando se necesita styling kiban + HTMX wiring custom + título largo. |
+
+### Menu (`view/menu/`)
+
+Kebab-style action menu para tablas y filas con varias acciones. El trigger es un botón con icono (reusa `button.Button` con `Variant:"icon"` + `IconComponent: icons.More()`); el panel es un dropdown `absolute right-0 top-full` con items renderizados como `<button role="menuitem">`. JS toggle/close + outside-click + Escape viven en `view/layout/base.templ` (`window.kibanToggleMenu`, `window.kibanCloseMenu`).
+
+**Single-active**: abrir un menú cierra cualquier otro menú abierto en la página (matching native OS menu behaviour). Click fuera de cualquier `[data-kiban-menu]` cierra todos los abiertos. Escape cierra los menús primero, antes que cualquier overlay (para que cerrar el menú no dismisse el modal subyacente).
+
+**Cierre automático tras click**: cada item agrega `window.kibanCloseMenu(id)` después del `OnClick` del consumer, así no hay que recordar cerrarlo manualmente.
+
+**ID por instancia**: `cfg.ID` debe ser único en la página (ej. `apikey-menu-<rowID>`). Las funciones JS keyean por ese ID para encontrar trigger + panel.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `menu.Config` (struct) | done | `ID string` (required, único en la página), `AriaLabel string` (aria-label del trigger, ej. "Acciones para {nombre}"), `Items []MenuItem`. Si `Items` está vacío, `Menu` no renderiza nada (consumer puede pasar lista vacía sin chequear). |
+| `menu.MenuItem` (struct) | done | `Label string`, `OnClick string` (raw inline JS — el menú agrega `kibanCloseMenu` al final), `Variant string` (`""`/`"default"` → `text-kiban-ink`; `"danger"` → `text-red-600` para destructivos), `Icon templ.Component` opcional a la izquierda, `Attrs templ.Attributes` para HTMX/data-* (mismo patrón que `button.Options.Attrs`). |
+| `menu.Menu(cfg Config)` | done | Renderiza `<div class="relative inline-block" data-kiban-menu={id}>` con el trigger button + panel oculto. Panel se posiciona `absolute right-0 top-full mt-1 z-30`; asegurate de que el call-site tenga espacio a la derecha o abajo. Si `cfg.Items` está vacío, no emite nada. |
 
 ### Tabs (`view/tabs/`)
 

@@ -1,0 +1,57 @@
+package menu
+
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
+	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
+)
+
+// Menu renders a kebab-style action menu: an `icon`-variant button that
+// toggles a dropdown panel of `<button role="menuitem">` rows. The
+// trigger reuses button.Button so styling stays uniform with the rest
+// of the kit. The panel is positioned `absolute right-0 top-full` —
+// ensure the parent has space below or to the right for the panel to
+// open into; if the call site lives at the right edge of the viewport
+// the panel sticks to the right of the trigger and reads naturally.
+//
+// Single-active behaviour: when one menu opens, any other open menu on
+// the page closes (matches OS-level menu UX). See JS in
+// view/layout/base.templ for the toggle/close/outside-click/Escape
+// handlers.
+templ Menu(cfg Config) {
+	if hasItem(cfg.Items) {
+		<div class="relative inline-block" data-kiban-menu={ cfg.ID }>
+			@button.Button(button.Options{
+				Variant:       "icon",
+				IconComponent: icons.More(),
+				AriaLabel:     cfg.AriaLabel,
+				Attrs:         triggerAttrs(cfg.ID),
+			})
+			<div
+				id={ cfg.ID + "-panel" }
+				role="menu"
+				aria-labelledby={ cfg.ID + "-trigger" }
+				class="hidden absolute right-0 top-full mt-1 z-30 min-w-[160px] bg-white border border-kiban-border rounded-md shadow-md py-1"
+			>
+				for _, it := range cfg.Items {
+					@itemRender(cfg.ID, it)
+				}
+			</div>
+		</div>
+	}
+}
+
+templ itemRender(menuID string, item MenuItem) {
+	<button
+		type="button"
+		role="menuitem"
+		class={ item.class() }
+		{ item.resolvedAttrs(menuID)... }
+	>
+		if item.Icon != nil {
+			<span class="inline-flex items-center justify-center w-4 h-4 shrink-0">
+				@item.Icon
+			</span>
+		}
+		<span>{ item.Label }</span>
+	</button>
+}

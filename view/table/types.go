@@ -36,12 +36,31 @@ type PaginationConfig struct {
 // cell is the caller's responsibility (typically via the Row helper's
 // `bulkValue` parameter).
 //
+// HeaderAlignRight is an optional parallel slice keyed by header index;
+// when `HeaderAlignRight[i]` is true, the i-th `<th>` renders with
+// `text-right` instead of the default `text-left`. Used for action
+// columns whose body cells are right-aligned (kebab menus, button
+// rows). A nil or shorter-than-Headers slice falls back to left-align
+// — pre-existing callers don't need to change.
+//
 // The body is rendered via templ children — caller writes their own
 // `<tr>` elements (or, more commonly, `@table.Row(href, bulkValue) {…}`
 // for the standard kiban hover/cursor markup).
 type TableConfig struct {
-	Headers    []string
-	BulkSelect bool
+	Headers          []string
+	HeaderAlignRight []bool
+	BulkSelect       bool
+}
+
+// HeaderAlignClass returns the alignment class for a given header
+// column index, picking `text-right` when the parallel slice marks it
+// or `text-left` otherwise. Lives next to the struct so the templ can
+// stay declarative.
+func (c TableConfig) HeaderAlignClass(i int) string {
+	if i < len(c.HeaderAlignRight) && c.HeaderAlignRight[i] {
+		return "text-right"
+	}
+	return "text-left"
 }
 
 // BulkActionBarConfig drives the BulkActionBar component — the row of
