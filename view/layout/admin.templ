@@ -1,0 +1,114 @@
+package layout
+
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/avatar"
+	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
+	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
+)
+
+// AdminLayout is the minimal admin/internal shell. Topbar with logo +
+// horizontal nav + user menu, optional breadcrumbs strip below, then
+// the page content. No icon rail, no sub-nav, no multi-tool switcher.
+//
+// Reuses Base() for the HTML chrome (head, scripts, base styles,
+// overlay/menu/nav-loader runtime). Customer-facing layout state
+// (sidebar tools rail, sub-nav level switching) is dormant in this
+// shell — the Base JS guards each block with a presence check
+// (`if (!root) return`) so nothing fires.
+templ AdminLayout(cfg AdminConfig) {
+	@Base(adminToBaseConfig(cfg)) {
+		<div class="min-h-screen flex flex-col bg-kiban-surface/40">
+			@adminTopbar(cfg)
+			if len(cfg.Breadcrumbs) > 0 {
+				<div class="border-b border-kiban-border bg-white px-6 py-3">
+					@breadcrumbs.Breadcrumbs(cfg.Breadcrumbs)
+				</div>
+			}
+			<main class="flex-1 overflow-x-hidden">
+				<div class="p-8 max-w-[1400px] mx-auto w-full">
+					{ children... }
+				</div>
+			</main>
+		</div>
+	}
+}
+
+templ adminTopbar(cfg AdminConfig) {
+	<header class="border-b border-kiban-border bg-white">
+		<div class="flex items-center justify-between px-6 h-16">
+			<div class="flex items-center gap-8">
+				if cfg.HomeHref != "" {
+					<a href={ templ.URL(cfg.HomeHref) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors">
+						{ cfg.ProjectName }
+					</a>
+				} else {
+					<span class="font-heading font-medium text-base text-kiban-ink">
+						{ cfg.ProjectName }
+					</span>
+				}
+				if len(cfg.NavSections) > 0 {
+					<nav class="flex items-center gap-1">
+						for _, section := range cfg.NavSections {
+							<a href={ templ.URL(section.Href) } class={ adminNavSectionClass(section.Key, cfg.ActiveSection) }>
+								{ section.Label }
+							</a>
+						}
+					</nav>
+				}
+			</div>
+			@adminUserMenu(cfg)
+		</div>
+	</header>
+}
+
+// adminUserMenu renders an avatar+name trigger that opens a dropdown
+// with the user's email and a logout form. Reuses the same JS toggle
+// (kibanToggleMenu / kibanCloseMenu) the menu package wires in
+// base.templ — no new runtime code.
+templ adminUserMenu(cfg AdminConfig) {
+	<div class="relative inline-block" data-kiban-menu="admin-user-menu">
+		<button
+			type="button"
+			id="admin-user-menu-trigger"
+			aria-haspopup="true"
+			aria-expanded="false"
+			aria-controls="admin-user-menu-panel"
+			aria-label={ "Menú de " + adminUserMenuLabel(cfg.User) }
+			onclick="window.kibanToggleMenu('admin-user-menu')"
+			class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-kiban-surface transition-colors"
+		>
+			@avatar.Avatar(avatar.Options{Src: cfg.User.Picture, Name: cfg.User.Name, Size: "sm"})
+			<span class="text-sm text-kiban-ink hidden sm:inline">{ adminUserMenuLabel(cfg.User) }</span>
+			<span class="text-kiban-ink3">
+				@icons.ChevronDown()
+			</span>
+		</button>
+		<div
+			id="admin-user-menu-panel"
+			role="menu"
+			aria-labelledby="admin-user-menu-trigger"
+			class="hidden absolute right-0 top-full mt-1 z-30 min-w-[220px] bg-white border border-kiban-border rounded-md shadow-md py-1"
+		>
+			<div class="px-3 py-2 border-b border-kiban-border">
+				if cfg.User.Name != "" {
+					<div class="text-sm font-medium text-kiban-ink truncate">{ cfg.User.Name }</div>
+				}
+				if cfg.User.Email != "" {
+					<div class="text-xs text-kiban-ink3 truncate">{ cfg.User.Email }</div>
+				}
+			</div>
+			if cfg.LogoutAction != "" {
+				<form method="POST" action={ templ.URL(cfg.LogoutAction) } class="m-0">
+					<button
+						type="submit"
+						role="menuitem"
+						class="flex w-full items-center gap-2 px-3 py-2 text-sm text-left text-kiban-ink hover:bg-kiban-surface"
+						onclick="window.kibanCloseMenu('admin-user-menu')"
+					>
+						Cerrar sesión
+					</button>
+				</form>
+			}
+		</div>
+	</div>
+}
