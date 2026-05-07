@@ -29,11 +29,14 @@ Sistema de diseño compartido entre los proyectos kiban basados en HTMX + templ 
 ```
 view/
   render.go             Render(c, status, component) — emite text/html, idéntico en todos los consumidores
-  layout/               shell HTML completa
-    base.templ          <!doctype>, <head> con scripts/CSS, <body>, JS global (sidebar level switching, tooltips, intl-tel-input init, htmx)
-    types.go            PageData, NavConfig, User, Tool, SubItem
-    nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2)
+  layout/               shell HTML completa — dos shells: customer-facing Layout (Topbar + IconRail + SubNav) y AdminLayout (topbar + breadcrumbs, sin multi-tool nav)
+    base.templ          <!doctype>, <head> con scripts/CSS, <body>, JS global (sidebar level switching, tooltips, intl-tel-input init, htmx, overlay/menu/nav-loader runtime)
+    types.go            Config, AdminConfig, User, Tool, SubItem, NavSection
+    nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2) — usados por Layout
+    admin.templ         AdminLayout — topbar minimal con horizontal nav + user menu, breadcrumbs strip opcional
     icons.templ         (alternativa: ver view/icons/)
+  avatar/               Circular profile picture con fallback de iniciales — usado por AdminLayout user menu
+  breadcrumbs/          Breadcrumbs(items) — nav trail con separador "/", último item no-clickeable
   icons/                set compartido de iconos SVG (currentColor stroke)
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
   button/               Button(Options) — variant via Options.Variant; renders <button> or <a> (when Href set); Group + RenderGroup for footer/bar rows
@@ -71,6 +74,10 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `layout.Topbar(cfg)` | done | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
+| `layout.AdminConfig` | done | Struct para AdminLayout: `Title`, `ProjectName`, `HomeHref`, `User`, `LogoutAction`, `NavSections`, `ActiveSection`, `Breadcrumbs`. Distinto de `Config` — no carga el modelo multi-tool (Tools/Docs/SubItems). |
+| `layout.NavSection` | done | Una entrada de la nav horizontal del topbar admin: `Key`, `Label`, `Href`. `Key` matchea `AdminConfig.ActiveSection` para resaltar. |
+| `layout.AdminLayout(cfg)` | done | Shell minimal para apps admin/internal: topbar (logo + horizontal nav + user menu) + breadcrumbs strip opcional + main. Reusa `Base()` para el chrome HTML; los blocks JS de Base que dependen de elementos del shell customer-facing (sidebar, sub-nav) son no-ops cuando esos elementos no existen. Para apps con 2-5 secciones top-level y autenticación propia, sin multi-tool switcher. |
+| Admin user menu | done | Dentro de `AdminLayout` topbar: avatar + nombre como trigger de un dropdown que muestra email + form de logout. Reusa los handlers JS de `view/menu` (kibanToggleMenu/kibanCloseMenu) sin código nuevo. ID fijo `admin-user-menu`. |
 | Tools rail toggle (slide) | done | CSS-only en `base.templ` con `.sidebar-rail-slot` (width 0 ↔ 14rem). El hamburger toggla el atributo booleano `data-sidebar-rail-open` en el root; JS persiste en `localStorage[<ProjectName>-sidebar-rail-open]` (key namespaceada por proyecto). |
 | Navigation loader (`#nav-loader`) | done | Overlay full-screen mostrado al hacer click en cualquier `<a data-nav-loader>` (los items del tool rail lo llevan automáticamente). Cubre el wait del navegador mientras la siguiente página carga — útil cuando se cambia entre tools de backends distintos. Skip para clicks con modificadores, target=_blank, anchors `#…`, y links HTMX. Auto-hide via `pageshow` para no quedarse pegado en restores de bfcache. |
 | Tooltip CSS (`data-tooltip`) | done | Bubble dark-ink, instant on hover/focus, ignora pointer events. CSS en `base.templ`. |
@@ -85,6 +92,27 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar` | done |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
+
+### Avatar (`view/avatar/`)
+
+Foto de perfil circular con fallback de iniciales para cuando la URL es vacía, 404 o lenta. Hoy lo usa `AdminLayout` para el user menu del topbar.
+
+**Patrón visual sin JS**: las iniciales siempre se renderizan en el background del span; cuando `Options.Src` está seteado, el `<img>` se posiciona absoluto encima con `object-cover` full-bleed. Si la imagen 404 o tarda, las iniciales se ven naturalmente — no hay handler `onerror`, no hay fallback dinámico.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `avatar.Options` | done | `Src string` (URL imagen, vacío = solo iniciales), `Name string` (deriva iniciales + aria-label default), `Size string` (`sm` 24px / `md` 32px default / `lg` 40px), `AltText string` (override opcional del aria-label, default = Name). |
+| `avatar.Avatar(o Options)` | done | Renderiza `<span>` circular con `bg-kiban-primary-soft text-kiban-primary`, iniciales centradas, `<img>` opcional encima. `overflow-hidden` corta la imagen al círculo. `shrink-0` protege el tamaño dentro de flex layouts (típico en topbars/listas). |
+| `avatar.Initials(name)` | done | Helper público — devuelve hasta 2 letras mayúsculas: `"Antonio Blancas"` → `"AB"`, `"Antonio"` → `"A"`, `""` → `"?"`. Útil cuando un consumer quiere las iniciales fuera del templ (ej. server-rendered notification list que muestra el icono inicialmente). |
+
+### Breadcrumbs (`view/breadcrumbs/`)
+
+Trail de navegación: lista de `{Label, Href?}` con separador "/" entre items. Items con `Href` no-vacío son links; items con `Href = ""` se renderizan como texto plano (típicamente el último, página actual).
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `breadcrumbs.Item` | done | `Label string`, `Href string`. Convención: el último Item tiene `Href = ""` para que se vea como página actual (`text-kiban-ink font-medium aria-current="page"`); los anteriores con `Href` actúan como links de retroceso. Items intermedios sin `Href` se permiten — útil para segmentos no-navegables. |
+| `breadcrumbs.Breadcrumbs(items)` | done | `<nav aria-label="Breadcrumb">` con `<ol>` flex-wrap. Lista vacía/`nil` no emite nada (útil en páginas sin jerarquía). Texto base muted (`kiban-ink3`); active en `kiban-ink + font-medium`; separador "/" en `kiban-ink4 select-none`. |
 
 ### Inputs (`view/input/`)
 
