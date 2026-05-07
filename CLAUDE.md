@@ -45,6 +45,7 @@ view/
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
+  menu/                 kebab/dropdown action menu — trigger + popover of MenuItem actions, used in row "Acciones" cells (rename, delete, copy value, …)
   comment_input/        textarea + chip-style file uploader + submit, all in one composition (used by klin's delivery comments; designed to be reused by future comment flows)
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
@@ -201,6 +202,18 @@ In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell qu
 |---|---|---|
 | `tabs.TabItem` (struct) | done | Una entrada del strip. Required: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav). Affordances opcionales: `Icon templ.Component` (slot a la izquierda del label, mismo patrón que `button.Options.IconComponent`), `Count int` + `HasCount bool` (badge pill a la derecha — el toggle explícito permite que un `0` real se renderice como "Inbox (0)" sin ambigüedad sentinel-vs-zero), `Disabled bool` (saca el `href`, mete `aria-disabled="true"` + `pointer-events-none` + `opacity-50`), `Title string` (atributo `title=""` nativo — útil para explicar el por qué cuando `Disabled=true`). Escape hatch HTMX: `Attrs templ.Attributes` (spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). |
 | `tabs.Strip(items []TabItem, activeKey string)` | done | Renderiza el strip con el visual contract descrito arriba. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. Múltiples instancias en la misma página son seguras (cada `<a>` lleva su propio `href`/Attrs). |
+
+### Menu (`view/menu/`)
+
+Kebab/dropdown action-menu primitive. Pensado para la última columna ("Acciones") de cada fila en una tabla de listado: trigger con tres puntos, popover con la lista de actions disponibles para esa fila (renombrar, eliminar, copiar valor, …). Cada `MenuItem.OnClick` es JS inline crudo (mismo patrón que `button.Options.OnClick`); tras correr la acción del usuario, el popover se cierra automáticamente.
+
+**Implementación**: built sobre `<details>` / `<summary>` para que el toggle open/close funcione sin estado JS bespoke. Un único listener `document.click` (registrado idempotentemente la primera vez que un `Menu` se renderiza, vía un flag en `window`) cierra cualquier `<details data-ds-menu>` abierto cuando el click cae fuera de su subtree — funciona con N instancias en la misma página sin duplicar listeners.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `menu.MenuItem` (struct) | done | Una entrada del popover. Required: `Label string`, `OnClick string` (raw inline JS — patrón `kibanOpenApiKeyEdit('123', "Foo")`). Optional: `Variant string` — vacío / desconocido cae al tono neutral kiban-ink; `"danger"` swappea a rojo (`text-red-600` + `hover:bg-red-50`) para acciones destructivas. |
+| `menu.Config` (struct) | done | Configura una invocación del Menu. `ID string` setea el `<summary id="…">` (útil para pruebas o JS externo); pasar valor único por fila. `AriaLabel string` describe el trigger a screen readers ("Acciones para <row name>" es el wording kiban convencional). `Items []MenuItem` se renderiza top-to-bottom; con slice vacío el popover no renderiza filas (en ese caso conviene gating en el caller para no emitir el trigger). |
+| `menu.Menu(c Config)` | done | El templ. Renderiza `<details>` con el trigger (icon `icons.More`) + popover absoluto right-aligned con un `<button>` por entry. Cada `<button>` carga `onclick="<userOnClick>; var d=this.closest('details'); if(d){d.removeAttribute('open');}"` para auto-cerrar tras pick. Emite también `<script>` con el listener click-outside-to-close idempotente. |
 
 ### Comment input (`view/comment_input/`)
 

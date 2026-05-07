@@ -40,8 +40,26 @@ type PaginationConfig struct {
 // `<tr>` elements (or, more commonly, `@table.Row(href, bulkValue) {…}`
 // for the standard kiban hover/cursor markup).
 type TableConfig struct {
-	Headers    []string
-	BulkSelect bool
+	Headers []string
+	// HeaderAlignRight is an optional parallel slice with the same length
+	// as Headers. Where the entry is true, that header cell renders with
+	// `text-right` instead of the default `text-left`. Useful for action
+	// columns whose body cells are right-aligned (kebab menus, action
+	// links). When the slice is shorter than Headers, missing entries are
+	// treated as false. Pass nil to keep every header left-aligned.
+	HeaderAlignRight []bool
+	BulkSelect       bool
+}
+
+// HeaderAlignsRight reports whether the i-th header should be
+// right-aligned given a [TableConfig.HeaderAlignRight] slice. Returns
+// false when the slice is nil, shorter than i+1, or the entry itself
+// is false.
+func HeaderAlignsRight(aligns []bool, i int) bool {
+	if i < 0 || i >= len(aligns) {
+		return false
+	}
+	return aligns[i]
 }
 
 // BulkActionBarConfig drives the BulkActionBar component — the row of
