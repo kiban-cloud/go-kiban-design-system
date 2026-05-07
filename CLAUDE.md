@@ -29,11 +29,14 @@ Sistema de diseño compartido entre los proyectos kiban basados en HTMX + templ 
 ```
 view/
   render.go             Render(c, status, component) — emite text/html, idéntico en todos los consumidores
-  layout/               shell HTML completa
-    base.templ          <!doctype>, <head> con scripts/CSS, <body>, JS global (sidebar level switching, tooltips, intl-tel-input init, htmx)
-    types.go            PageData, NavConfig, User, Tool, SubItem
-    nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2)
+  layout/               shell HTML completa — dos shells: customer-facing Layout (Topbar + IconRail + SubNav) y AdminLayout (topbar + breadcrumbs, sin multi-tool nav)
+    base.templ          <!doctype>, <head> con scripts/CSS, <body>, JS global (sidebar level switching, tooltips, intl-tel-input init, htmx, overlay/menu/nav-loader runtime)
+    types.go            Config, AdminConfig, User, Tool, SubItem, NavSection
+    nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2) — usados por Layout
+    admin.templ         AdminLayout — topbar minimal con horizontal nav + user menu, breadcrumbs strip opcional
     icons.templ         (alternativa: ver view/icons/)
+  avatar/               Circular profile picture con fallback de iniciales — usado por AdminLayout user menu
+  breadcrumbs/          Breadcrumbs(items) — nav trail con separador "/", último item no-clickeable
   icons/                set compartido de iconos SVG (currentColor stroke)
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
   button/               Button(Options) — variant via Options.Variant; renders <button> or <a> (when Href set); Group + RenderGroup for footer/bar rows
@@ -42,10 +45,10 @@ view/
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
   table/                Table (chrome) + Row (helper) + BulkActionBar (Tailwind group-has visibility) + Pagination + EmptyState
   drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse button.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
+  menu/                 Kebab-style action dropdown — icon trigger + panel of <button role="menuitem"> rows. Single-active behaviour (open one closes others); JS in base.templ.
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
   tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
-  menu/                 kebab/dropdown action menu — trigger + popover of MenuItem actions, used in row "Acciones" cells (rename, delete, copy value, …)
   comment_input/        textarea + chip-style file uploader + submit, all in one composition (used by klin's delivery comments; designed to be reused by future comment flows)
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
@@ -71,6 +74,10 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `layout.Topbar(cfg)` | done | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
+| `layout.AdminConfig` | done | Struct para AdminLayout: `Title`, `ProjectName`, `HomeHref`, `User`, `LogoutAction`, `NavSections`, `ActiveSection`, `Breadcrumbs`. Distinto de `Config` — no carga el modelo multi-tool (Tools/Docs/SubItems). |
+| `layout.NavSection` | done | Una entrada de la nav horizontal del topbar admin: `Key`, `Label`, `Href`. `Key` matchea `AdminConfig.ActiveSection` para resaltar. |
+| `layout.AdminLayout(cfg)` | done | Shell minimal para apps admin/internal: topbar (logo + horizontal nav + user menu) + breadcrumbs strip opcional + main. Reusa `Base()` para el chrome HTML; los blocks JS de Base que dependen de elementos del shell customer-facing (sidebar, sub-nav) son no-ops cuando esos elementos no existen. Para apps con 2-5 secciones top-level y autenticación propia, sin multi-tool switcher. |
+| Admin user menu | done | Dentro de `AdminLayout` topbar: avatar + nombre como trigger de un dropdown que muestra email + form de logout. Reusa los handlers JS de `view/menu` (kibanToggleMenu/kibanCloseMenu) sin código nuevo. ID fijo `admin-user-menu`. |
 | Tools rail toggle (slide) | done | CSS-only en `base.templ` con `.sidebar-rail-slot` (width 0 ↔ 14rem). El hamburger toggla el atributo booleano `data-sidebar-rail-open` en el root; JS persiste en `localStorage[<ProjectName>-sidebar-rail-open]` (key namespaceada por proyecto). |
 | Navigation loader (`#nav-loader`) | done | Overlay full-screen mostrado al hacer click en cualquier `<a data-nav-loader>` (los items del tool rail lo llevan automáticamente). Cubre el wait del navegador mientras la siguiente página carga — útil cuando se cambia entre tools de backends distintos. Skip para clicks con modificadores, target=_blank, anchors `#…`, y links HTMX. Auto-hide via `pageshow` para no quedarse pegado en restores de bfcache. |
 | Tooltip CSS (`data-tooltip`) | done | Bubble dark-ink, instant on hover/focus, ignora pointer events. CSS en `base.templ`. |
@@ -85,6 +92,27 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar` | done |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
+
+### Avatar (`view/avatar/`)
+
+Foto de perfil circular con fallback de iniciales para cuando la URL es vacía, 404 o lenta. Hoy lo usa `AdminLayout` para el user menu del topbar.
+
+**Patrón visual sin JS**: las iniciales siempre se renderizan en el background del span; cuando `Options.Src` está seteado, el `<img>` se posiciona absoluto encima con `object-cover` full-bleed. Si la imagen 404 o tarda, las iniciales se ven naturalmente — no hay handler `onerror`, no hay fallback dinámico.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `avatar.Options` | done | `Src string` (URL imagen, vacío = solo iniciales), `Name string` (deriva iniciales + aria-label default), `Size string` (`sm` 24px / `md` 32px default / `lg` 40px), `AltText string` (override opcional del aria-label, default = Name). |
+| `avatar.Avatar(o Options)` | done | Renderiza `<span>` circular con `bg-kiban-primary-soft text-kiban-primary`, iniciales centradas, `<img>` opcional encima. `overflow-hidden` corta la imagen al círculo. `shrink-0` protege el tamaño dentro de flex layouts (típico en topbars/listas). |
+| `avatar.Initials(name)` | done | Helper público — devuelve hasta 2 letras mayúsculas: `"Antonio Blancas"` → `"AB"`, `"Antonio"` → `"A"`, `""` → `"?"`. Útil cuando un consumer quiere las iniciales fuera del templ (ej. server-rendered notification list que muestra el icono inicialmente). |
+
+### Breadcrumbs (`view/breadcrumbs/`)
+
+Trail de navegación: lista de `{Label, Href?}` con separador "/" entre items. Items con `Href` no-vacío son links; items con `Href = ""` se renderizan como texto plano (típicamente el último, página actual).
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `breadcrumbs.Item` | done | `Label string`, `Href string`. Convención: el último Item tiene `Href = ""` para que se vea como página actual (`text-kiban-ink font-medium aria-current="page"`); los anteriores con `Href` actúan como links de retroceso. Items intermedios sin `Href` se permiten — útil para segmentos no-navegables. |
+| `breadcrumbs.Breadcrumbs(items)` | done | `<nav aria-label="Breadcrumb">` con `<ol>` flex-wrap. Lista vacía/`nil` no emite nada (útil en páginas sin jerarquía). Texto base muted (`kiban-ink3`); active en `kiban-ink + font-medium`; separador "/" en `kiban-ink4 select-none`. |
 
 ### Inputs (`view/input/`)
 
@@ -170,7 +198,7 @@ Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-render
 | `table.PaginationConfig` | done | Struct con Page, HasPrev, HasNext, PageURL func(int) string, Target, Indicator. Caller construye con un closure sobre su `pageURL` local para preservar filtros entre páginas. |
 | `table.Pagination(cfg)` | done | Anterior/Siguiente botones HTMX. Estados disabled-styled cuando edge. `cfg.PageURL` callback para que el caller maneje filter state. |
 | `table.EmptyState(title, hint)` | done | Card centrada con border-top, "Aún no tenemos X qué mostrar". `hint` opcional. |
-| `table.Table(cfg TableConfig)` | done | Chrome estándar (border-t + table). `cfg.Headers []string` (plain text por ahora; sortable headers con chevron-down se agregan después). `cfg.BulkSelect=true` prepende un `<th>` con checkbox "select all" que togglea todos los `input[name=ids]` siblings via inline JS. Body via templ children: el caller renderiza sus `<tr>` o, mejor, usa `@table.Row(href, bulkValue)` para el chrome estándar. |
+| `table.Table(cfg TableConfig)` | done | Chrome estándar (border-t + table). `cfg.Headers []string` (plain text por ahora; sortable headers con chevron-down se agregan después). `cfg.HeaderAlignRight []bool` opcional — slice paralelo a `Headers`; cuando el índice está marcado en `true` el `<th>` correspondiente usa `text-right` en vez del default `text-left`. Pensado para columnas de acciones cuya celda body ya está alineada a la derecha (kebab menus, button rows). `nil` o slice corto = todo `text-left` (los callers existentes no se rompen). `cfg.BulkSelect=true` prepende un `<th>` con checkbox "select all" que togglea todos los `input[name=ids]` siblings via inline JS. Body via templ children: el caller renderiza sus `<tr>` o, mejor, usa `@table.Row(href, bulkValue)` para el chrome estándar. |
 | `table.Row(href, bulkValue string)` | done | `<tr>` con `border-b + hover:bg-kiban-primary-soft`. Cuando `href != ""` agrega `data-href` + `cursor-pointer` (la JS de `view/layout/base.templ` intercepta clicks y navega; los clicks en `a/button/input/textarea/select/label` no disparan navigation, así no compite con anchors anidados). Cuando `bulkValue != ""` prepende un `<td><input type="checkbox" name="ids" value={bulkValue}>` — combinar con `Table.BulkSelect=true` para el toggle de header. |
 | `table.BulkActionBar(cfg BulkActionBarConfig)` | done | Barra de acciones que aparece sobre la tabla cuando hay selecciones. **Visibilidad puramente Tailwind** (sin JS, sin `<style>` por instancia): la barra usa `hidden group-has-[input[name=ids]:checked]/bulk:flex`. **Contrato del caller**: envolver el form que contiene tabla + barra en `<form class="group/bulk">` para que el variant nombrado resuelva. `cfg.Message` muestra texto muted a la izquierda; `cfg.Actions button.Group` renderiza primary + secondaries a la derecha (mismo `button.Group` que drawer). |
 
@@ -192,6 +220,22 @@ Convenciones del paquete:
 | `drawer.Modal(cfg ModalConfig)` | done | Centrado, backdrop oscuro (`bg-black/40`). Mismos campos que SidePanel (incluido `FooterActions button.Group`) + `Icon templ.Component` opcional renderizado a la izquierda del título (caller pasa el block fully styled — patrón típico kiban: `<div class="w-8 h-8 rounded-full bg-kiban-primary-soft text-kiban-primary flex items-center justify-center"><svg…/></div>`). Para flujos HTMX-form-bound (modal con submit): wrapeá el `@drawer.Modal(...)` entero en un `<form hx-post=… hx-on::after-request="if(event.detail.successful){ kibanCloseOverlay('id'); }">`. |
 | `drawer.Confirm(cfg ConfirmConfig)` | done | Preset de Modal con shape fijo: title (opcional) + message + cancel/confirm buttons. Default size `sm`. `cfg.PrimaryAction button.Options` es el botón de confirm; setear `Variant:"danger"` para deletes. Cancel se cablea automáticamente al `kibanCloseOverlay(id)`; label default "Cancelar". Para "are you sure?"-level simple usar `hx-confirm` nativo de HTMX; usar Confirm cuando se necesita styling kiban + HTMX wiring custom + título largo. |
 
+### Menu (`view/menu/`)
+
+Kebab-style action menu para tablas y filas con varias acciones. El trigger es un botón con icono (reusa `button.Button` con `Variant:"icon"` + `IconComponent: icons.More()`); el panel es un dropdown `absolute right-0 top-full` con items renderizados como `<button role="menuitem">`. JS toggle/close + outside-click + Escape viven en `view/layout/base.templ` (`window.kibanToggleMenu`, `window.kibanCloseMenu`).
+
+**Single-active**: abrir un menú cierra cualquier otro menú abierto en la página (matching native OS menu behaviour). Click fuera de cualquier `[data-kiban-menu]` cierra todos los abiertos. Escape cierra los menús primero, antes que cualquier overlay (para que cerrar el menú no dismisse el modal subyacente).
+
+**Cierre automático tras click**: cada item agrega `window.kibanCloseMenu(id)` después del `OnClick` del consumer, así no hay que recordar cerrarlo manualmente.
+
+**ID por instancia**: `cfg.ID` debe ser único en la página (ej. `apikey-menu-<rowID>`). Las funciones JS keyean por ese ID para encontrar trigger + panel.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `menu.Config` (struct) | done | `ID string` (required, único en la página), `AriaLabel string` (aria-label del trigger, ej. "Acciones para {nombre}"), `Items []MenuItem`. Si `Items` está vacío, `Menu` no renderiza nada (consumer puede pasar lista vacía sin chequear). |
+| `menu.MenuItem` (struct) | done | `Label string`, `OnClick string` (raw inline JS — el menú agrega `kibanCloseMenu` al final), `Variant string` (`""`/`"default"` → `text-kiban-ink`; `"danger"` → `text-red-600` para destructivos), `Icon templ.Component` opcional a la izquierda, `Attrs templ.Attributes` para HTMX/data-* (mismo patrón que `button.Options.Attrs`). |
+| `menu.Menu(cfg Config)` | done | Renderiza `<div class="relative inline-block" data-kiban-menu={id}>` con el trigger button + panel oculto. Panel se posiciona `absolute right-0 top-full mt-1 z-30`; asegurate de que el call-site tenga espacio a la derecha o abajo. Si `cfg.Items` está vacío, no emite nada. |
+
 ### Tabs (`view/tabs/`)
 
 In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell que usa el estilo pill). Tabs usan underline-style para "switch view inside this page", pills mean "switch tools/sections in the app". Mantener visualmente diferenciados evita confundir state in-page con navegación global.
@@ -202,18 +246,6 @@ In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell qu
 |---|---|---|
 | `tabs.TabItem` (struct) | done | Una entrada del strip. Required: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav). Affordances opcionales: `Icon templ.Component` (slot a la izquierda del label, mismo patrón que `button.Options.IconComponent`), `Count int` + `HasCount bool` (badge pill a la derecha — el toggle explícito permite que un `0` real se renderice como "Inbox (0)" sin ambigüedad sentinel-vs-zero), `Disabled bool` (saca el `href`, mete `aria-disabled="true"` + `pointer-events-none` + `opacity-50`), `Title string` (atributo `title=""` nativo — útil para explicar el por qué cuando `Disabled=true`). Escape hatch HTMX: `Attrs templ.Attributes` (spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). |
 | `tabs.Strip(items []TabItem, activeKey string)` | done | Renderiza el strip con el visual contract descrito arriba. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. Múltiples instancias en la misma página son seguras (cada `<a>` lleva su propio `href`/Attrs). |
-
-### Menu (`view/menu/`)
-
-Kebab/dropdown action-menu primitive. Pensado para la última columna ("Acciones") de cada fila en una tabla de listado: trigger con tres puntos, popover con la lista de actions disponibles para esa fila (renombrar, eliminar, copiar valor, …). Cada `MenuItem.OnClick` es JS inline crudo (mismo patrón que `button.Options.OnClick`); tras correr la acción del usuario, el popover se cierra automáticamente.
-
-**Implementación**: built sobre `<details>` / `<summary>` para que el toggle open/close funcione sin estado JS bespoke. Un único listener `document.click` (registrado idempotentemente la primera vez que un `Menu` se renderiza, vía un flag en `window`) cierra cualquier `<details data-ds-menu>` abierto cuando el click cae fuera de su subtree — funciona con N instancias en la misma página sin duplicar listeners.
-
-| Componente | Estado | Notas |
-|---|---|---|
-| `menu.MenuItem` (struct) | done | Una entrada del popover. Required: `Label string`, `OnClick string` (raw inline JS — patrón `kibanOpenApiKeyEdit('123', "Foo")`). Optional: `Variant string` — vacío / desconocido cae al tono neutral kiban-ink; `"danger"` swappea a rojo (`text-red-600` + `hover:bg-red-50`) para acciones destructivas. |
-| `menu.Config` (struct) | done | Configura una invocación del Menu. `ID string` setea el `<summary id="…">` (útil para pruebas o JS externo); pasar valor único por fila. `AriaLabel string` describe el trigger a screen readers ("Acciones para <row name>" es el wording kiban convencional). `Items []MenuItem` se renderiza top-to-bottom; con slice vacío el popover no renderiza filas (en ese caso conviene gating en el caller para no emitir el trigger). |
-| `menu.Menu(c Config)` | done | El templ. Renderiza `<details>` con el trigger (icon `icons.More`) + popover absoluto right-aligned con un `<button>` por entry. Cada `<button>` carga `onclick="<userOnClick>; var d=this.closest('details'); if(d){d.removeAttribute('open');}"` para auto-cerrar tras pick. Emite también `<script>` con el listener click-outside-to-close idempotente. |
 
 ### Comment input (`view/comment_input/`)
 

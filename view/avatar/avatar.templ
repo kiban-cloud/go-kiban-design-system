@@ -1,0 +1,23 @@
+package avatar
+
+// Avatar renders a circular profile picture with an initials fallback.
+// The initials always render in the background; when Options.Src is set
+// the image stacks on top (object-cover, full bleed). If the image
+// 404s or hasn't loaded yet, the initials show through naturally —
+// no JS needed.
+templ Avatar(o Options) {
+	<span
+		class={ "relative inline-flex items-center justify-center rounded-full bg-kiban-primary-soft text-kiban-primary font-medium overflow-hidden shrink-0 " + o.sizeClass() }
+		aria-label={ o.altText() }
+		role="img"
+	>
+		{ Initials(o.Name) }
+		if o.hasSrc() {
+			<img
+				src={ o.Src }
+				alt={ o.altText() }
+				class="absolute inset-0 h-full w-full object-cover"
+			/>
+		}
+	</span>
+}

@@ -1,0 +1,28 @@
+package breadcrumbs
+
+// Breadcrumbs renders the nav trail. Empty `items` emits nothing so
+// callers can pass a nil/empty slice on pages without a meaningful
+// hierarchy without checking themselves.
+//
+// Visual: small muted text, "/" separator between items, current page
+// (empty Href) rendered in kiban-ink and font-medium for emphasis.
+templ Breadcrumbs(items []Item) {
+	if len(items) > 0 {
+		<nav aria-label="Breadcrumb">
+			<ol class="flex flex-wrap items-center gap-1.5 text-sm text-kiban-ink3">
+				for i, item := range items {
+					if i > 0 {
+						<li aria-hidden="true" class="text-kiban-ink4 select-none">/</li>
+					}
+					<li>
+						if item.Href != "" {
+							<a href={ templ.URL(item.Href) } class="hover:text-kiban-ink transition-colors">{ item.Label }</a>
+						} else {
+							<span class="text-kiban-ink font-medium" aria-current="page">{ item.Label }</span>
+						}
+					</li>
+				}
+			</ol>
+		</nav>
+	}
+}

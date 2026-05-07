@@ -447,9 +447,60 @@ templ Base(cfg Config) {
 				};
 				document.addEventListener('keydown', function (e) {
 					if (e.key !== 'Escape') return;
+					// Open menus take precedence over overlays on Escape:
+					// closing the menu without dismissing the underlying
+					// modal matches native OS behaviour.
+					var openMenus = document.querySelectorAll('[data-kiban-menu] [role="menu"]:not(.hidden)');
+					if (openMenus.length) {
+						openMenus.forEach(function (p) { p.classList.add('hidden'); });
+						document.querySelectorAll('[data-kiban-menu] button[aria-expanded="true"]').forEach(function (t) {
+							t.setAttribute('aria-expanded', 'false');
+						});
+						return;
+					}
 					var visible = document.querySelectorAll('[data-kiban-overlay]:not(.hidden)');
 					if (!visible.length) return;
 					visible[visible.length - 1].classList.add('hidden');
+				});
+
+				// Menu helpers for the design-system menu package
+				// (kebab-style dropdowns). Each menu carries [data-kiban-menu]
+				// + a unique ID; trigger="<id>-trigger", panel="<id>-panel".
+				// Single-active: opening one menu closes any other already
+				// open. Click outside any menu closes all open menus.
+				window.kibanToggleMenu = function (id) {
+					var panel = document.getElementById(id + '-panel');
+					var trigger = document.getElementById(id + '-trigger');
+					if (!panel || !trigger) return;
+					var willOpen = panel.classList.contains('hidden');
+					document.querySelectorAll('[data-kiban-menu] [role="menu"]').forEach(function (p) {
+						if (p !== panel) p.classList.add('hidden');
+					});
+					document.querySelectorAll('[data-kiban-menu] button[aria-haspopup="true"]').forEach(function (t) {
+						if (t !== trigger) t.setAttribute('aria-expanded', 'false');
+					});
+					if (willOpen) {
+						panel.classList.remove('hidden');
+						trigger.setAttribute('aria-expanded', 'true');
+					} else {
+						panel.classList.add('hidden');
+						trigger.setAttribute('aria-expanded', 'false');
+					}
+				};
+				window.kibanCloseMenu = function (id) {
+					var panel = document.getElementById(id + '-panel');
+					var trigger = document.getElementById(id + '-trigger');
+					if (panel) panel.classList.add('hidden');
+					if (trigger) trigger.setAttribute('aria-expanded', 'false');
+				};
+				document.addEventListener('click', function (e) {
+					if (e.target.closest && e.target.closest('[data-kiban-menu]')) return;
+					document.querySelectorAll('[data-kiban-menu] [role="menu"]:not(.hidden)').forEach(function (p) {
+						p.classList.add('hidden');
+					});
+					document.querySelectorAll('[data-kiban-menu] button[aria-expanded="true"]').forEach(function (t) {
+						t.setAttribute('aria-expanded', 'false');
+					});
 				});
 			</script>
 		</body>

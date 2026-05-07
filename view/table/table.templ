@@ -31,11 +31,7 @@ templ Table(cfg TableConfig) {
 						</th>
 					}
 					for i, h := range cfg.Headers {
-						if HeaderAlignsRight(cfg.HeaderAlignRight, i) {
-							<th class="text-right font-medium text-kiban-ink2 py-3 px-4">{ h }</th>
-						} else {
-							<th class="text-left font-medium text-kiban-ink2 py-3 px-4">{ h }</th>
-						}
+						<th class={ cfg.HeaderAlignClass(i) + " font-medium text-kiban-ink2 py-3 px-4" }>{ h }</th>
 					}
 				</tr>
 			</thead>

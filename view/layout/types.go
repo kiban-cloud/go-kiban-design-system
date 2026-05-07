@@ -4,12 +4,24 @@
 // component, passing per-project nav data via Config.
 package layout
 
-import "github.com/a-h/templ"
+import (
+	"strings"
+
+	"github.com/a-h/templ"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
+)
 
 // User is the minimal identity displayed in the topbar's avatar dropdown.
+//
+// Picture is optional. The customer-facing Layout doesn't render it
+// today (its topbar shows initials only); AdminLayout shows the photo
+// when present and falls back to initials when empty. Adding the
+// field here keeps a single User source-of-truth across both shells.
 type User struct {
-	Email string
-	Name  string
+	Email   string
+	Name    string
+	Picture string
 }
 
 // Tool is one entry in the icon rail (sidebar level 1). External=true → links
@@ -74,3 +86,81 @@ type Config struct {
 	Docs     []Tool // bottom of the icon rail — docs links
 	SubItems []SubItem
 }
+
+// NavSection is one entry in AdminLayout's horizontal top-level nav.
+// Section nav is a single-level row of links (no icon rail, no
+// sub-nav) — admin/internal apps with 2-5 sections fit here cleanly.
+type NavSection struct {
+	Key   string // matches AdminConfig.ActiveSection to highlight
+	Label string
+	Href  string
+}
+
+// AdminConfig drives AdminLayout — a minimal admin/internal shell:
+// topbar with logo + horizontal nav + user menu, optional breadcrumbs
+// strip below, and the page content. No icon rail, no sub-nav,
+// no multi-tool switcher. Suitable for staff/internal apps that
+// aren't part of the multi-tool kiban shell.
+//
+// Reuses Base() under the hood for the HTML chrome, scripts, and
+// runtime helpers (overlay, menu, nav-loader, …).
+type AdminConfig struct {
+	// Page metadata
+	Title string
+
+	// Identity. Used for the <title> suffix and the topbar logo link.
+	ProjectName string
+	HomeHref    string // where the topbar logo links to (e.g. /klin-internal-htmx/)
+
+	// User context (avatar + dropdown in the topbar)
+	User User
+
+	// LogoutAction is the POST URL the "Cerrar sesión" item submits to
+	// (the user-menu wraps the item in a <form method="POST">). Leave
+	// empty to omit the logout entry from the menu entirely.
+	LogoutAction string
+
+	// Top-level horizontal nav rendered in the topbar.
+	NavSections []NavSection
+	// ActiveSection highlights the matching NavSection.Key. Empty =
+	// nothing highlighted (e.g. on the login page or a 404).
+	ActiveSection string
+
+	// Breadcrumbs is the trail rendered in a strip below the topbar.
+	// Empty/nil collapses the strip entirely (zero height).
+	Breadcrumbs []breadcrumbs.Item
+}
+
+// adminToBaseConfig narrows an AdminConfig down to the few Config
+// fields Base actually uses (title chrome, project namespacing for
+// sidebar localStorage). The customer-facing fields (Tools, SubItems,
+// etc.) stay zero-valued — Base.templ tolerates them.
+func adminToBaseConfig(cfg AdminConfig) Config {
+	return Config{
+		Title:       cfg.Title,
+		ProjectName: cfg.ProjectName,
+	}
+}
+
+// adminNavSectionClass returns the class set for a horizontal nav
+// item, branching on whether the item's Key matches the active one.
+// Active gets the kiban-primary tint; inactive renders muted ink with
+// hover affordance.
+func adminNavSectionClass(itemKey, activeKey string) string {
+	base := "px-3 py-1.5 rounded-md text-sm transition-colors"
+	if itemKey != "" && itemKey == activeKey {
+		return base + " bg-kiban-primary-soft text-kiban-primary font-medium"
+	}
+	return base + " text-kiban-ink3 hover:text-kiban-ink hover:bg-kiban-surface"
+}
+
+// adminUserMenuLabel returns the visible name in the topbar's user
+// menu trigger. Falls back to email when name is empty (some staff
+// users may register with email-only).
+func adminUserMenuLabel(u User) string {
+	if strings.TrimSpace(u.Name) != "" {
+		return u.Name
+	}
+	return u.Email
+}
+
