@@ -27,6 +27,33 @@ type PaginationConfig struct {
 	Target string
 	// Indicator is the CSS selector for `hx-indicator` (e.g. "#customers-loading").
 	Indicator string
+	// NextVariant overrides the styling of the "Siguiente" button.
+	// Default ("" / "primary") keeps the historical kiban-primary
+	// solid-blue look. "secondary" renders both buttons in the same
+	// outlined secondary style — useful on internal/admin lists where
+	// Next isn't a primary affordance and the visual symmetry reads
+	// cleaner. Anterior is always secondary regardless.
+	NextVariant string
+}
+
+// paginationNextEnabledClass picks the Tailwind class string for the
+// active "Siguiente" button. Default ("" / "primary") = solid kiban-
+// primary with white text. "secondary" = same outlined style as the
+// "Anterior" button so both pagination controls match visually.
+func paginationNextEnabledClass(variant string) string {
+	if variant == "secondary" {
+		return "bg-white border border-kiban-border rounded-md px-4 py-2 hover:border-kiban-ink3 disabled:opacity-50 disabled:cursor-wait"
+	}
+	return "bg-kiban-primary text-white rounded-md px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
+}
+
+// paginationNextDisabledClass mirrors paginationNextEnabledClass for
+// the disabled (HasNext == false) edge.
+func paginationNextDisabledClass(variant string) string {
+	if variant == "secondary" {
+		return "bg-white border border-kiban-border rounded-md px-4 py-2 text-kiban-ink4 cursor-not-allowed"
+	}
+	return "bg-kiban-primary text-white rounded-md px-4 py-2 opacity-40 cursor-not-allowed"
 }
 
 // TableConfig drives the Table component. Headers are rendered as plain
@@ -50,6 +77,13 @@ type TableConfig struct {
 	Headers          []string
 	HeaderAlignRight []bool
 	BulkSelect       bool
+	// HeaderNoWrap forces every `<th>` to render on a single line via
+	// `whitespace-nowrap`. Default (`false`) keeps the historical
+	// behaviour where multi-word column titles ("Fecha de creación")
+	// can wrap when the column is narrow. Useful in dense admin
+	// tables where wrapped headers misalign visually with no-wrap
+	// body cells.
+	HeaderNoWrap bool
 }
 
 // HeaderAlignClass returns the alignment class for a given header
@@ -61,6 +95,16 @@ func (c TableConfig) HeaderAlignClass(i int) string {
 		return "text-right"
 	}
 	return "text-left"
+}
+
+// HeaderWrapClass returns `whitespace-nowrap` when [TableConfig.HeaderNoWrap]
+// is true and an empty string otherwise — concatenated into each
+// `<th>`'s class list by the Table templ.
+func (c TableConfig) HeaderWrapClass() string {
+	if c.HeaderNoWrap {
+		return "whitespace-nowrap"
+	}
+	return ""
 }
 
 // BulkActionBarConfig drives the BulkActionBar component — the row of

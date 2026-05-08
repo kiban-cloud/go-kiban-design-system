@@ -35,12 +35,12 @@ templ Pagination(cfg PaginationConfig) {
 					hx-push-url="true"
 					hx-indicator={ cfg.Indicator }
 					hx-disabled-elt="this"
-					class="bg-kiban-primary text-white rounded-md px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
+					class={ paginationNextEnabledClass(cfg.NextVariant) }
 				>
 					Siguiente ›
 				</button>
 			} else {
-				<button type="button" disabled?={ true } class="bg-kiban-primary text-white rounded-md px-4 py-2 opacity-40 cursor-not-allowed">Siguiente ›</button>
+				<button type="button" disabled?={ true } class={ paginationNextDisabledClass(cfg.NextVariant) }>Siguiente ›</button>
 			}
 		</div>
 	</div>

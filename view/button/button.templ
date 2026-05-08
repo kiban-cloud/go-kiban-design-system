@@ -26,7 +26,9 @@ templ Button(p Options) {
 			aria-label={ effectiveAriaLabelForVariant(p) }
 			title={ effectiveTitleForVariant(p) }
 			disabled?={ p.Disabled }
-			form={ p.Form }
+			if p.Form != "" {
+				form={ p.Form }
+			}
 			if NonEmptyAttrs(resolvedAttrs(p)) {
 				{ resolvedAttrs(p)... }
 			}

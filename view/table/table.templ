@@ -31,7 +31,7 @@ templ Table(cfg TableConfig) {
 						</th>
 					}
 					for i, h := range cfg.Headers {
-						<th class={ cfg.HeaderAlignClass(i) + " font-medium text-kiban-ink2 py-3 px-4" }>{ h }</th>
+						<th class={ cfg.HeaderAlignClass(i) + " " + cfg.HeaderWrapClass() + " font-medium text-kiban-ink2 py-3 px-4" }>{ h }</th>
 					}
 				</tr>
 			</thead>
