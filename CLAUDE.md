@@ -38,7 +38,7 @@ view/
   avatar/               Circular profile picture con fallback de iniciales — usado por AdminLayout user menu
   breadcrumbs/          Breadcrumbs(items) — nav trail con separador "/", último item no-clickeable
   icons/                set compartido de iconos SVG (currentColor stroke)
-  input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, file
+  input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, month, file
   button/               Button(Options) — variant via Options.Variant; renders <button> or <a> (when Href set); Group + RenderGroup for footer/bar rows
   card/                 Card (chrome wrapper) + Section (sub-section divider)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
@@ -130,6 +130,7 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 | `input.Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, required bool)` | done | Wrapper de intl-tel-input. Renderiza `<input type="tel" data-tel-visible>` (sin `name`) + dos `<input type="hidden">` (`data-tel-cc` / `data-tel-national`). El init JS de `layout/base.templ` escanea `[data-phone-input]`. `data-tel-initial` se pre-popula con `+<cc><national>` cuando ambos lados están seteados (edit). |
 | `input.Select(name, label, value, errMsg, hint string, options []SelectOption, required bool)` | done | `options []SelectOption{Value, Label}`. Si necesitas placeholder, prepéndelo como una `SelectOption{Value: "", Label: "Selecciona…"}`. |
 | `input.Date(name, label, value, errMsg, hint string, required bool)` | done | `<input type="date">`, mismo contrato que Text. |
+| `input.Month(name, label, value, errMsg, hint string, required bool)` | done | `<input type="month">`. El browser muestra un picker mes/año (sin día); el value que sube en el form es `"YYYY-MM"`. Soporte ubicuo en Chrome/Edge/Safari/Firefox; browsers viejos caen a un text input libre, así que el server siempre debe validar la shape `YYYY-MM`. |
 | `input.File(name, label, accept, hint string, required bool)` | done | `<input type="file">` con `file:` prefix kiban-styleado. `accept` (ej. `.csv,text/csv`) para restringir el picker; pasá `""` para aceptar todo. `required?={required}` se emite (HTML5) para que el browser bloquee submit sin archivo. |
 | `input.Hidden(name, value, id string)` | done | `<input type="hidden">`. Pasá `id=""` cuando no haga falta (la mayoría de los casos); poné `id` cuando el JS necesite leer/escribir el valor en runtime (ej. el script de geolocation que rellena lat/lng antes de submit). |
 | `input.Textarea(name, label, value, errMsg, hint string, required bool, rows int, placeholder string, mono bool)` | done | `rows <= 0` → default 3. `placeholder` se emite siempre (vacío = no se muestra). `mono=true` swappea a `font-mono` para PEM blocks, listas de emails una-por-línea, etc. |
