@@ -29,15 +29,15 @@ func TestField_Defaults(t *testing.T) {
 	assert.True(t, strings.Contains(body, `action="/c"`))
 	// Form id derived from default ID.
 	assert.True(t, strings.Contains(body, `id="comment-input-form"`))
-	// Wrapper exposes the JS hook.
-	assert.True(t, strings.Contains(body, "data-kiban-comment-input"))
-	// Submit carries the data tag the chip JS uses to find/disable it.
-	assert.True(t, strings.Contains(body, "data-kiban-comment-submit"))
+	// Wrapper exposes the JS hook (now via the embedded file_chip_input).
+	assert.True(t, strings.Contains(body, "data-kiban-file-chip-input"))
+	// Submit carries the data tag the chip JS uses to find/disable it,
+	// pointing at the file_chip_input's id (same lookup the JS does).
+	assert.True(t, strings.Contains(body, `data-kiban-file-chip-submit="comment-input-files"`))
 	// Default submit label is rendered inside the button.
 	assert.True(t, strings.Contains(body, "Enviar"))
-	// Files block + chip list mount point.
-	assert.True(t, strings.Contains(body, "data-comment-files-block"))
-	assert.True(t, strings.Contains(body, "data-comment-files-list"))
+	// Chip list mount point comes from the file_chip_input.
+	assert.True(t, strings.Contains(body, "data-chip-list"))
 }
 
 func TestField_OmitsCardWhenWithoutCard(t *testing.T) {
@@ -116,7 +116,7 @@ func TestField_MultipleAttrEmittedOnInput(t *testing.T) {
 
 func TestField_DisableFilesHidesUploader(t *testing.T) {
 	body := render(t, comment_input.Options{Action: "/c", DisableFiles: true})
-	assert.False(t, strings.Contains(body, "data-comment-files-block"))
+	assert.False(t, strings.Contains(body, "data-kiban-file-chip-input"))
 	assert.False(t, strings.Contains(body, `type="file"`))
 	// Textarea still there.
 	assert.True(t, strings.Contains(body, `name="text"`))
@@ -127,10 +127,11 @@ func TestField_CustomIDsAreUnique(t *testing.T) {
 	b := render(t, comment_input.Options{Action: "/b", ID: "thread-2"})
 	assert.True(t, strings.Contains(a, `id="thread-1-form"`))
 	assert.True(t, strings.Contains(b, `id="thread-2-form"`))
-	// And the wrapper id is also distinct so the JS scoping by wrapper
-	// doesn't collide between two siblings on the same page.
-	assert.True(t, strings.Contains(a, `id="thread-1-wrapper"`))
-	assert.True(t, strings.Contains(b, `id="thread-2-wrapper"`))
+	// And the file_chip_input wrapper id is also distinct so the JS
+	// scoping by wrapper doesn't collide between two siblings on the
+	// same page.
+	assert.True(t, strings.Contains(a, `id="thread-1-files"`))
+	assert.True(t, strings.Contains(b, `id="thread-2-files"`))
 }
 
 func TestField_FormAttrsSpreadOnForm(t *testing.T) {

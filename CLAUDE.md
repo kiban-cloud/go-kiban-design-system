@@ -41,6 +41,8 @@ view/
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, month, file
   button/               Button(Options) — variant via Options.Variant; renders <button> or <a> (when Href set); Group + RenderGroup for footer/bar rows
   card/                 Card (chrome wrapper) + Section (sub-section divider)
+  chip/                 Atomic chip pill — label, optional remove button, variants
+  file_chip_input/      File input paired with chips (DataTransfer add/remove, invalid-flag)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
   table/                Table (chrome) + Row (helper) + BulkActionBar (Tailwind group-has visibility) + Pagination + EmptyState
@@ -131,7 +133,7 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 | `input.Select(name, label, value, errMsg, hint string, options []SelectOption, required bool)` | done | `options []SelectOption{Value, Label}`. Si necesitas placeholder, prepéndelo como una `SelectOption{Value: "", Label: "Selecciona…"}`. |
 | `input.Date(name, label, value, errMsg, hint string, required bool)` | done | `<input type="date">`, mismo contrato que Text. |
 | `input.Month(name, label, value, errMsg, hint string, required bool)` | done | `<input type="month">`. El browser muestra un picker mes/año (sin día); el value que sube en el form es `"YYYY-MM"`. Soporte ubicuo en Chrome/Edge/Safari/Firefox; browsers viejos caen a un text input libre, así que el server siempre debe validar la shape `YYYY-MM`. |
-| `input.File(name, label, accept, hint string, required bool)` | done | `<input type="file">` con `file:` prefix kiban-styleado. `accept` (ej. `.csv,text/csv`) para restringir el picker; pasá `""` para aceptar todo. `required?={required}` se emite (HTML5) para que el browser bloquee submit sin archivo. |
+| `input.File(name, label, accept, hint string, required, multiple bool)` | done | `<input type="file">` con `file:` prefix kiban-styleado. `accept` (ej. `.csv,text/csv`) para restringir el picker; pasá `""` para aceptar todo. `required?={required}` se emite (HTML5) para que el browser bloquee submit sin archivo. `multiple?={multiple}` permite que el cuadro de diálogo del SO seleccione varios archivos en una sola apertura — pareá con `view/file_chip_input` cuando además querés chips + remove + agregar más en sucesivos picks. |
 | `input.Hidden(name, value, id string)` | done | `<input type="hidden">`. Pasá `id=""` cuando no haga falta (la mayoría de los casos); poné `id` cuando el JS necesite leer/escribir el valor en runtime (ej. el script de geolocation que rellena lat/lng antes de submit). |
 | `input.Textarea(name, label, value, errMsg, hint string, required bool, rows int, placeholder string, mono bool)` | done | `rows <= 0` → default 3. `placeholder` se emite siempre (vacío = no se muestra). `mono=true` swappea a `font-mono` para PEM blocks, listas de emails una-por-línea, etc. |
 | `input.Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, disabledHint string)` | done | Checkbox plano + label en línea. **`value="true"` obligatorio** — Gin no parsea "on" como bool. `disabledHint` se renderiza después del label en `text-kiban-ink4` solo cuando `!enabled` (útil para mostrar "— no configurado en …" en toggles disabled). Pasá `""` cuando no haga falta. |
@@ -192,6 +194,43 @@ Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-render
 | `spinner` (CSS class `.ds-spinner`) | done | Definida en `view/layout/base.templ`. Uso: `<div class="ds-spinner" role="status"></div>`. No hay templ helper — la clase CSS es la API. |
 | `tooltip` | done | Patrón CSS-only: añade `data-tooltip="texto"` a cualquier elemento. CSS en `base.templ`. |
 
+### Chip (`view/chip/`)
+
+Atomic pill primitive — a small label-shaped tag with an optional close "×" button. Use it anywhere a list of removable labels makes sense: file uploaders (via `view/file_chip_input/`), filter pills, multi-select readouts, tag inputs.
+
+**What it is NOT:**
+- Not a [badge](#viewbadge): badges are status displays, chips are interactive/removable.
+- Not a [button](#viewbutton): the chip body is non-interactive; only the optional remove button is clickable.
+- Not a standalone widget: chips are always rendered as items inside a parent that owns the list state. The chip itself emits markup only; the consumer wires the remove click to whatever JS / HTMX contract removes the chip.
+
+The chip's remove button (when `Removable=true`) emits `<button type="button" data-chip-remove>` so a parent's delegated click listener can find it without per-chip wiring. Consumers can attach extra attributes via `Options.RemoveAttrs` (e.g., `data-remove="<key>"` to identify which chip).
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `chip.Options` (struct) | done | `Label string` (required), `Subtext string` (optional muted secondary line, e.g. file size), `Title string` (native tooltip), `Variant string` (`""`/`"default"`, `"danger"`, `"info"`, `"success"`, `"warning"`; unknown values fall back to default), `Removable bool` (renders the × button), `RemoveAttrs templ.Attributes` (spread onto the remove `<button>`), `RemoveAriaLabel string` (override default Spanish "Quitar"), `Attrs templ.Attributes` (spread onto the outer `<span>`). |
+| `chip.Chip(opts)` | done | Renders an `<span>` pill. Variant tokens come from `helpers.go` so adding a new variant is one map entry, not a templ rewrite. Used today by `view/file_chip_input` for the file selection list; the markup is mirrored 1:1 by JS in `view/layout/base.templ` (when chips are added client-side, the JS injects equivalent markup — keep them in lockstep when changing styling). |
+
+### File chip input (`view/file_chip_input/`)
+
+A `<input type="file">` paired with a chip-style readout of the selected files (one `chip.Chip` per file). Selecting more files appends instead of replacing (DataTransfer trick), each chip has a × that drops just that file, and oversize files render as `danger` chips with a tooltip + the consumer's submit button auto-disabled until they're removed.
+
+**Use when** you need a multi-file (or single-file) picker with per-file remove + cumulative add behavior. **Don't use** for inline-image fields, single-shot upload-and-go flows, or anywhere the chip readout would be visual noise (a single `[input.File]` is simpler).
+
+**Architecture:**
+- The component emits markup only: an `[input.File]` plus a sibling `<ul data-chip-list>`. The chip list starts empty server-side; JS populates it from the user's pick.
+- The DataTransfer / dedup / per-chip-remove / disable-on-invalid JS lives in `view/layout/base.templ`, scoped to `[data-kiban-file-chip-input]`. Re-runs on `DOMContentLoaded` and `htmx:afterSwap`, mirroring the rest of the design system's init pattern.
+- Each instance is identified by a unique `[data-kiban-file-chip-input]` value (defaulting to `Options.ID`). Multiple instances on the same page work without collisions.
+
+**Caller integration:**
+- Wrap the field in a `<form>` (or HTMX equivalent). The component does not render the form; it's a sub-widget.
+- For "disable submit while invalid file present", the consumer's submit button must carry `data-kiban-file-chip-submit="<id>"` (where `<id>` matches `Options.ID`). Without that attribute the JS still renders chips correctly; only the disable-while-invalid auto-wire is skipped.
+- File inputs can't be pre-populated server-side (browser security), so there's no "round-trip on validation error" affordance — the user re-picks on form re-render.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `file_chip_input.Options` (struct) | done | `Name string` (required, the form field), `Label string` (above the picker; empty omits), `ID string` (wrapper id + JS lookup key; defaults to `kiban-file-chip-input`), `Hint string` (under the picker; empty auto-builds from MaxSize + Multiple), `Accept string` (native `accept` filter), `Multiple bool`, `Required bool`, `MaxSizeBytes int64` (per-file cap; over-cap chips render `danger` and disable submit), `FileVariant string` (override the chip variant for valid files; default neutral). |
+| `file_chip_input.Field(opts)` | done | Renders the wrapper + `[input.File]` + empty chip list. Composed by `view/comment_input` internally — comment_input.Field is the higher-level "comment with attachments" widget, file_chip_input.Field is the picker primitive used anywhere else. |
+
 ### Tables (`view/table/`)
 
 | Componente | Estado | Notas |
@@ -250,19 +289,17 @@ In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell qu
 
 ### Comment input (`view/comment_input/`)
 
-Composición de alto nivel: textarea + chip-style file uploader (con remove individual + marcado de inválido por tamaño) + botón submit, todo bajo un único `<form>`. Encapsula el look-and-feel y la JS de manejo de archivos (DataTransfer para acumular entre picks, re-init en `htmx:afterSwap`) para que cualquier proyecto que necesite un "post a comment" UI lo consuma con un solo callsite. Hoy lo usa klin para los comentarios de entrega; fue diseñado para que rekon (notas en órdenes de pago) / crm (actividad por cliente) / futuros tools tengan la misma UX sin re-implementar.
+Composición de alto nivel: textarea + `[file_chip_input.Field]` + botón submit, todo bajo un único `<form>`. Encapsula el look-and-feel para que cualquier proyecto que necesite un "post a comment" UI lo consuma con un solo callsite. Hoy lo usa klin para los comentarios de entrega; fue diseñado para que rekon (notas en órdenes de pago) / crm (actividad por cliente) / futuros tools tengan la misma UX sin re-implementar.
 
 **Reglas que respeta**:
 - HTMX-agnóstico: el form es POST plano al `Options.Action`. Los consumers que quieran HTMX inyectan los atributos vía `Options.FormAttrs` (mismo patrón que `button.Options.Attrs`, `input.Toggle.attrs`, etc.).
-- CSS-only para el estado de chip inválido: clases rojas + `title="Archivo inválido: …"`. El submit se deshabilita por JS al haber chips inválidos (no se puede solo con CSS porque `disabled` es atributo, no clase). El JS está centralizado en `view/layout/base.templ` y se re-bindea en cada `htmx:afterSwap`, igual que el init de `intl-tel-input`.
-- Reusa `card.Card`, `flash.Success`/`Error`, `input.Textarea`, `input.File`, `button.Button` — cero primitivas nuevas, sólo el chip markup + el wiring de la JS por wrapper.
+- File handling delega 100% en `view/file_chip_input` — comment_input ya no carga JS propio, sólo lo compone. Esto significa que cualquier mejora en el chip-uploader (drag&drop, previews, etc.) se hace en `file_chip_input` y comment_input la hereda gratis. El submit del comment_input lleva `data-kiban-file-chip-submit="<filesID>"` para que la JS de file_chip_input lo deshabilite mientras haya un archivo inválido.
+- Reusa `card.Card`, `flash.Success`/`Error`, `input.Textarea`, `file_chip_input.Field`, `button.Button` — cero primitivas nuevas a este nivel.
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `comment_input.Options` (struct) | done | Configura el `Field`. Sólo `Action` es required. Defaults razonables para todo lo demás (Title="Nuevo comentario", SubmitLabel="Enviar", Placeholder="Escribe un comentario…", textName="text", filesName="files", id="comment-input"). Toggles importantes: `Multiple bool` para multi-archivo (chip JS acumula entre picks), `MaxSizeBytes int64` para el cap por archivo client-side, `Accept string` para `<input accept>`, `DisableFiles bool` para text-only, `WithoutCard bool` para skipear el `card.Card` chrome (consumer renderiza su propio container), `FormAttrs templ.Attributes` para escape hatch HTMX. Round-trip de error: `TextValue` + `TextError` para draft + per-field error; `GlobalError` para flash banner; `Success` para flash post-submit. `MaxChars int` es informativo (renderiza "Máximo N caracteres" como hint del textarea); el server sigue siendo el de la verdad. |
-| `comment_input.Field(opts Options)` | done | El templ. Emite (en orden): título + subtítulo opcionales, banners de Success/GlobalError si aplica, el `<form>` con `enctype="multipart/form-data"` apuntando a `Action`, textarea, bloque de archivos (`<input type="file">` + `<ul data-comment-files-list>` donde la JS pinta chips), botón submit con `data-kiban-comment-submit` para que la JS lo encuentre y lo deshabilite mientras hay archivos inválidos. El wrapper externo lleva `data-kiban-comment-input` + `data-max-size` (cuando `MaxSizeBytes>0`); la JS de `base.templ` scanea por ese selector. Múltiples instancias en la misma página funcionan: cada wrapper se inicializa una sola vez (flag `dataset.kibanCommentInputInit`) y la JS escopa todo por wrapper, así que no colisionan. |
-
-**Comportamiento de los chips**: cada `change` del file input (a) deduplica por `name+size+lastModified` para evitar agregar dos veces el mismo archivo si el user repick-ea, (b) acumula con un staging interno + reasignación de `input.files` vía `DataTransfer` (esto es lo que permite "agregar más" en sucesivos clicks al picker — el behavior nativo es reemplazar), (c) repinta la lista con un `<li>` por archivo (nombre + tamaño formateado + botón "×"), aplicando estilos rojos + `title` cuando excede `MaxSizeBytes`. El click en "×" saca ese archivo del staging y vuelve a hacer sync. El submit del form se deshabilita automáticamente mientras haya algún chip inválido.
+| `comment_input.Options` (struct) | done | Configura el `Field`. Sólo `Action` es required. Defaults razonables para todo lo demás (Title="Nuevo comentario", SubmitLabel="Enviar", Placeholder="Escribe un comentario…", textName="text", filesName="files", id="comment-input"). Toggles importantes: `Multiple bool` para multi-archivo, `MaxSizeBytes int64` para el cap por archivo client-side, `Accept string` para `<input accept>`, `DisableFiles bool` para text-only, `WithoutCard bool` para skipear el `card.Card` chrome (consumer renderiza su propio container), `FormAttrs templ.Attributes` para escape hatch HTMX. Round-trip de error: `TextValue` + `TextError` para draft + per-field error; `GlobalError` para flash banner; `Success` para flash post-submit. `MaxChars int` es informativo (renderiza "Máximo N caracteres" como hint del textarea); el server sigue siendo el de la verdad. |
+| `comment_input.Field(opts Options)` | done | El templ. Emite (en orden): título + subtítulo opcionales, banners de Success/GlobalError si aplica, el `<form>` con `enctype="multipart/form-data"` apuntando a `Action`, textarea, `[file_chip_input.Field]` con id `<opts.ID>-files`, botón submit con `data-kiban-file-chip-submit="<id>-files"` para que la JS de `file_chip_input` lo deshabilite mientras hay archivos inválidos. Múltiples instancias en la misma página funcionan: cada `Options.ID` produce un par único `<id>-form` / `<id>-files`. |
 
 ### Form binding (`binding/`)
 

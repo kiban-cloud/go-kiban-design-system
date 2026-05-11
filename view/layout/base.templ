@@ -230,17 +230,23 @@ templ Base(cfg Config) {
 					});
 				})();
 
-				// Comment-input chip uploader. Each [data-kiban-comment-input]
-				// holds a `<form>` with a `<input type="file">` and a sibling
-				// `<ul data-comment-files-list>`. We mirror selected files as
-				// chips (name + size + remove button) and use a DataTransfer
-				// trick to (a) accumulate across multiple picker opens, since
-				// native input replaces FileList on each change, and (b) let
-				// the user remove a single file without losing the rest. Chips
-				// over the per-file size limit (data-max-size on the wrapper)
-				// render in red with a tooltip and disable the form's submit
-				// button until removed. Re-runs on htmx:afterSwap so HTMX
-				// partials that re-render the input get re-bound.
+				// File chip-input. Each [data-kiban-file-chip-input] holds
+				// an `<input type="file">` and a sibling `<ul data-chip-list>`.
+				// Selected files appear as chips (name + size + remove ×);
+				// picking more files appends instead of replacing (native
+				// input.files replaces — we use DataTransfer to round-trip).
+				// Chips over the wrapper's data-max-size render as `danger`
+				// chips with a tooltip and the consumer's submit button (when
+				// tagged `data-kiban-file-chip-submit="<id>"` matching the
+				// wrapper's `data-kiban-file-chip-input`) is auto-disabled
+				// until the offending chips are removed. Re-runs on
+				// htmx:afterSwap so partials that re-render the input get
+				// re-bound, idempotent via the wrapper's `data-init` flag.
+				//
+				// Used by `view/file_chip_input` directly, and by
+				// `view/comment_input` (which composes file_chip_input
+				// internally). The chip markup mirrors `view/chip` — keep
+				// in lockstep when changing chip styling.
 				(function () {
 					var KB = 1024;
 					var MB = 1024 * 1024;
@@ -254,19 +260,44 @@ templ Base(cfg Config) {
 							return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
 						});
 					}
+					function chipClasses(variant) {
+						var base = 'inline-flex items-center gap-2 px-2 py-1 rounded-md border text-xs ';
+						if (variant === 'danger') {
+							return {
+								outer: base + 'border-red-400 bg-red-50 text-red-700',
+								sub:   'text-red-500',
+								btn:   'ml-0.5 text-red-500 hover:text-red-700',
+							};
+						}
+						if (variant === 'info') {
+							return {
+								outer: base + 'border-kiban-primary/40 bg-kiban-primary-soft text-kiban-primary',
+								sub:   'text-kiban-primary/70',
+								btn:   'ml-0.5 text-kiban-primary/70 hover:text-kiban-primary',
+							};
+						}
+						return {
+							outer: base + 'border-kiban-border bg-kiban-surface text-kiban-ink2',
+							sub:   'text-kiban-ink3',
+							btn:   'ml-0.5 text-kiban-ink3 hover:text-kiban-ink',
+						};
+					}
 					function setupOne(wrapper) {
-						if (wrapper.dataset.kibanCommentInputInit === '1') return;
-						wrapper.dataset.kibanCommentInputInit = '1';
+						if (wrapper.dataset.init === '1') return;
+						wrapper.dataset.init = '1';
 
 						var input = wrapper.querySelector('input[type="file"]');
-						var list = wrapper.querySelector('[data-comment-files-list]');
+						var list = wrapper.querySelector('[data-chip-list]');
 						if (!input || !list) return;
 
 						var maxSize = parseInt(wrapper.getAttribute('data-max-size') || '0', 10);
-						// Internal staging list — mirrors what the input.files
-						// will be after the next reassignment. We rebuild from
-						// here on add / remove so submits send exactly what
-						// the user sees in the chip list.
+						var fileVariant = wrapper.getAttribute('data-file-variant') || '';
+						var id = wrapper.getAttribute('data-kiban-file-chip-input') || '';
+						// Internal staging list — mirrors what the
+						// input.files will be after the next
+						// reassignment. We rebuild from here on add /
+						// remove so submits send exactly what the user
+						// sees in the chip list.
 						var staged = [];
 
 						function fileKey(f) {
@@ -284,9 +315,8 @@ templ Base(cfg Config) {
 							input.files = dt.files;
 						}
 						function findSubmit() {
-							var formId = (input.form && input.form.id) || '';
-							if (!formId) return null;
-							return document.querySelector('[data-kiban-comment-submit][form="' + formId + '"], button[type="submit"][form="' + formId + '"]');
+							if (!id) return null;
+							return document.querySelector('[data-kiban-file-chip-submit="' + id + '"]');
 						}
 						function syncSubmit() {
 							var btn = findSubmit();
@@ -304,16 +334,16 @@ templ Base(cfg Config) {
 							list.innerHTML = '';
 							staged.forEach(function (f, idx) {
 								var reason = invalidReason(f);
+								var variant = reason ? 'danger' : fileVariant;
+								var c = chipClasses(variant);
 								var li = document.createElement('li');
-								li.className = 'inline-flex items-center gap-2 px-2 py-1 rounded-md border text-xs ' +
-									(reason
-										? 'border-red-400 bg-red-50 text-red-700'
-										: 'border-kiban-border bg-kiban-surface text-kiban-ink2');
-								if (reason) li.setAttribute('title', reason);
+								var titleAttr = reason ? (' title="' + escapeHTML(reason) + '"') : '';
 								li.innerHTML =
-									'<span class="font-medium truncate max-w-[14rem]">' + escapeHTML(f.name) + '</span>' +
-									'<span class="' + (reason ? 'text-red-500' : 'text-kiban-ink3') + '">' + humanSize(f.size) + '</span>' +
-									'<button type="button" aria-label="Quitar" class="ml-0.5 ' + (reason ? 'text-red-500 hover:text-red-700' : 'text-kiban-ink3 hover:text-kiban-ink') + '" data-remove="' + idx + '">&times;</button>';
+									'<span class="' + c.outer + '"' + titleAttr + '>' +
+										'<span class="font-medium truncate max-w-[14rem]">' + escapeHTML(f.name) + '</span>' +
+										'<span class="' + c.sub + '">' + humanSize(f.size) + '</span>' +
+										'<button type="button" aria-label="Quitar" class="' + c.btn + '" data-chip-remove data-remove="' + idx + '">&times;</button>' +
+									'</span>';
 								list.appendChild(li);
 							});
 							syncSubmit();
@@ -334,7 +364,7 @@ templ Base(cfg Config) {
 							render();
 						});
 						list.addEventListener('click', function (e) {
-							var btn = e.target.closest('[data-remove]');
+							var btn = e.target.closest('[data-chip-remove]');
 							if (!btn) return;
 							var idx = parseInt(btn.getAttribute('data-remove'), 10);
 							if (isNaN(idx)) return;
@@ -344,7 +374,7 @@ templ Base(cfg Config) {
 						});
 					}
 					function scan() {
-						document.querySelectorAll('[data-kiban-comment-input]').forEach(setupOne);
+						document.querySelectorAll('[data-kiban-file-chip-input]').forEach(setupOne);
 					}
 					document.addEventListener('DOMContentLoaded', function () {
 						scan();
@@ -502,6 +532,163 @@ templ Base(cfg Config) {
 						t.setAttribute('aria-expanded', 'false');
 					});
 				});
+
+				// kibanLogger — browser-side error reporting bridge.
+				//
+				// Three things happen in this block:
+				//
+				//  1. `window.kibanLogger.error(msg, extra)` lets app-level
+				//     JS (the create-delivery flow, the chip uploader, etc.)
+				//     report a problem to the server with optional context
+				//     in `extra`. Use this in catch blocks where you'd
+				//     otherwise just `console.error` — it does both, so the
+				//     dev still sees the message in DevTools and the server
+				//     still gets a structured report.
+				//
+				//  2. Global `error` and `unhandledrejection` listeners
+				//     catch anything the app didn't handle explicitly so
+				//     truly uncaught failures still reach the server. The
+				//     `kind` field on the report tags which path it came
+				//     from so ops can filter "manual" (developer-flagged)
+				//     vs "uncaught" / "unhandledrejection" (the JS engine
+				//     gave up).
+				//
+				//  3. A small dedupe + throttle keeps a tight error loop
+				//     from flooding the network. We hash recent reports
+				//     and silently drop repeats inside the window.
+				//
+				// The endpoint URL is auto-detected from the page's URL
+				// prefix: pages under /klin-internal-htmx/* report to the
+				// staff endpoint, everything else reports to the customer
+				// endpoint. A page that doesn't match either prefix (e.g.
+				// a non-klin host using this base.templ) skips the POST
+				// and falls back to console-only.
+				(function () {
+					if (window.kibanLogger) return;
+
+					var inflightCount = 0;
+					var INFLIGHT_CAP = 8;        // back-pressure: don't queue more than 8 reports concurrently
+					var DEDUPE_WINDOW_MS = 5000; // a repeated identical report inside 5s is dropped
+					var recent = {};
+
+					function endpoint() {
+						var p = (window.location && window.location.pathname) || '';
+						if (p.indexOf('/klin-internal-htmx') === 0) {
+							return '/klin-internal-htmx/_/client-errors';
+						}
+						if (p.indexOf('/klin-htmx') === 0) {
+							return '/klin-htmx/_/client-errors';
+						}
+						// Page isn't on a klin route — no server to report
+						// to. Fall back to console-only by returning ''.
+						return '';
+					}
+
+					function fingerprint(report) {
+						return [report.kind, report.message, report.source, report.line, report.column].join('|');
+					}
+
+					function shouldDrop(fp) {
+						var now = Date.now();
+						// Sweep stale entries on each call so the map
+						// doesn't grow unbounded over a long session.
+						for (var k in recent) {
+							if (recent.hasOwnProperty(k) && now - recent[k] > DEDUPE_WINDOW_MS) {
+								delete recent[k];
+							}
+						}
+						if (recent[fp]) return true;
+						recent[fp] = now;
+						return false;
+					}
+
+					function send(report) {
+						var url = endpoint();
+						if (!url) return;
+						if (inflightCount >= INFLIGHT_CAP) return;
+						if (shouldDrop(fingerprint(report))) return;
+						inflightCount++;
+						// `keepalive` so the browser still ships the
+						// report when the page is unloading (e.g. an error
+						// fires inside a click handler that navigates).
+						try {
+							fetch(url, {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify(report),
+								keepalive: true,
+								credentials: 'same-origin',
+							}).catch(function () {
+								// Reporter errors are intentionally
+								// swallowed — there's nowhere to report
+								// the reporter failing, and re-trying
+								// would amplify a real outage.
+							}).finally(function () {
+								inflightCount--;
+							});
+						} catch (e) {
+							inflightCount--;
+						}
+					}
+
+					function buildReport(kind, msg, extra) {
+						var ua = '';
+						try { ua = navigator.userAgent || ''; } catch (e) {}
+						return {
+							message: String(msg == null ? '' : msg),
+							url: window.location ? String(window.location.href) : '',
+							userAgent: ua,
+							kind: kind,
+							extra: (extra && typeof extra === 'object') ? extra : undefined,
+						};
+					}
+
+					window.kibanLogger = {
+						// Manual report. Use in app code's catch blocks.
+						// `extra` may be any JSON-serializable object —
+						// it lands in the structured log under
+						// `client_extra`.
+						error: function (msg, extra) {
+							var r = buildReport('manual', msg, extra);
+							try { console.error('[kibanLogger]', msg, extra || ''); } catch (e) {}
+							send(r);
+						},
+						// Like .error but without the console mirror.
+						// Useful for high-volume diagnostic events you
+						// don't want littering DevTools.
+						warn: function (msg, extra) {
+							var r = buildReport('manual', msg, extra);
+							r.kind = 'manual';
+							send(r);
+						},
+					};
+
+					window.addEventListener('error', function (event) {
+						if (!event) return;
+						var r = buildReport('uncaught', event.message || 'Uncaught error');
+						r.source = event.filename || '';
+						r.line = event.lineno || 0;
+						r.column = event.colno || 0;
+						if (event.error && event.error.stack) r.stack = String(event.error.stack);
+						send(r);
+					});
+
+					window.addEventListener('unhandledrejection', function (event) {
+						if (!event) return;
+						var reason = event.reason;
+						var msg = '';
+						var stack = '';
+						if (reason && typeof reason === 'object') {
+							msg = reason.message || String(reason);
+							if (reason.stack) stack = String(reason.stack);
+						} else {
+							msg = String(reason);
+						}
+						var r = buildReport('unhandledrejection', msg);
+						if (stack) r.stack = stack;
+						send(r);
+					});
+				})();
 			</script>
 		</body>
 	</html>

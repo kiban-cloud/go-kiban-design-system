@@ -1,0 +1,29 @@
+package chip
+
+// Chip renders one pill. See package doc for the contract: emits a
+// `<span>` with optional remove button; consumers own the list state
+// and the click handler. Visual classes per variant live in helpers.go
+// so adding/changing a variant is one map lookup, not a templ rewrite.
+templ Chip(opts Options) {
+	<span
+		class={ chipClass(opts.Variant) }
+		if opts.Title != "" {
+			title={ opts.Title }
+		}
+		{ opts.Attrs... }
+	>
+		<span class="font-medium truncate max-w-[14rem]">{ opts.Label }</span>
+		if opts.Subtext != "" {
+			<span class={ subtextClass(opts.Variant) }>{ opts.Subtext }</span>
+		}
+		if opts.Removable {
+			<button
+				type="button"
+				aria-label={ opts.effectiveRemoveAriaLabel() }
+				class={ removeClass(opts.Variant) }
+				data-chip-remove
+				{ opts.RemoveAttrs... }
+			>&times;</button>
+		}
+	</span>
+}

@@ -1,10 +1,9 @@
 package comment_input
 
 import (
-	"strconv"
-
 	ds_button "github.com/kiban-cloud/go-kiban-design-system/view/button"
 	ds_card "github.com/kiban-cloud/go-kiban-design-system/view/card"
+	ds_file_chip_input "github.com/kiban-cloud/go-kiban-design-system/view/file_chip_input"
 	ds_flash "github.com/kiban-cloud/go-kiban-design-system/view/flash"
 	ds_input "github.com/kiban-cloud/go-kiban-design-system/view/input"
 )
@@ -25,14 +24,8 @@ templ Field(opts Options) {
 
 templ fieldInner(opts Options) {
 	{{ id := opts.effectiveID() }}
-	{{ filesName := opts.effectiveFilesName() }}
-	<div
-		data-kiban-comment-input
-		id={ id + "-wrapper" }
-		if opts.MaxSizeBytes > 0 {
-			data-max-size={ strconv.FormatInt(opts.MaxSizeBytes, 10) }
-		}
-	>
+	{{ filesID := id + "-files" }}
+	<div id={ id + "-wrapper" }>
 		if opts.effectiveTitle() != "" || opts.effectiveSubtitle() != "" {
 			<div class="pb-2">
 				if opts.effectiveTitle() != "" {
@@ -73,17 +66,21 @@ templ fieldInner(opts Options) {
 				false,
 			)
 			if opts.filesEnabled() {
-				<div class="space-y-2" data-comment-files-block>
-					@ds_input.File(filesName, "Archivos adjuntos", opts.Accept, filesHint(opts), false)
-					<ul data-comment-files-list class="flex flex-wrap gap-2"></ul>
-				</div>
+				@ds_file_chip_input.Field(ds_file_chip_input.Options{
+					ID:           filesID,
+					Name:         opts.effectiveFilesName(),
+					Label:        "Archivos adjuntos",
+					Accept:       opts.Accept,
+					Multiple:     opts.Multiple,
+					MaxSizeBytes: opts.MaxSizeBytes,
+				})
 			}
 			<div class="flex justify-end">
 				@ds_button.Button(ds_button.Options{
 					Label:    opts.effectiveSubmitLabel(),
 					IsSubmit: true,
 					Form:     id + "-form",
-					Attrs:    submitAttrs(id),
+					Attrs:    submitAttrs(filesID),
 				})
 			</div>
 		</form>
