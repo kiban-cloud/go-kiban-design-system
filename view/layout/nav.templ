@@ -25,6 +25,9 @@ templ Topbar(cfg Config) {
 			@icons.ChevronDown()
 		</div>
 		<div class="flex-1"></div>
+		if cfg.SandboxToggle != nil {
+			@sandboxSwitch(*cfg.SandboxToggle)
+		}
 		if cfg.DevelopersURL != "" {
 			<a href={ templ.URL(cfg.DevelopersURL) } class="bg-kiban-primary text-white font-medium text-sm px-4 py-2 rounded-md hover:opacity-90">
 				Developers
@@ -50,6 +53,54 @@ templ Topbar(cfg Config) {
 			</div>
 		</div>
 	</header>
+}
+
+// sandboxSwitch renders the topbar's prod/sandbox switch as a styled
+// anchor. The whole control is one navigation: clicking it goes to
+// ToggleHref (the caller-computed URL with sandbox flipped) — no JS, no
+// HTMX, no state to reconcile. The visual is a label + a switch track:
+// filled in kiban-primary when Enabled, neutral when not.
+templ sandboxSwitch(t SandboxToggle) {
+	<a
+		href={ templ.URL(t.ToggleHref) }
+		role="switch"
+		aria-checked={ sandboxAriaChecked(t.Enabled) }
+		title={ t.LabelOrDefault() }
+		class="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-kiban-surface select-none"
+	>
+		<span class="text-kiban-ink3">{ t.LabelOrDefault() }</span>
+		<span class={ sandboxTrackClass(t.Enabled) }>
+			<span class={ sandboxThumbClass(t.Enabled) }></span>
+		</span>
+	</a>
+}
+
+func sandboxAriaChecked(enabled bool) string {
+	if enabled {
+		return "true"
+	}
+	return "false"
+}
+
+// sandboxTrackClass returns the outer pill classes. Track color flips on
+// state; size/shape stays constant so the thumb animation lines up.
+func sandboxTrackClass(enabled bool) string {
+	base := "relative inline-block w-9 h-5 rounded-full transition-colors"
+	if enabled {
+		return base + " bg-kiban-primary"
+	}
+	return base + " bg-kiban-border"
+}
+
+// sandboxThumbClass returns the inner circle classes. Position flips with
+// state; transition handles the slide affordance even though the page
+// itself is doing a full nav (looks crisp on hover/focus before click).
+func sandboxThumbClass(enabled bool) string {
+	base := "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all"
+	if enabled {
+		return base + " left-4"
+	}
+	return base + " left-0.5"
 }
 
 templ IconRail(cfg Config) {

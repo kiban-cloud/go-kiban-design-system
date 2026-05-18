@@ -43,6 +43,31 @@ type SubItem struct {
 	Href  string
 }
 
+// SandboxToggle drives an optional switch in the topbar — every kiban tool
+// has a prod/sandbox concept, so the control lives in the shared shell so
+// consumers don't have to re-implement it per project.
+//
+// Behavior is a link, not a form submit: clicking flips the page to
+// ToggleHref, which the project computes (typically the current URL with
+// ?sandbox flipped). The shell never persists state — the caller owns it.
+// Label defaults to "Modo sandbox" when empty.
+type SandboxToggle struct {
+	Enabled    bool
+	ToggleHref string
+	Label      string
+}
+
+// LabelOrDefault returns the toggle's display label, defaulting to "Modo
+// sandbox" when the caller didn't set one — keeps the contract terse for
+// the common case while still allowing overrides for localized or
+// project-specific wording.
+func (s SandboxToggle) LabelOrDefault() string {
+	if strings.TrimSpace(s.Label) != "" {
+		return s.Label
+	}
+	return "Modo sandbox"
+}
+
 // Config carries everything the Layout templ needs. Each consuming project
 // builds this once per render (typically in a project-specific PageData
 // helper) and hands it to Layout.
@@ -85,6 +110,24 @@ type Config struct {
 	Tools    []Tool // top of the icon rail — kiban tools
 	Docs     []Tool // bottom of the icon rail — docs links
 	SubItems []SubItem
+
+	// SandboxToggle, when non-nil, renders a switch in the topbar (next to
+	// the user menu). Leave nil to omit the control entirely on pages that
+	// don't have a sandbox dimension.
+	SandboxToggle *SandboxToggle
+
+	// Optional CDN-pinned client libraries. Each flag emits the matching
+	// <script> / <link> in base.templ's <head>. Consumers opt in per page
+	// (or per layout helper) so projects that don't need a library don't
+	// pay the byte cost. Versions are pinned in base.templ — see the
+	// "Externals" section of the design-system CLAUDE.md for the
+	// current set.
+	LoadChartJS    bool // Chart.js — line/bar/donut charts (view/chart)
+	LoadCytoscape  bool // Cytoscape.js + cytoscape-dagre — flow graphs (view/flow_graph)
+	LoadCodeMirror bool // CodeMirror 6 (JS mode) — code editor (view/code_editor)
+	LoadSortable   bool // SortableJS — drag-to-reorder lists (view/sortable_list)
+	LoadFlatpickr  bool // flatpickr + es locale — date range picker (view/date_range)
+	LoadMarked     bool // marked.js — markdown rendering
 }
 
 // NavSection is one entry in AdminLayout's horizontal top-level nav.

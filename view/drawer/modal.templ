@@ -30,13 +30,17 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 templ Modal(cfg ModalConfig) {
 	<div data-kiban-overlay id={ cfg.ID } class="hidden fixed inset-0 z-50 flex items-center justify-center">
 		<div { overlayBackdropAttrs(cfg.ID, "bg-black/40")... }></div>
+		// The modal box is a flex column capped at viewport-minus-margin so
+		// the header and footer stay pinned while the body scrolls when its
+		// content overflows. Short modals still render at their natural
+		// height (the max-h is a ceiling, not a fixed size).
 		<div
 			class={
-				"relative bg-white rounded-md shadow-xl w-full mx-4",
+				"relative bg-white rounded-md shadow-xl w-full mx-4 flex flex-col max-h-[calc(100vh-2rem)]",
 				sizeClass(cfg.Size),
 			}
 		>
-			<div class="px-6 py-4 border-b border-kiban-border flex items-center justify-between">
+			<div class="px-6 py-4 border-b border-kiban-border flex items-center justify-between shrink-0">
 				<div class="flex items-center gap-3 min-w-0">
 					if cfg.Icon != nil {
 						@cfg.Icon
@@ -47,7 +51,7 @@ templ Modal(cfg ModalConfig) {
 					@icons.Close()
 				</button>
 			</div>
-			<div class="px-6 py-5 space-y-3">
+			<div class="px-6 py-5 space-y-3 overflow-y-auto flex-1 min-h-0">
 				{ children... }
 			</div>
 			@renderFooter(cfg.FooterActions)

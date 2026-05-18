@@ -1,0 +1,204 @@
+package chart
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// Line renders a line chart. Datasets stack as separate series; no fill
+// below the line by default (consumers can pass `Color` and rely on the
+// stroke).
+templ Line(o Options) {
+	@canvas(o, "line")
+}
+
+// Bar renders a vertical bar chart. Set `o.Stacked = true` to stack
+// datasets per-category instead of placing them side-by-side.
+templ Bar(o Options) {
+	@canvas(o, "bar")
+}
+
+// BarHorizontal renders a horizontal bar chart — typical for "top N" lists
+// where labels are long.
+templ BarHorizontal(o Options) {
+	@canvas(o, "horizontalBar")
+}
+
+// Donut renders a donut chart. Use a single dataset with `Colors` set to
+// match the number of `Labels`.
+templ Donut(o Options) {
+	@canvas(o, "doughnut")
+}
+
+// Pie renders a pie chart (no center hole). Same shape as Donut.
+templ Pie(o Options) {
+	@canvas(o, "pie")
+}
+
+// canvas is the shared rendering body. The data-chart attribute carries
+// the resolved Chart.js config as JSON; the init script (below) reads it
+// and instantiates the chart.
+//
+// No border on the wrapper: charts are virtually always nested inside a
+// view/card (or a comparable container) that already carries the visual
+// frame. The earlier inner border doubled the chrome and looked off in
+// dashboards. Consumers that want a standalone bordered chart can wrap
+// the templ themselves.
+templ canvas(o Options, kind string) {
+	<div class={ "bg-white p-4", o.ExtraClass }>
+		<canvas
+			id={ o.ID }
+			data-kiban-chart={ buildConfig(o, kind) }
+			height={ fmt.Sprintf("%d", o.HeightPxOrDefault()) }
+		></canvas>
+	</div>
+}
+
+// Init renders the small init script that scans the page for chart
+// canvases and instantiates Chart.js for each. Include it once per page
+// (typically right before </body>) — the design-system shell's
+// layout.Layout handles this automatically for projects that opt in to
+// Config.LoadChartJS.
+templ Init() {
+	<script>
+		(function () {
+			function instantiate(canvas) {
+				if (canvas.dataset.kibanChartInit === '1') return;
+				if (!window.Chart) return;
+				var raw = canvas.getAttribute('data-kiban-chart');
+				if (!raw) return;
+				var cfg;
+				try { cfg = JSON.parse(raw); } catch (e) { return; }
+				try {
+					new window.Chart(canvas.getContext('2d'), cfg);
+					canvas.dataset.kibanChartInit = '1';
+				} catch (e) {
+					if (window.kibanLogger) window.kibanLogger.error('chart init failed', { id: canvas.id, error: String(e) });
+				}
+			}
+			function scan() {
+				document.querySelectorAll('canvas[data-kiban-chart]').forEach(instantiate);
+			}
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', scan);
+			} else {
+				scan();
+			}
+			document.body.addEventListener('htmx:afterSwap', scan);
+		})();
+	</script>
+}
+
+// buildConfig translates Options into the Chart.js v4 config shape and
+// returns it as a JSON string ready to drop into a data attribute. We
+// build it server-side so the canvas is fully self-describing — any
+// caller updating a chart just returns a fresh fragment, no JS state
+// to reconcile.
+func buildConfig(o Options, kind string) string {
+	indexAxis := ""
+	chartType := kind
+	if kind == "horizontalBar" {
+		chartType = "bar"
+		indexAxis = "y"
+	}
+
+	datasets := make([]map[string]any, 0, len(o.Datasets))
+	for _, d := range o.Datasets {
+		ds := map[string]any{
+			"label": d.Label,
+			"data":  d.Data,
+		}
+		switch kind {
+		case "line":
+			ds["borderColor"] = d.Color
+			ds["backgroundColor"] = d.Color
+			ds["tension"] = 0.25
+			ds["fill"] = false
+			ds["pointRadius"] = 2
+		case "bar", "horizontalBar":
+			ds["backgroundColor"] = d.Color
+			ds["borderColor"] = d.Color
+			ds["borderWidth"] = 1
+			// Round only the outer edge of each bar (the side away from
+			// the axis or the previous stacked segment). Chart.js v4
+			// achieves this by combining `borderRadius` with the default
+			// `borderSkipped: 'start'`, which leaves the axis-adjacent
+			// corners square. For stacked bars only the outermost segment
+			// shows the radius, so segments still read as separable
+			// chunks of the same bar.
+			ds["borderRadius"] = 4
+		case "doughnut", "pie":
+			colors := d.Colors
+			if len(colors) == 0 && d.Color != "" {
+				colors = []string{d.Color}
+			}
+			ds["backgroundColor"] = colors
+			ds["borderColor"] = "#ffffff"
+			ds["borderWidth"] = 2
+		}
+		datasets = append(datasets, ds)
+	}
+
+	scales := map[string]any{}
+	if kind == "bar" || kind == "horizontalBar" || kind == "line" {
+		// x grid is hidden by default — vertical gridlines through a bar
+		// chart are usually noise. y grid is opt-in, light gray.
+		x := map[string]any{"grid": map[string]any{"display": false}}
+		y := map[string]any{"beginAtZero": true, "grid": map[string]any{"color": "#E8E8E8"}}
+		if o.Stacked && (kind == "bar" || kind == "horizontalBar") {
+			x["stacked"] = true
+			y["stacked"] = true
+		}
+		if o.HideGridLines {
+			// Suppress both the gridlines AND the axis "border" line
+			// (the line that runs along the axis edge); together they're
+			// what makes a chart look "framed". Tick labels stay visible
+			// unless the axis itself is also hidden below.
+			x["grid"] = map[string]any{"display": false}
+			y["grid"] = map[string]any{"display": false}
+			x["border"] = map[string]any{"display": false}
+			y["border"] = map[string]any{"display": false}
+		}
+		if o.HideYAxis {
+			// `display: false` collapses the whole y scale — ticks, axis
+			// line, and the horizontal gridlines that would otherwise
+			// still render even with `grid.display: false` because
+			// they're owned by the y axis.
+			y["display"] = false
+		}
+		if o.HideXAxis {
+			x["display"] = false
+		}
+		scales["x"] = x
+		scales["y"] = y
+	}
+
+	options := map[string]any{
+		"responsive":          true,
+		"maintainAspectRatio": false,
+		"plugins": map[string]any{
+			"legend": map[string]any{"display": o.LegendEnabled(), "position": "bottom"},
+		},
+	}
+	if len(scales) > 0 {
+		options["scales"] = scales
+	}
+	if indexAxis != "" {
+		options["indexAxis"] = indexAxis
+	}
+
+	cfg := map[string]any{
+		"type": chartType,
+		"data": map[string]any{
+			"labels":   o.Labels,
+			"datasets": datasets,
+		},
+		"options": options,
+	}
+
+	bytes, err := json.Marshal(cfg)
+	if err != nil {
+		return "{}"
+	}
+	return string(bytes)
+}

@@ -81,7 +81,7 @@ func Modal(cfg ModalConfig) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 = []any{"relative bg-white rounded-md shadow-xl w-full mx-4",
+		var templ_7745c5c3_Var3 = []any{"relative bg-white rounded-md shadow-xl w-full mx-4 flex flex-col max-h-[calc(100vh-2rem)]",
 			sizeClass(cfg.Size),
 		}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
@@ -101,7 +101,7 @@ func Modal(cfg ModalConfig) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><div class=\"px-6 py-4 border-b border-kiban-border flex items-center justify-between\"><div class=\"flex items-center gap-3 min-w-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><div class=\"px-6 py-4 border-b border-kiban-border flex items-center justify-between shrink-0\"><div class=\"flex items-center gap-3 min-w-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -118,7 +118,7 @@ func Modal(cfg ModalConfig) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/drawer/modal.templ`, Line: 44, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/drawer/modal.templ`, Line: 48, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -140,7 +140,7 @@ func Modal(cfg ModalConfig) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</button></div><div class=\"px-6 py-5 space-y-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</button></div><div class=\"px-6 py-5 space-y-3 overflow-y-auto flex-1 min-h-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

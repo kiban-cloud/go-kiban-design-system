@@ -17,6 +17,22 @@ package card
 // loud, banner-style "this whole card is an error" cases belong in
 // `flash.Error` / `flash.Warning`, not in a coloured Card.
 templ Card(variant string) {
+	// IMPORTANT: the explicit `{ children... }` block forwards the
+	// caller's templ children into CardWithClass. Without it, templ
+	// generates a `ClearChildren` call before the nested invocation
+	// and the inner card body comes through empty. Affected every
+	// `@Card(...){ ... }` call site.
+	@CardWithClass(variant, "") {
+		{ children... }
+	}
+}
+
+// CardWithClass is the same as Card but accepts an extra class string for
+// callers that need to control layout from the outside (`h-full` so cards
+// stretch to match the tallest in a grid row, `flex flex-col` so a chart
+// inside can `flex-1` to fill remaining vertical space, etc.). When
+// extraClass is empty this is identical to Card.
+templ CardWithClass(variant, extraClass string) {
 	<div
 		class={
 			"bg-white border rounded-md p-6 space-y-5",
@@ -25,6 +41,7 @@ templ Card(variant string) {
 			templ.KV("border-amber-200", variant == "warning"),
 			templ.KV("border-red-200", variant == "danger"),
 			templ.KV("border-kiban-primary/40", variant == "info"),
+			extraClass,
 		}
 	>
 		{ children... }
