@@ -28,32 +28,33 @@ type PaginationConfig struct {
 	// Indicator is the CSS selector for `hx-indicator` (e.g. "#customers-loading").
 	Indicator string
 	// NextVariant overrides the styling of the "Siguiente" button.
-	// Default ("" / "primary") keeps the historical kiban-primary
-	// solid-blue look. "secondary" renders both buttons in the same
-	// outlined secondary style — useful on internal/admin lists where
-	// Next isn't a primary affordance and the visual symmetry reads
-	// cleaner. Anterior is always secondary regardless.
+	// Default ("" / "secondary") renders both buttons in the same
+	// outlined secondary style — the project-wide standard, since
+	// list paging is a navigation affordance, not a destructive or
+	// primary action. Pass "primary" to opt into the legacy
+	// kiban-primary solid-blue look (kept for callers that already
+	// rely on it). Anterior is always secondary regardless.
 	NextVariant string
 }
 
 // paginationNextEnabledClass picks the Tailwind class string for the
-// active "Siguiente" button. Default ("" / "primary") = solid kiban-
-// primary with white text. "secondary" = same outlined style as the
-// "Anterior" button so both pagination controls match visually.
+// active "Siguiente" button. Default ("" / "secondary") = outlined
+// secondary, matching the "Anterior" button. "primary" = legacy
+// solid kiban-primary with white text, kept for opt-in callers.
 func paginationNextEnabledClass(variant string) string {
-	if variant == "secondary" {
-		return "bg-white border border-kiban-border rounded-md px-4 py-2 hover:border-kiban-ink3 disabled:opacity-50 disabled:cursor-wait"
+	if variant == "primary" {
+		return "bg-kiban-primary text-white rounded-md px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
 	}
-	return "bg-kiban-primary text-white rounded-md px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
+	return "bg-white border border-kiban-border rounded-md px-4 py-2 hover:border-kiban-ink3 disabled:opacity-50 disabled:cursor-wait"
 }
 
 // paginationNextDisabledClass mirrors paginationNextEnabledClass for
 // the disabled (HasNext == false) edge.
 func paginationNextDisabledClass(variant string) string {
-	if variant == "secondary" {
-		return "bg-white border border-kiban-border rounded-md px-4 py-2 text-kiban-ink4 cursor-not-allowed"
+	if variant == "primary" {
+		return "bg-kiban-primary text-white rounded-md px-4 py-2 opacity-40 cursor-not-allowed"
 	}
-	return "bg-kiban-primary text-white rounded-md px-4 py-2 opacity-40 cursor-not-allowed"
+	return "bg-white border border-kiban-border rounded-md px-4 py-2 text-kiban-ink4 cursor-not-allowed"
 }
 
 // TableConfig drives the Table component. Headers are rendered as plain
