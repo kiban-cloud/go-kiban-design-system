@@ -1,0 +1,71 @@
+package stepper
+
+import "strconv"
+
+// Stepper renders a horizontal row of stages with connectors. The
+// connector between stages N and N+1 takes the colour of stage N
+// (the *preceding* one), so a completed step pulls the line up to
+// the next dot — mirrors the visual idiom in kiban-design-system's
+// React AlphaStepper.
+//
+// Empty input renders nothing (no wrapper). One-stage input
+// renders just the dot — connector is only drawn between stages.
+templ Stepper(stages []Stage) {
+	if len(stages) > 0 {
+		<div class="flex items-start gap-2">
+			for i, stage := range stages {
+				@stageBlock(stage, i)
+				if i < len(stages)-1 {
+					<div class={ "flex-1 h-px mt-3.5", connectorClass(stage.Status) }></div>
+				}
+			}
+		</div>
+	}
+}
+
+// stageBlock is the dot + label column for a single stage. Index
+// is passed in so non-complete dots can show their 1-based
+// position number.
+templ stageBlock(stage Stage, index int) {
+	<div class="flex-1 flex flex-col items-center text-center min-w-0">
+		<div class={
+			"w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0",
+			dotClass(stage.Status),
+		}>
+			if stage.Status == StatusComplete {
+				<svg viewBox="0 0 20 20" fill="none" class="w-4 h-4">
+					<path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+				</svg>
+			} else {
+				{ strconv.Itoa(index + 1) }
+			}
+		</div>
+		if stage.Label != "" {
+			<div class="text-xs text-kiban-ink mt-2 break-words">{ stage.Label }</div>
+		}
+	</div>
+}
+
+// dotClass picks the dot's background + text + border per status.
+// Unknown statuses fall through to the incomplete appearance so
+// the layout never breaks on a typo.
+func dotClass(status string) string {
+	switch status {
+	case StatusComplete:
+		return "bg-emerald-100 text-emerald-700"
+	case StatusActive:
+		return "bg-kiban-primary-soft text-kiban-primary border border-kiban-primary"
+	default:
+		return "bg-kiban-surface text-kiban-ink4 border border-kiban-border"
+	}
+}
+
+// connectorClass picks the line colour between dots. Complete →
+// any draws an emerald line (signals "this section finished"); any
+// other preceding status draws the neutral border colour.
+func connectorClass(prevStatus string) string {
+	if prevStatus == StatusComplete {
+		return "bg-emerald-300"
+	}
+	return "bg-kiban-border"
+}

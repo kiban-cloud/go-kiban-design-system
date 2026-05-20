@@ -66,3 +66,35 @@ type TabItem struct {
 	Title    string
 	Attrs    templ.Attributes
 }
+
+// PanelConfig is the input for Panel — the in-page tabs primitive
+// that switches between pre-rendered content blocks WITHOUT a
+// network round-trip (unlike Strip, which navigates via anchor
+// hrefs). Use Panel when all the tab bodies are cheap to render
+// upfront and the user expects instant switching; use Strip when
+// tabs map to distinct URLs / lazy-loaded views.
+//
+//   - ID is unique on the page; the JS in view/layout/base.templ
+//     keys off it to scope click handling to this panel only, so
+//     two Panels on the same page don't interfere.
+//   - ActiveKey is the tab that's visible on first paint. If no
+//     tab matches, the panel renders with nothing visible — the
+//     first click on the strip will pick whichever tab the user
+//     selects.
+//   - Tabs lists the strip entries in display order. Each header
+//     is `{Key, Label}` — the Body call site for that key supplies
+//     the actual content.
+type PanelConfig struct {
+	ID        string
+	ActiveKey string
+	Tabs      []TabHeader
+}
+
+// TabHeader is one entry in the Panel's strip. Intentionally
+// minimal (no Href / Icon / Count / Disabled) — Panel is for
+// CSS-only in-page switching, so the navigation affordances that
+// matter for Strip don't apply here.
+type TabHeader struct {
+	Key   string
+	Label string
+}

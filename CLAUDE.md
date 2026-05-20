@@ -50,8 +50,12 @@ view/
   menu/                 Kebab-style action dropdown — icon trigger + panel of <button role="menuitem"> rows. Single-active behaviour (open one closes others); JS in base.templ.
   spinner/              loading indicator (CSS class `.ds-spinner` in base.templ)
   tooltip/              CSS tooltip (`data-tooltip="…"` in base.templ)
-  tabs/                 in-page tabs (underline style; distinct from SubNav's pill style for level-2 app navigation)
+  tabs/                 in-page tabs — Strip (anchor-nav, underline style) + Panel/Body (CSS-only switching for pre-rendered tab bodies)
+  detail_row/           label/value list pair — Row (single) + List (wraps multiple rows in a `<dl>`)
+  stepper/              horizontal multi-stage progress (numbered dots + connectors; statuses: complete/active/incomplete)
+  timeline/             vertical event timeline (status-coloured dot + label + optional date)
   comment_input/        textarea + chip-style file uploader + submit, all in one composition (used by klin's delivery comments; designed to be reused by future comment flows)
+  jsonviewer/           nested-accordion JSON viewer (object/array tree with per-node expand + master "Expandir todo"); native `<details>` for individual toggles, tiny JS only for the master button
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
 middleware/
@@ -286,6 +290,47 @@ In-page tabs primitive — distinto de `layout.SubNav` (level-2 nav del shell qu
 |---|---|---|
 | `tabs.TabItem` (struct) | done | Una entrada del strip. Required: `Key string` (matched against activeKey), `Label string`, `Href string` (URL canónica para fallback de browser nav). Affordances opcionales: `Icon templ.Component` (slot a la izquierda del label, mismo patrón que `button.Options.IconComponent`), `Count int` + `HasCount bool` (badge pill a la derecha — el toggle explícito permite que un `0` real se renderice como "Inbox (0)" sin ambigüedad sentinel-vs-zero), `Disabled bool` (saca el `href`, mete `aria-disabled="true"` + `pointer-events-none` + `opacity-50`), `Title string` (atributo `title=""` nativo — útil para explicar el por qué cuando `Disabled=true`). Escape hatch HTMX: `Attrs templ.Attributes` (spread sobre el `<a>` para flujos `hx-get` / `hx-target` / `hx-push-url`). |
 | `tabs.Strip(items []TabItem, activeKey string)` | done | Renderiza el strip con el visual contract descrito arriba. Active state es 100% caller-driven: si ningún `Key` matchea `activeKey`, no se resalta nada. Múltiples instancias en la misma página son seguras (cada `<a>` lleva su propio `href`/Attrs). |
+| `tabs.PanelConfig` (struct) | done | Input para `tabs.Panel` — el primitive de tabs in-page con switching CSS-only (sin network round-trip, a diferencia de `Strip` que navega via anchor hrefs). Campos: `ID string` (único en la página — la JS en `base.templ` keyea por ID para scopear handlers), `ActiveKey string` (tab visible al primer paint), `Tabs []TabHeader` (entries del strip en orden de display). |
+| `tabs.TabHeader` (struct) | done | Una entrada del strip de `Panel`. Sólo `Key string` + `Label string` — intencionalmente minimal (sin Href / Icon / Count / Disabled), porque `Panel` es para switching CSS-only y las affordances de navegación de `Strip` no aplican. |
+| `tabs.Panel(cfg PanelConfig)` | done | Container con strip header + body area. Switching CSS-only via `[data-kiban-tabs-active-key]` en el panel. Bodies se pasan como templ children (uno por tab via `Body(key)`). Empty `Tabs` renderiza sólo el body container (sin strip). La JS que flippea `data-kiban-tabs-active-key` en click vive en `view/layout/base.templ`. |
+| `tabs.Body(key string)` | done | Wraps el contenido de una tab. Lleva `data-kiban-tabs-body data-kiban-tabs-key={key}`. CSS en `base.templ` muestra sólo el body cuyo key matchea el `data-kiban-tabs-active-key` del panel padre. |
+
+### Detail row (`view/detail_row/`)
+
+Read-only label/value pairs renderizados como una lista de dos columnas. Ubicuo en cualquier "Detalles" tab a través de los backends kiban (workfloo histórico, rekon payment detail, reportalos invoice detail, …). Dos entry points: `Row(label, value)` para un solo row (cuando el caller quiere controlar el wrapping container — interleaving condicional, mixing in flash banners) y `List(items)` que envuelve múltiples rows en un `<dl>` con vertical spacing.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `detail_row.Item` (struct) | done | Un row en una llamada a `List`: `{Label, Value string}`. Callers que iteran ellos mismos pueden saltar este type y llamar `Row(label, value)` directo. |
+| `detail_row.Row(label, value string)` | done | Renderiza una entrada label/value. Layout: flex con label column de ancho fijo + value column que flexea y wrappea contenido largo. Empty value collapsa al placeholder "-" para que el row nunca se vea visualmente roto al lado de rows poblados; la regla "hide row entirely when empty" vive en el caller. |
+| `detail_row.List(items []Item)` | done | Wraps multiple rows en un `<dl class="space-y-3">`. Conveniencia para la lista plana — callers que necesitan interleaving deben componer `<dl>` ellos mismos y llamar `Row` directo. Empty input renderiza un `<dl>` vacío (no nil). |
+
+### Stepper (`view/stepper/`)
+
+Multi-stage progress indicator horizontal: dots numerados conectados por líneas, cada dot toma color según su status. Genérico across los backends que muestran un flujo secuencial multi-step (phases de autenticación NIP, onboarding wizards, KYC progress, payment settlement steps…).
+
+**Visual contract**:
+- Dot variant por status: `"complete"` → emerald background con checkmark icon; `"active"` → kiban-primary-soft background con border kiban-primary + position number; `"incomplete"` → surface background con border kiban-border + position number.
+- Connector color matches el preceding stage's status: "complete → anything" dibuja la línea en emerald, "anything else → anything" dibuja en border gris.
+- Status strings fuera de las 3 caen al appearance "incomplete" — un valor inesperado nunca explota el layout.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `stepper.Stage` (struct) | done | Un slot en el stepper. `Label string` (texto debajo del dot — empty hides la label row pero mantiene el dot), `Status string` ("complete" / "active" / "incomplete"). |
+| `stepper.StatusComplete` / `StatusActive` / `StatusIncomplete` (consts) | done | Exported para evitar stringly-typed values en el call site. |
+| `stepper.Stepper(stages []Stage)` | done | Renderiza una row horizontal de stages con connectors entre dots. Empty input renderiza nada (no wrapper, sin whitespace artifact). Single stage renderiza sólo el dot (connector se draws sólo entre stages). |
+
+### Timeline (`view/timeline/`)
+
+Lista vertical de eventos dateados con un dot status-colored por row. Genérico across kiban: status logs (NIP send/validation events), audit trails (workfloo execution events), payment lifecycle ticks (rekon), delivery tracking (klin).
+
+Cada row es `[dot] [label]                              [date]`, flexed para que la date sticka a la derecha y la label tome el middle. Date es opcional — cuando es empty, sólo el dot + label renderizan.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `timeline.Event` (struct) | done | Un row en el timeline. `Label string` (status copy ya localizado por el caller), `Kind string` ("success" / "warning" / "info" / "danger" / "default" — drives el dot color), `Date string` (timestamp pre-formateado; empty hides la date column). |
+| `timeline.KindSuccess` / `KindWarning` / `KindInfo` / `KindDanger` / `KindDefault` (consts) | done | Exported para evitar stringly-typed values. |
+| `timeline.Timeline(events []Event)` | done | Renderiza un `<ul>` vertical de events. Empty input renderiza nada (sin wrapper) para que un parent block no termine con un `<ul>` vacío. Unknown Kind colapsa al "default" gris para que un valor inesperado nunca rompa la row. |
 
 ### Comment input (`view/comment_input/`)
 
@@ -300,6 +345,19 @@ Composición de alto nivel: textarea + `[file_chip_input.Field]` + botón submit
 |---|---|---|
 | `comment_input.Options` (struct) | done | Configura el `Field`. Sólo `Action` es required. Defaults razonables para todo lo demás (Title="Nuevo comentario", SubmitLabel="Enviar", Placeholder="Escribe un comentario…", textName="text", filesName="files", id="comment-input"). Toggles importantes: `Multiple bool` para multi-archivo, `MaxSizeBytes int64` para el cap por archivo client-side, `Accept string` para `<input accept>`, `DisableFiles bool` para text-only, `WithoutCard bool` para skipear el `card.Card` chrome (consumer renderiza su propio container), `FormAttrs templ.Attributes` para escape hatch HTMX. Round-trip de error: `TextValue` + `TextError` para draft + per-field error; `GlobalError` para flash banner; `Success` para flash post-submit. `MaxChars int` es informativo (renderiza "Máximo N caracteres" como hint del textarea); el server sigue siendo el de la verdad. |
 | `comment_input.Field(opts Options)` | done | El templ. Emite (en orden): título + subtítulo opcionales, banners de Success/GlobalError si aplica, el `<form>` con `enctype="multipart/form-data"` apuntando a `Action`, textarea, `[file_chip_input.Field]` con id `<opts.ID>-files`, botón submit con `data-kiban-file-chip-submit="<id>-files"` para que la JS de `file_chip_input` lo deshabilite mientras hay archivos inválidos. Múltiples instancias en la misma página funcionan: cada `Options.ID` produce un par único `<id>-form` / `<id>-files`. |
+
+### JSON viewer (`view/jsonviewer/`)
+
+Nested-accordion viewer for arbitrary JSON-shaped Go values (typical input: the result of `json.Unmarshal(...)` into `interface{}`). Each object/array level renders as a collapsible accordion; primitive values inside a level render as `key: value` rows. Mirrors the React `JsonViewer` from KDS so workfloo-htmx's Histórico-detail "Consulta"/"Respuesta" tabs match the React MF's UX.
+
+**Why native `<details>`**: per-node expand state lives in the DOM element itself, so individual toggles need zero JS and are keyboard / screen-reader accessible for free. The only inline script is the "Expandir todo / Ocultar todo" master toggle, scoped to the wrapper via `data-jsonviewer-target` so multiple viewers on the same page stay independent.
+
+**Input shapes**: walks `map[string]any` / `[]any` / primitives (`string`, `bool`, `float64`, `nil`); anything else falls through to `fmt.Sprint(v)` so unusual types degrade gracefully instead of panicking. Keys that all parse as integers sort numerically (array-index keys), otherwise alphabetically — matches the React component's `getObjectTemplate` rule. Empty containers and `nil` collapse to the `EmptyMessage` placeholder so the viewer never shows a blank frame.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `jsonviewer.Options` (struct) | done | `Data any` (required — pass the raw decoded JSON), `ID string` (DOM id of the wrapper; defaults to `kiban-jsonviewer`, override when multiple viewers share a page so each master toggle stays scoped), `EmptyMessage string` (Spanish placeholder when `Data` is nil/empty; defaults to "Sin información."). |
+| `jsonviewer.View(opts)` | done | Renders the wrapper + master toggle button + recursive accordion tree. Top-level primitives don't get a redundant outer accordion (the level itself is the frame); nested objects/arrays each become a `<details>` with the key as the summary. Per-node toggle is native; the inline JS only watches `[data-jsonviewer-toggle-all]` clicks and flips every `<details data-jsonviewer-node>` inside the target wrapper. |
 
 ### Form binding (`binding/`)
 

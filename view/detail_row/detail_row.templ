@@ -1,0 +1,38 @@
+package detail_row
+
+// Row renders one label/value entry. Two-column flex layout with a
+// fixed-width label column so values line up vertically across
+// stacked rows. The value column flexes and wraps long content.
+//
+// Empty value renders the dash placeholder "-" by default so the
+// row never reads visually broken; callers that want a "hide when
+// empty" rule should branch on the value before calling Row.
+templ Row(label, value string) {
+	<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+		<dt class="w-48 shrink-0 font-medium text-kiban-ink">{ label }</dt>
+		<dd class="flex-1 min-w-0 text-kiban-ink break-words">{ rowValue(value) }</dd>
+	</div>
+}
+
+// List wraps multiple rows in a styled <dl>. Convenience for the
+// common case where the rows are a flat slice — callers that need
+// to interleave anything else should compose `<dl>` themselves and
+// call Row directly.
+templ List(items []Item) {
+	<dl class="space-y-3">
+		for _, it := range items {
+			@Row(it.Label, it.Value)
+		}
+	</dl>
+}
+
+// rowValue collapses an empty value to "-" so the value column
+// never renders blank (which would look broken next to populated
+// rows). Mirrors `dash()` helpers that have shown up in multiple
+// consumers.
+func rowValue(v string) string {
+	if v == "" {
+		return "-"
+	}
+	return v
+}

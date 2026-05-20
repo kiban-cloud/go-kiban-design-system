@@ -1,0 +1,49 @@
+package timeline
+
+// Timeline renders a vertical `<ul>` of events. Each event row
+// shows a small status-coloured dot on the left, the localised
+// status label in the middle, and (optionally) a date stuck to
+// the right via flex.
+//
+// Empty input renders nothing at all (no wrapper) so a parent
+// block doesn't end up with an empty `<ul>` artefact.
+templ Timeline(events []Event) {
+	if len(events) > 0 {
+		<ul class="space-y-3">
+			for _, ev := range events {
+				@row(ev)
+			}
+		</ul>
+	}
+}
+
+// row is one entry in the timeline. Kept unexported because the
+// only sanctioned way to render the list is through Timeline; a
+// row outside an `<ul>` parent has no semantic meaning.
+templ row(ev Event) {
+	<li class="flex items-center gap-3">
+		<div class={ "w-2 h-2 rounded-full shrink-0", dotClass(ev.Kind) }></div>
+		<div class="text-sm text-kiban-ink flex-1 min-w-0 break-words">{ ev.Label }</div>
+		if ev.Date != "" {
+			<div class="text-xs text-kiban-ink3 shrink-0">{ ev.Date }</div>
+		}
+	</li>
+}
+
+// dotClass picks the dot colour per Kind. Unknown kinds collapse
+// to the default ink-4 grey so an unexpected value never breaks
+// the row.
+func dotClass(kind string) string {
+	switch kind {
+	case KindSuccess:
+		return "bg-emerald-500"
+	case KindWarning:
+		return "bg-amber-500"
+	case KindInfo:
+		return "bg-kiban-primary"
+	case KindDanger:
+		return "bg-red-500"
+	default:
+		return "bg-kiban-ink4"
+	}
+}

@@ -1,0 +1,66 @@
+package tabs
+
+// Panel renders a tab-panel container: header strip on top, body
+// area below, with CSS-only switching driven by the parent's
+// `data-kiban-tabs-active-key` attribute. Tab bodies are passed
+// as templ children via `Body(key)` calls inside the Panel block.
+//
+// Wiring (lives in view/layout/base.templ):
+//   - Clicking a `[data-kiban-tabs-tab]` button updates the
+//     ancestor `[data-kiban-tabs-panel]`'s `data-kiban-tabs-active-key`
+//     attribute. CSS rules then show only the matching
+//     `[data-kiban-tabs-body]` and apply the active-tab styling
+//     to the matching tab button.
+//   - Multiple Panels on the same page coexist via the wrapping
+//     panel selector — handlers never reach outside their panel.
+//
+// Empty Tabs renders just the body container (no strip), so a
+// degenerate one-tab UI can still pass through Panel without
+// adding visual chrome.
+templ Panel(cfg PanelConfig) {
+	<section
+		id={ cfg.ID }
+		data-kiban-tabs-panel
+		data-kiban-tabs-active-key={ cfg.ActiveKey }
+		class="bg-white border border-kiban-border rounded-md"
+	>
+		if len(cfg.Tabs) > 0 {
+			@strip(cfg.Tabs)
+		}
+		<div class="p-5 space-y-4">
+			{ children... }
+		</div>
+	</section>
+}
+
+// strip renders the tab header buttons. Active state is purely
+// CSS-driven (see base.templ rules); the buttons just carry their
+// keys + the data-kiban-tabs-tab marker so the global handler
+// recognises them.
+templ strip(tabs []TabHeader) {
+	<div class="border-b border-kiban-border px-5 pt-4">
+		<nav class="-mb-px flex gap-3 flex-wrap" role="tablist">
+			for _, t := range tabs {
+				<button
+					type="button"
+					role="tab"
+					data-kiban-tabs-tab
+					data-kiban-tabs-key={ t.Key }
+					class="px-3 py-2 text-sm transition-colors border-b"
+				>{ t.Label }</button>
+			}
+		</nav>
+	</div>
+}
+
+// Body wraps one tab's content. Each Body inside a Panel block
+// declares its key via `data-kiban-tabs-key`; the panel-level
+// CSS shows only the body whose key matches the parent's active
+// key. Multiple Bodies with the same key would all show together
+// — but Panel renders each tab once by construction, so this is
+// a non-issue for the canonical usage.
+templ Body(key string) {
+	<div data-kiban-tabs-body data-kiban-tabs-key={ key }>
+		{ children... }
+	</div>
+}

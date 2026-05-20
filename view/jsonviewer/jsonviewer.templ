@@ -1,0 +1,141 @@
+package jsonviewer
+
+// View renders a JSON-shaped value as a nested expandable tree.
+// Per-node toggling uses the native `<details>` element — keyboard
+// + screen-reader accessible for free, no per-node JS state. A
+// small script at the bottom wires the "Expandir todo / Ocultar
+// todo" master toggle, scoped to this viewer's id so multiple
+// viewers can coexist on the same page.
+templ View(opts Options) {
+	if isEmpty(opts.Data) {
+		<p class="text-sm text-kiban-ink3">{ opts.resolveEmpty() }</p>
+	} else {
+		<div
+			id={ opts.resolveID() }
+			data-kiban-jsonviewer
+			class="space-y-2"
+		>
+			<button
+				type="button"
+				class="inline-flex items-center gap-2 text-sm text-kiban-primary hover:underline"
+				data-jsonviewer-toggle-all
+				data-jsonviewer-target={ "#" + opts.resolveID() }
+			>
+				<span class="inline-flex items-center justify-center w-4 h-4 rounded border border-kiban-primary text-xs leading-none" data-jsonviewer-icon>+</span>
+				<span data-jsonviewer-label>Expandir todo</span>
+			</button>
+			<div class="border border-kiban-border rounded-md divide-y divide-kiban-border">
+				@renderRoot(opts.Data)
+			</div>
+		</div>
+		@toggleScript()
+	}
+}
+
+// renderRoot handles the top-level value. The top level always
+// renders as a single accordion-style frame so the visual depth is
+// consistent regardless of whether the input is an object, array,
+// or array-of-primitives. For plain objects we drop the outer
+// wrapper and inline the children to avoid an empty heading row.
+templ renderRoot(v any) {
+	if isContainer(v) {
+		@renderContainerBody(v)
+	} else {
+		<div class="px-3 py-2">
+			<span class="text-sm text-kiban-ink">{ primitiveString(v) }</span>
+		</div>
+	}
+}
+
+// renderContainerBody emits a container's primitives + nested
+// children, flattening one level so the root viewer doesn't get an
+// extra wrapping <details>.
+templ renderContainerBody(v any) {
+	{{ primitives, children := classify(v) }}
+	if len(primitives) > 0 {
+		<div class="px-3 py-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+			for _, p := range primitives {
+				@primitiveRow(p)
+			}
+		</div>
+	}
+	for _, c := range children {
+		@renderNode(c.key, c.value)
+	}
+}
+
+// renderNode wraps a nested object/array in a <details> element so
+// the user can collapse/expand it. The summary is the key label
+// plus a chevron the JS toggles via the open attribute. For empty
+// containers we still render the accordion so the structure is
+// visible (matches the React component).
+templ renderNode(key string, v any) {
+	<details class="group" data-jsonviewer-node>
+		<summary class="cursor-pointer select-none px-3 py-2 flex items-center gap-2 text-sm text-kiban-ink hover:bg-kiban-surface">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 20 20"
+				fill="currentColor"
+				class="w-4 h-4 text-kiban-ink3 transition-transform group-open:rotate-90"
+				aria-hidden="true"
+			>
+				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd"/>
+			</svg>
+			<span class="font-medium">{ key }</span>
+		</summary>
+		<div class="pl-7 pr-3 py-2 border-t border-kiban-border bg-white">
+			if isEmpty(v) {
+				<span class="text-xs text-kiban-ink3">Vacío.</span>
+			} else if isContainer(v) {
+				@renderContainerBody(v)
+			} else {
+				<span class="text-sm text-kiban-ink">{ primitiveString(v) }</span>
+			}
+		</div>
+	</details>
+}
+
+// primitiveRow is a single `key: value` row inside the primitives
+// block. Kept as its own templ so the styling stays consistent
+// whether it's rendered at the root or nested deeper.
+templ primitiveRow(p entry) {
+	<div class="space-y-0.5">
+		<div class="text-xs text-kiban-ink3">{ p.key }</div>
+		<div class="text-sm text-kiban-ink break-words">{ primitiveString(p.value) }</div>
+	</div>
+}
+
+// toggleScript wires the master "Expandir todo / Ocultar todo"
+// button. Scoped to a single viewer by `data-jsonviewer-target` so
+// multiple viewers on the same page stay independent. The button
+// keeps its label + icon in sync with the current expansion state
+// by reading whether all `<details>` under the target are open.
+templ toggleScript() {
+	<script>
+		(function () {
+			if (window.__kibanJsonViewerWired) return;
+			window.__kibanJsonViewerWired = true;
+			document.addEventListener('click', function (e) {
+				var btn = e.target.closest('[data-jsonviewer-toggle-all]');
+				if (!btn) return;
+				var targetSel = btn.getAttribute('data-jsonviewer-target');
+				if (!targetSel) return;
+				var root = document.querySelector(targetSel);
+				if (!root) return;
+				var nodes = root.querySelectorAll('details[data-jsonviewer-node]');
+				if (nodes.length === 0) return;
+				// Decide direction from the CURRENT state: if any node
+				// is closed, expand all; otherwise collapse all. This
+				// mirrors the React JsonViewer's toggle behaviour.
+				var anyClosed = false;
+				nodes.forEach(function (n) { if (!n.open) anyClosed = true; });
+				var nextOpen = anyClosed;
+				nodes.forEach(function (n) { n.open = nextOpen; });
+				var icon = btn.querySelector('[data-jsonviewer-icon]');
+				var label = btn.querySelector('[data-jsonviewer-label]');
+				if (icon) icon.textContent = nextOpen ? '−' : '+';
+				if (label) label.textContent = nextOpen ? 'Ocultar todo' : 'Expandir todo';
+			});
+		})();
+	</script>
+}

@@ -100,6 +100,25 @@ templ Base(cfg Config) {
 					animation: kiban-spin 0.8s linear infinite;
 				}
 
+				/* tabs.Panel — CSS-only switching driven by the parent
+				   [data-kiban-tabs-active-key] attribute. Bodies whose
+				   key matches show; everything else hides. The strip
+				   buttons get an underline + kiban-primary text colour
+				   when active, transparent border + ink-3 otherwise.
+				   The JS that flips data-kiban-tabs-active-key on click
+				   lives further down in this file. */
+				[data-kiban-tabs-panel] [data-kiban-tabs-body] { display: none; }
+				[data-kiban-tabs-panel] [data-kiban-tabs-body][data-kiban-tabs-active] { display: block; }
+				[data-kiban-tabs-panel] [data-kiban-tabs-tab] {
+					border-color: transparent;
+					color: rgb(99 113 142);
+				}
+				[data-kiban-tabs-panel] [data-kiban-tabs-tab][data-kiban-tabs-active] {
+					border-color: rgb(0 71 255);
+					color: rgb(0 71 255);
+					font-weight: 500;
+				}
+
 				/* Sidebar (GCP-style). The sub-nav is always visible; the
 				   hamburger toggles the optional tools rail to its left,
 				   which lists the kiban tools with their full labels. The
@@ -558,6 +577,47 @@ templ Base(cfg Config) {
 					document.querySelectorAll('[data-kiban-menu] button[aria-expanded="true"]').forEach(function (t) {
 						t.setAttribute('aria-expanded', 'false');
 					});
+				});
+
+				// tabs.Panel — CSS-only in-page tab switching. Each Panel
+				// instance carries [data-kiban-tabs-panel] +
+				// [data-kiban-tabs-active-key="<currentKey>"]; clicking a
+				// strip button updates that attribute on the closest
+				// panel ancestor. The CSS rules at the top of this file
+				// pick up the change and show/hide the matching body +
+				// active-tab styling.
+				//
+				// syncPanel re-applies the [data-kiban-tabs-active] flag
+				// on each button and body inside a panel based on the
+				// panel's current active key. It also runs once per
+				// panel on DOMContentLoaded so the initial server-side
+				// `data-kiban-tabs-active-key` resolves to the visible
+				// tab without a click.
+				function kibanSyncTabsPanel(panel) {
+					var active = panel.getAttribute('data-kiban-tabs-active-key') || '';
+					panel.querySelectorAll('[data-kiban-tabs-tab]').forEach(function (btn) {
+						btn.toggleAttribute('data-kiban-tabs-active', btn.getAttribute('data-kiban-tabs-key') === active);
+					});
+					panel.querySelectorAll('[data-kiban-tabs-body]').forEach(function (body) {
+						body.toggleAttribute('data-kiban-tabs-active', body.getAttribute('data-kiban-tabs-key') === active);
+					});
+				}
+				document.addEventListener('click', function (e) {
+					var btn = e.target.closest && e.target.closest('[data-kiban-tabs-tab]');
+					if (!btn) return;
+					var panel = btn.closest('[data-kiban-tabs-panel]');
+					if (!panel) return;
+					panel.setAttribute('data-kiban-tabs-active-key', btn.getAttribute('data-kiban-tabs-key') || '');
+					kibanSyncTabsPanel(panel);
+				});
+				document.addEventListener('DOMContentLoaded', function () {
+					document.querySelectorAll('[data-kiban-tabs-panel]').forEach(kibanSyncTabsPanel);
+				});
+				// Re-sync on HTMX swap so panels appearing after a
+				// partial response don't render with stale active state.
+				document.addEventListener('htmx:afterSwap', function (e) {
+					var root = e.target || document;
+					root.querySelectorAll && root.querySelectorAll('[data-kiban-tabs-panel]').forEach(kibanSyncTabsPanel);
 				});
 
 				// kibanLogger — browser-side error reporting bridge.
