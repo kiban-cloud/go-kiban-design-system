@@ -166,6 +166,21 @@ templ Base(cfg Config) {
 				}
 				.nav-loader.is-visible { display: flex; }
 
+				/* Card-style radio (view/input/radio.templ): el highlight
+				   visual sigue el estado real del <input> nativo vía :has().
+				   Sin esto, en flujos HTMX donde la card no se re-renderiza
+				   tras el click (el trigger sólo swap-ea otra región del
+				   form), el estilo "checked" quedaría pegado al radio que
+				   estaba seleccionado al render server-side.
+				   Specificity (0,2,2) > Tailwind class (0,1,0), así pisa los
+				   defaults de `border-kiban-border` sin necesidad de
+				   !important. Colores hardcoded en línea con el resto de los
+				   tokens del DS porque Tailwind CDN no expone CSS vars. */
+				label[data-kiban-radio-card]:has(> input:checked) {
+					border-color: #0047FF;
+					background-color: rgba(0, 71, 255, 0.08);
+				}
+
 				/* CSS-only tooltip: any element carrying data-tooltip="…" gets
 				   a small dark bubble to its right on hover/focus. Instant,
 				   themed to match the kiban palette, ignores pointer events
