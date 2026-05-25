@@ -9,7 +9,7 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 templ Button(p Options) {
 	if hasHref(p) {
 		<a
-			href={ templ.URL(p.Href) }
+			href={ hrefFor(p) }
 			class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
 			aria-label={ effectiveAriaLabelForVariant(p) }
 			title={ effectiveTitleForVariant(p) }
