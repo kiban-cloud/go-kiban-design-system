@@ -14,7 +14,13 @@
 //
 //   - A `Size` parameter mapped to a Tailwind `max-w-*` class:
 //     "sm" → max-w-sm, "" or "md" → max-w-md, "lg" → max-w-lg,
-//     "xl" → max-w-xl. Empty string falls back to "md".
+//     "xl" → max-w-xl, "2xl" → max-w-2xl, "3xl" → max-w-3xl,
+//     "4xl" → max-w-4xl, "5xl" → max-w-5xl, "6xl" → max-w-6xl,
+//     "7xl" → max-w-7xl. Empty string falls back to "md".
+//
+//     4xl–7xl are intended for multi-column editor experiences
+//     (e.g. the RULESET wizard's 4-column layout). Use sparingly
+//     — short-form modals look best at lg or below.
 //
 //   - A `FooterActions button.Group` — primary + secondaries — rendered as
 //     a row at the bottom. `Group` lives in `view/button/` and is reused
@@ -80,6 +86,11 @@ type ConfirmConfig struct {
 
 // sizeClass maps the public size keyword to its Tailwind max-width class.
 // Falls back to max-w-md (the most common case) on empty / unknown.
+//
+// The 2xl/3xl sizes were added for grid-style modals (e.g. workfloo's
+// templates picker) whose content doesn't fit at xl without forcing
+// each card to a too-narrow column. Use sparingly — most modals are
+// "short form" and look best at lg or below.
 func sizeClass(size string) string {
 	switch size {
 	case "sm":
@@ -88,6 +99,18 @@ func sizeClass(size string) string {
 		return "max-w-lg"
 	case "xl":
 		return "max-w-xl"
+	case "2xl":
+		return "max-w-2xl"
+	case "3xl":
+		return "max-w-3xl"
+	case "4xl":
+		return "max-w-4xl"
+	case "5xl":
+		return "max-w-5xl"
+	case "6xl":
+		return "max-w-6xl"
+	case "7xl":
+		return "max-w-7xl"
 	default:
 		return "max-w-md"
 	}

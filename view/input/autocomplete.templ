@@ -1,0 +1,132 @@
+package input
+
+// Autocomplete is a typed-input + filtered-options-dropdown
+// hybrid. Users type to filter the existing options; clicking
+// an option (or pressing Enter on the highlighted row) selects
+// it. When `AllowCreate` is true and the typed text doesn't
+// match any existing option exactly, an extra "Crear: «<typed>»"
+// row appears at the bottom — clicking it adds the typed text
+// as the value without prior catalog enrollment.
+//
+// Wire shape: the *visible* `<input type="text">` is purely
+// editing UX. The form-submitted value rides on a *sibling*
+// `<input type="hidden" name="<name>">` that the JS keeps in
+// sync with the visible input — this way the consuming form
+// reads the autocomplete value via the same `c.PostForm("<name>")`
+// pattern used for every other input, no special-case binding.
+//
+// JS lives in `view/layout/base.templ` scoped to
+// `[data-kiban-autocomplete]`. Re-runs on `htmx:afterSwap` so
+// autocompletes re-mount cleanly after partial swaps.
+//
+// Error/hint contract mirrors `input.Select`: `errMsg` renders
+// red under the control when non-empty and suppresses `hint`;
+// otherwise `hint` shows in muted ink.
+type AutocompleteOptions struct {
+	Name        string
+	Label       string
+	Value       string         // current value (round-tripped via hidden input)
+	Items       []SelectOption // existing options to filter against
+	ErrMsg      string
+	Hint        string
+	Required    bool
+	Placeholder string
+	AllowCreate bool // true → show "Crear: <typed>" row when no exact match
+	CreateLabel string // override the "Crear:" prefix (default "Crear")
+}
+
+// Autocomplete renders the labelled control.
+templ Autocomplete(opts AutocompleteOptions) {
+	<div class="space-y-1 relative" data-kiban-autocomplete data-allow-create={ autocompleteBoolAttr(opts.AllowCreate) } data-create-label={ autocompleteCreateLabel(opts) }>
+		if opts.Label != "" {
+			<label for={ "f-" + opts.Name } class="text-xs font-medium text-kiban-ink2">
+				{ opts.Label }
+				if opts.Required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<input
+			type="text"
+			id={ "f-" + opts.Name }
+			data-kiban-autocomplete-input
+			autocomplete="off"
+			placeholder={ opts.Placeholder }
+			value={ autocompleteLabelForValue(opts) }
+			class={
+				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none bg-white",
+				templ.KV("border-kiban-border focus:border-kiban-primary", opts.ErrMsg == ""),
+				templ.KV("border-red-400 focus:border-red-500", opts.ErrMsg != ""),
+			}
+		/>
+		<input type="hidden" name={ opts.Name } value={ opts.Value } data-kiban-autocomplete-value/>
+		<ul
+			data-kiban-autocomplete-list
+			class="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-kiban-border bg-white shadow-md text-sm"
+			hidden
+		>
+			for _, item := range opts.Items {
+				<li
+					data-kiban-autocomplete-option
+					data-value={ item.Value }
+					data-label={ item.Label }
+					class="px-3 py-1.5 cursor-pointer hover:bg-kiban-primary-soft/60 hover:text-kiban-primary"
+				>
+					{ item.Label }
+				</li>
+			}
+			if opts.AllowCreate {
+				<li
+					data-kiban-autocomplete-create
+					class="px-3 py-1.5 cursor-pointer border-t border-kiban-border text-kiban-primary hover:bg-kiban-primary-soft/60"
+					hidden
+				>
+					{ autocompleteCreateLabel(opts) }: <span data-kiban-autocomplete-create-text></span>
+				</li>
+			}
+			<li data-kiban-autocomplete-empty class="px-3 py-1.5 text-kiban-ink3 italic" hidden>
+				Sin coincidencias.
+			</li>
+		</ul>
+		if opts.ErrMsg != "" {
+			<div class="text-xs text-red-600">{ opts.ErrMsg }</div>
+		} else if opts.Hint != "" {
+			<div class="text-xs text-kiban-ink3">{ opts.Hint }</div>
+		}
+	</div>
+}
+
+// autocompleteBoolAttr formats a bool as the literal "true" or
+// "false" for the `data-allow-create` attribute. The JS reads
+// this verbatim.
+func autocompleteBoolAttr(v bool) string {
+	if v {
+		return "true"
+	}
+	return "false"
+}
+
+// autocompleteCreateLabel returns the user-visible prefix for the
+// create-new row. Defaults to "Crear" so consumers don't need to
+// repeat the common case.
+func autocompleteCreateLabel(opts AutocompleteOptions) string {
+	if opts.CreateLabel != "" {
+		return opts.CreateLabel
+	}
+	return "Crear"
+}
+
+// autocompleteLabelForValue finds the label matching the current
+// Value among the options, so the visible input starts showing
+// the human-readable label (e.g. "Aprobado") rather than the raw
+// value when those differ. Falls back to Value as the label when
+// no match (catches the "Value is itself the label" case which is
+// common for label-style autocompletes).
+func autocompleteLabelForValue(opts AutocompleteOptions) string {
+	for _, item := range opts.Items {
+		if item.Value == opts.Value {
+			return item.Label
+		}
+	}
+	return opts.Value
+}

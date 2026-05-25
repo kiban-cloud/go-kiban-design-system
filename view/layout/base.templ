@@ -66,6 +66,14 @@ templ Base(cfg Config) {
 				<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/lib/codemirror.min.js" defer></script>
 				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/lib/codemirror.min.css"/>
 				<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/mode/javascript/javascript.min.js" defer></script>
+				<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/mode/python/python.min.js" defer></script>
+				// HTML editing needs htmlmixed, which composes xml + css
+				// + the already-loaded javascript mode. Cheap (~12 KB
+				// across the three modes) and only ships when callers
+				// flip LoadCodeMirror on.
+				<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/mode/xml/xml.min.js" defer></script>
+				<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/mode/css/css.min.js" defer></script>
+				<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/mode/htmlmixed/htmlmixed.min.js" defer></script>
 				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.18/theme/neo.min.css"/>
 			}
 			if cfg.LoadSortable {
@@ -428,6 +436,144 @@ templ Base(cfg Config) {
 					});
 				})();
 
+				// Autocomplete input. Each [data-kiban-autocomplete] wraps
+				// a visible <input type="text"> + a hidden form-submit
+				// <input type="hidden"> + a <ul> dropdown of options.
+				// Typing filters the options (case-insensitive substring);
+				// clicking an option (or pressing Enter on the highlighted
+				// row) selects it; when `data-allow-create="true"` and
+				// the typed text doesn't match any existing option exactly,
+				// a "Crear: <typed>" row appears at the bottom — clicking
+				// it adopts the typed text as the value with no prior
+				// catalog enrollment. Init re-runs on htmx:afterSwap.
+				(function () {
+					function setupOne(wrap) {
+						if (wrap._kibanAutocompleteWired) return;
+						wrap._kibanAutocompleteWired = true;
+						var input = wrap.querySelector('[data-kiban-autocomplete-input]');
+						var hidden = wrap.querySelector('[data-kiban-autocomplete-value]');
+						var list = wrap.querySelector('[data-kiban-autocomplete-list]');
+						if (!input || !hidden || !list) return;
+						var allowCreate = wrap.getAttribute('data-allow-create') === 'true';
+						var createRow = list.querySelector('[data-kiban-autocomplete-create]');
+						var createText = createRow ? createRow.querySelector('[data-kiban-autocomplete-create-text]') : null;
+						var emptyRow = list.querySelector('[data-kiban-autocomplete-empty]');
+						var options = Array.prototype.slice.call(
+							list.querySelectorAll('[data-kiban-autocomplete-option]')
+						);
+						var activeIndex = -1;
+
+						function visibleOptions() {
+							return options.filter(function (o) { return !o.hidden; });
+						}
+						function setActive(i) {
+							var vis = visibleOptions();
+							activeIndex = Math.max(-1, Math.min(i, vis.length - 1));
+							options.forEach(function (o) {
+								o.classList.remove('bg-kiban-primary-soft/60', 'text-kiban-primary');
+							});
+							if (activeIndex >= 0 && vis[activeIndex]) {
+								vis[activeIndex].classList.add('bg-kiban-primary-soft/60', 'text-kiban-primary');
+							}
+						}
+						function open() { list.hidden = false; }
+						function close() { list.hidden = true; setActive(-1); }
+						function filter(q) {
+							var needle = (q || '').trim().toLowerCase();
+							var anyVisible = false;
+							var exactMatch = false;
+							options.forEach(function (opt) {
+								var lbl = (opt.getAttribute('data-label') || opt.textContent || '').trim();
+								var matches = needle === '' || lbl.toLowerCase().indexOf(needle) !== -1;
+								opt.hidden = !matches;
+								if (matches) anyVisible = true;
+								if (lbl.toLowerCase() === needle && needle !== '') exactMatch = true;
+							});
+							if (createRow) {
+								var showCreate = allowCreate && needle !== '' && !exactMatch;
+								createRow.hidden = !showCreate;
+								if (showCreate && createText) createText.textContent = '“' + (q || '').trim() + '”';
+								if (showCreate) anyVisible = true;
+							}
+							if (emptyRow) emptyRow.hidden = anyVisible;
+						}
+						function pickOption(opt) {
+							var value = opt.getAttribute('data-value') || '';
+							var label = opt.getAttribute('data-label') || opt.textContent || '';
+							hidden.value = value;
+							input.value = label.trim();
+							close();
+							input.dispatchEvent(new Event('input', { bubbles: true }));
+							input.dispatchEvent(new Event('change', { bubbles: true }));
+						}
+						function pickCreate() {
+							var typed = (input.value || '').trim();
+							if (!typed) return;
+							hidden.value = typed;
+							input.value = typed;
+							close();
+							input.dispatchEvent(new Event('input', { bubbles: true }));
+							input.dispatchEvent(new Event('change', { bubbles: true }));
+						}
+
+						input.addEventListener('focus', function () {
+							filter(input.value);
+							open();
+						});
+						input.addEventListener('input', function () {
+							hidden.value = (input.value || '').trim();
+							filter(input.value);
+							open();
+							setActive(0);
+						});
+						input.addEventListener('blur', function () {
+							// Delay so the click on a list item registers
+							// before the dropdown hides.
+							setTimeout(close, 120);
+						});
+						input.addEventListener('keydown', function (e) {
+							var vis = visibleOptions();
+							if (e.key === 'ArrowDown') {
+								e.preventDefault();
+								open();
+								setActive(activeIndex + 1);
+							} else if (e.key === 'ArrowUp') {
+								e.preventDefault();
+								setActive(activeIndex - 1);
+							} else if (e.key === 'Enter') {
+								if (activeIndex >= 0 && vis[activeIndex]) {
+									e.preventDefault();
+									pickOption(vis[activeIndex]);
+								} else if (allowCreate && (input.value || '').trim()) {
+									e.preventDefault();
+									pickCreate();
+								}
+							} else if (e.key === 'Escape') {
+								close();
+							}
+						});
+						options.forEach(function (opt) {
+							opt.addEventListener('mousedown', function (e) {
+								e.preventDefault();
+								pickOption(opt);
+							});
+						});
+						if (createRow) {
+							createRow.addEventListener('mousedown', function (e) {
+								e.preventDefault();
+								pickCreate();
+							});
+						}
+					}
+					function scan() {
+						document.querySelectorAll('[data-kiban-autocomplete]').forEach(setupOne);
+					}
+					document.addEventListener('DOMContentLoaded', function () {
+						scan();
+						document.body.addEventListener('htmx:afterSwap', scan);
+					});
+				})();
+
 				// Sidebar tools-rail toggle. The sub-nav is always visible;
 				// the hamburger flips a boolean attribute on the layout
 				// root that controls whether the tools rail slides in/out.
@@ -619,6 +765,205 @@ templ Base(cfg Config) {
 					var root = e.target || document;
 					root.querySelectorAll && root.querySelectorAll('[data-kiban-tabs-panel]').forEach(kibanSyncTabsPanel);
 				});
+
+				// code_editor — CodeMirror 5 wrapper.
+				//
+				// Each [data-kiban-code-editor] is a wrapper around a
+				// <textarea> that should turn into a CodeMirror instance.
+				// Picks the mode from data-language (javascript/python);
+				// `editor.on('change', editor.save)` keeps the textarea
+				// value in sync so `new FormData(form)` reads the latest
+				// code. Init re-runs on htmx:afterSwap so editors brought
+				// in by a partial response are also wired. We tag the
+				// wrapper with data-kiban-code-editor-ready so a re-run
+				// doesn't double-init.
+				//
+				// Requires `LoadCodeMirror: true` on the layout Config —
+				// without it the CDN scripts aren't loaded and the init
+				// silently skips (window.CodeMirror is undefined).
+				(function () {
+					// modeFor — public via window.kibanCodeEditorModeFor
+					// so callers (workfloo's variables drawer dynamic
+					// language switcher, for example) can reuse the
+					// kiban-domain language keywords without having to
+					// duplicate the switch.
+					function modeFor(lang) {
+						switch (lang) {
+							case 'python312':
+							case 'python':
+								return 'python';
+							case 'json':
+								return { name: 'javascript', json: true };
+							case 'html':
+							case 'htmlmixed':
+								return 'htmlmixed';
+							case 'xml':
+								return 'xml';
+							case 'css':
+								return 'css';
+							case 'nodejs20':
+							case 'javascript':
+							default:
+								return { name: 'javascript', json: false };
+						}
+					}
+					window.kibanCodeEditorModeFor = modeFor;
+					function initOne(wrapper) {
+						if (wrapper.getAttribute('data-kiban-code-editor-ready') === '1') return;
+						if (!window.CodeMirror) return;
+						var textarea = wrapper.querySelector('textarea');
+						if (!textarea) return;
+						var lang = wrapper.getAttribute('data-language') || 'javascript';
+						var editor = CodeMirror.fromTextArea(textarea, {
+							mode: modeFor(lang),
+							theme: 'neo',
+							lineNumbers: true,
+							indentUnit: 2,
+							tabSize: 2,
+							lineWrapping: true,
+							viewportMargin: Infinity,
+						});
+						editor.on('change', function () { editor.save(); });
+						// Stash the instance on the wrapper so callers can
+						// reach it (e.g. to flip mode when a related
+						// language-select changes). Convention: any caller
+						// that mutates the editor should also keep the
+						// wrapper's data-language attribute in sync.
+						wrapper._kibanCm = editor;
+						wrapper.setAttribute('data-kiban-code-editor-ready', '1');
+					}
+					function scan(root) {
+						(root || document).querySelectorAll('[data-kiban-code-editor]').forEach(initOne);
+					}
+					document.addEventListener('DOMContentLoaded', function () { scan(); });
+					document.addEventListener('htmx:afterSwap', function (e) { scan(e.target || document); });
+				})();
+
+				// canvas — workfloo-style tree visualisation.
+				//
+				// Each [data-kiban-canvas] is a vertical stack of HTML node
+				// cards plus a sibling <svg data-kiban-canvas-edges> overlay.
+				// The cards are positioned by ordinary flex layout (so they
+				// can never overlap); this script just paints the lines that
+				// connect them, by reading data-edges from the wrapper and
+				// measuring each referenced node's rect.
+				//
+				// Edge shape: when source and destination share the same
+				// horizontal center, a single vertical segment is drawn.
+				// Otherwise a three-segment orthogonal path is drawn
+				// (down → across → down), with the horizontal segment
+				// halfway between the source's bottom and the destination's
+				// top so branches in different columns connect cleanly.
+				//
+				// Re-runs on DOMContentLoaded, htmx:afterSwap (scoped to
+				// the swap target), and window resize so the lines stay
+				// glued to nodes through partial re-renders and viewport
+				// changes.
+				(function () {
+					var STROKE_DEFAULT = '#94A1B9'; // kiban-ink4-ish
+					var STROKE_ERROR = '#DC2626';   // red-600
+
+					function strokeFor(variant) {
+						return variant === 'error' ? STROKE_ERROR : STROKE_DEFAULT;
+					}
+
+					function render(canvas) {
+						var raw = canvas.getAttribute('data-edges') || '[]';
+						var edges;
+						try { edges = JSON.parse(raw); } catch (_) { edges = []; }
+						var svg = canvas.querySelector('[data-kiban-canvas-edges]');
+						if (!svg) return;
+
+						var rect = canvas.getBoundingClientRect();
+						// Set explicit width/height + viewBox so the SVG
+						// coordinate system matches CSS pixels relative to
+						// the canvas top-left. Without this, percentage-
+						// sized SVGs stretch lines weirdly when the canvas
+						// is taller than the viewport.
+						svg.setAttribute('width', rect.width);
+						svg.setAttribute('height', rect.height);
+						svg.setAttribute('viewBox', '0 0 ' + rect.width + ' ' + rect.height);
+
+						// Clear previous paths before redrawing.
+						while (svg.firstChild) svg.removeChild(svg.firstChild);
+						if (!edges.length) return;
+
+						edges.forEach(function (edge) {
+							if (!edge || !edge.from || !edge.to) return;
+							var from = canvas.querySelector('#' + cssEscape(edge.from));
+							var to = canvas.querySelector('#' + cssEscape(edge.to));
+							if (!from || !to) return;
+
+							var fr = from.getBoundingClientRect();
+							var tr = to.getBoundingClientRect();
+							var x1 = fr.left + fr.width / 2 - rect.left;
+							var y1 = fr.bottom - rect.top;
+							var x2 = tr.left + tr.width / 2 - rect.left;
+							var y2 = tr.top - rect.top;
+
+							var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+							var d;
+							if (Math.abs(x1 - x2) < 0.5) {
+								d = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+							} else {
+								var midY = (y1 + y2) / 2;
+								d = 'M ' + x1 + ' ' + y1 +
+								    ' L ' + x1 + ' ' + midY +
+								    ' L ' + x2 + ' ' + midY +
+								    ' L ' + x2 + ' ' + y2;
+							}
+							path.setAttribute('d', d);
+							path.setAttribute('fill', 'none');
+							path.setAttribute('stroke', strokeFor(edge.variant));
+							path.setAttribute('stroke-width', '1.5');
+							svg.appendChild(path);
+
+							if (edge.label) {
+								var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+								label.setAttribute('x', (x1 + x2) / 2);
+								label.setAttribute('y', (y1 + y2) / 2 - 4);
+								label.setAttribute('text-anchor', 'middle');
+								label.setAttribute('fill', '#63718E');
+								label.setAttribute('font-size', '11');
+								label.textContent = edge.label;
+								svg.appendChild(label);
+							}
+						});
+					}
+
+					// CSS.escape polyfill — old Safari + some test runners
+					// lack it. We only need to handle the workfloo nodeId
+					// shape (Mongo ObjectIDs, mostly hex), so a tiny escape
+					// covers what we hit in practice.
+					function cssEscape(id) {
+						if (window.CSS && CSS.escape) return CSS.escape(id);
+						return String(id).replace(/[^a-zA-Z0-9_\-]/g, function (c) {
+							return '\\' + c;
+						});
+					}
+
+					function renderAll(root) {
+						(root || document).querySelectorAll('[data-kiban-canvas]').forEach(render);
+					}
+
+					var resizeTimer = null;
+					function scheduleResize() {
+						if (resizeTimer) clearTimeout(resizeTimer);
+						resizeTimer = setTimeout(function () { renderAll(); }, 80);
+					}
+
+					document.addEventListener('DOMContentLoaded', function () { renderAll(); });
+					document.addEventListener('htmx:afterSwap', function (e) {
+						renderAll(e.target || document);
+					});
+					window.addEventListener('resize', scheduleResize);
+
+					// Expose for callers that mutate canvas contents
+					// programmatically (e.g. after an in-place DOM tweak
+					// that doesn't go through HTMX). Optional — most
+					// consumers won't need it.
+					window.kibanCanvasRender = renderAll;
+				})();
 
 				// kibanLogger — browser-side error reporting bridge.
 				//

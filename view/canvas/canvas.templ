@@ -1,0 +1,120 @@
+package canvas
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
+// Canvas wraps a vertical stack of Node/EdgeButton children plus a sibling
+// SVG overlay where the runtime JS paints the edges. The flex column keeps
+// the cards visually centered and forbids overlaps (the children share the
+// same column; the JS only paints lines between their measured positions).
+//
+// data-edges is consumed by the kibanCanvasRender JS in view/layout/base.templ.
+// When Edges is empty, no SVG paths are drawn — useful for empty/single-node
+// canvases.
+templ Canvas(cfg CanvasOptions) {
+	<div
+		id={ canvasID(cfg.ID) }
+		data-kiban-canvas
+		data-edges={ encodeEdges(cfg.Edges) }
+		class="relative w-full"
+	>
+		<svg
+			data-kiban-canvas-edges
+			class="absolute inset-0 pointer-events-none"
+			width="100%"
+			height="100%"
+			aria-hidden="true"
+		></svg>
+		<div data-kiban-canvas-stage class="relative flex flex-col items-center gap-10 py-8">
+			{ children... }
+			if cfg.EmptyMessage != "" {
+				<div data-kiban-canvas-empty class="flex flex-col items-center gap-4 text-center text-kiban-ink3">
+					<div class="text-sm">{ cfg.EmptyMessage }</div>
+					if cfg.EmptyAction != nil {
+						@cfg.EmptyAction
+					}
+				</div>
+			}
+		</div>
+	</div>
+}
+
+// Node is a single workfloo card. The DOM id is required because the edge
+// JS resolves edges by querying [id=…] inside the parent canvas. The card's
+// border + background tint shifts with Status; nodes with non-ok status get
+// a small pill on the bottom-right indicating the state.
+//
+// Href turns the card into an <a> for click-to-edit; without it the card is
+// a div and the caller wires interactivity via Attrs (HTMX or onclick).
+//
+// ActionMenu is rendered absolutely in the top-right of the card so the
+// title row keeps its own flex layout.
+templ Node(opts NodeOptions) {
+	if opts.Href != "" {
+		<a
+			id={ opts.ID }
+			href={ templ.SafeURL(opts.Href) }
+			data-kiban-canvas-node
+			data-status={ opts.Status }
+			class={ nodeShellClass(opts.Status) + " block px-4 py-3 no-underline" }
+			{ opts.Attrs... }
+		>
+			@nodeInner(opts)
+		</a>
+	} else {
+		<div
+			id={ opts.ID }
+			data-kiban-canvas-node
+			data-status={ opts.Status }
+			class={ nodeShellClass(opts.Status) + " px-4 py-3" }
+			{ opts.Attrs... }
+		>
+			@nodeInner(opts)
+		</div>
+	}
+}
+
+templ nodeInner(opts NodeOptions) {
+	<div class="flex items-start gap-3">
+		if opts.Icon != nil {
+			<div class="shrink-0 mt-0.5 w-8 h-8 rounded-md bg-kiban-primary-soft text-kiban-primary flex items-center justify-center">
+				@opts.Icon
+			</div>
+		}
+		<div class="flex-1 min-w-0">
+			<div class="text-sm font-medium text-kiban-ink truncate">{ opts.Title }</div>
+			if opts.Subtitle != "" {
+				<div class="text-xs text-kiban-ink3 truncate mt-0.5">{ opts.Subtitle }</div>
+			}
+		</div>
+		if opts.ActionMenu != nil {
+			<div class="shrink-0" onclick="event.stopPropagation()">
+				@opts.ActionMenu
+			</div>
+		}
+	</div>
+	if opts.Status == StatusError || opts.Status == StatusNotConfigured {
+		<div class="mt-2 flex justify-end">
+			<span class={ statusPillClass(opts.Status) }>{ statusPillLabel(opts.Status) }</span>
+		</div>
+	}
+}
+
+// EdgeButton is the "+" affordance rendered between nodes. The caller drops
+// it into the Canvas children between two consecutive @Node calls; the
+// runtime JS positions the edges to start/end at the surrounding nodes, so
+// the button sits visually on top of the connector line at its midpoint.
+//
+// Attrs carries the HTMX wiring (hx-get, hx-target, …) or an onclick that
+// opens the connector picker overlay.
+templ EdgeButton(opts EdgeButtonOptions) {
+	<div data-kiban-canvas-edge-button class="relative z-10">
+		<button
+			type="button"
+			aria-label={ opts.AriaLabel }
+			class="w-8 h-8 rounded-full border border-kiban-border bg-white text-kiban-ink3 hover:text-kiban-primary hover:border-kiban-primary shadow-sm flex items-center justify-center transition-colors"
+			{ opts.Attrs... }
+		>
+			@icons.Plus()
+		</button>
+	</div>
+}

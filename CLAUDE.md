@@ -95,7 +95,7 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | Componente | Estado |
 |---|---|
 | `icons.Home`, `icons.Users`, `icons.ShoppingBag`, `icons.GitMerge`, `icons.CreditCard`, `icons.Code`, `icons.Database`, `icons.BookOpen`, `icons.FileText` | done |
-| `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar` | done |
+| `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar`, `icons.Plus` | done |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
 
@@ -140,6 +140,8 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 | `input.File(name, label, accept, hint string, required, multiple bool)` | done | `<input type="file">` con `file:` prefix kiban-styleado. `accept` (ej. `.csv,text/csv`) para restringir el picker; pasá `""` para aceptar todo. `required?={required}` se emite (HTML5) para que el browser bloquee submit sin archivo. `multiple?={multiple}` permite que el cuadro de diálogo del SO seleccione varios archivos en una sola apertura — pareá con `view/file_chip_input` cuando además querés chips + remove + agregar más en sucesivos picks. |
 | `input.Hidden(name, value, id string)` | done | `<input type="hidden">`. Pasá `id=""` cuando no haga falta (la mayoría de los casos); poné `id` cuando el JS necesite leer/escribir el valor en runtime (ej. el script de geolocation que rellena lat/lng antes de submit). |
 | `input.Textarea(name, label, value, errMsg, hint string, required bool, rows int, placeholder string, mono bool)` | done | `rows <= 0` → default 3. `placeholder` se emite siempre (vacío = no se muestra). `mono=true` swappea a `font-mono` para PEM blocks, listas de emails una-por-línea, etc. |
+| `input.AutocompleteOptions` (struct) | done | Configura `Autocomplete`. Campos: `Name` (form input, required), `Label`, `Value` (current value — el visible input muestra el `Label` del item que matchea), `Items []SelectOption` (opciones existentes para filtrar), `ErrMsg`, `Hint`, `Required`, `Placeholder`, `AllowCreate` (cuando `true` y el texto tipeado no matchea ningún item exactamente, aparece una fila "Crear: «<typed>»" al final), `CreateLabel` (override del prefijo "Crear"). |
+| `input.Autocomplete(opts AutocompleteOptions)` | done | Renderiza un visible `<input type="text">` + un hidden `<input type="hidden" name=…>` (lo que va al form-submit) + un `<ul>` dropdown de opciones filtradas. La JS en `view/layout/base.templ` (scoped a `[data-kiban-autocomplete]`) maneja filtrado en `input`, navegación con ↑/↓/Enter/Escape, click para seleccionar, blur con delay para cerrar, y la fila "Crear" cuando `AllowCreate=true`. Re-init en `htmx:afterSwap`. El form-submitted value es el hidden — el visible es UX puro. |
 | `input.Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, disabledHint string)` | done | Checkbox plano + label en línea. **`value="true"` obligatorio** — Gin no parsea "on" como bool. `disabledHint` se renderiza después del label en `text-kiban-ink4` solo cuando `!enabled` (útil para mostrar "— no configurado en …" en toggles disabled). Pasá `""` cuando no haga falta. |
 | `input.CheckboxCard(name, title, help string, value, enabled bool, attrs templ.Attributes)` | done | Card-style: borde + padding + título arriba + helper text en muted abajo. Mismo contrato `value="true"`. `enabled=false` deshabilita y baja opacidad. Útil para listas de preferencias / settings cards. |
 | `input.Toggle(name, label string, value, enabled bool, attrs templ.Attributes)` | done | Checkbox semántico, switch visual (Tailwind `peer-checked` para animar el tracker). Mismo contrato `value="true"` y `attrs` que Checkbox. |
@@ -251,7 +253,7 @@ A `<input type="file">` paired with a chip-style readout of the selected files (
 Convenciones del paquete:
 - **Open / close** vía `window.kibanOpenOverlay(id)` / `kibanCloseOverlay(id)` (definidos en `view/layout/base.templ`). El caller cablea su trigger con `onclick="kibanOpenOverlay('the-id')"`; el componente se ocupa del close (close button + backdrop click + Escape global).
 - **Escape** cierra solo el overlay topmost visible (por orden de `[data-kiban-overlay]:not(.hidden)` en el DOM) — multiple overlays apilados se cierran uno a la vez, igual que el comportamiento nativo del browser.
-- **Sizes** compartidos: `sm` (max-w-sm) / `md` (max-w-md, default) / `lg` (max-w-lg) / `xl` (max-w-xl). String vacío cae a `md` (excepto Confirm, que cae a `sm`).
+- **Sizes** compartidos: `sm` (max-w-sm) / `md` (max-w-md, default) / `lg` (max-w-lg) / `xl` (max-w-xl) / `2xl` (max-w-2xl) / `3xl` (max-w-3xl) / `4xl` (max-w-4xl) / `5xl` (max-w-5xl) / `6xl` (max-w-6xl) / `7xl` (max-w-7xl). String vacío cae a `md` (excepto Confirm, que cae a `sm`). Los tamaños `2xl`/`3xl` están pensados para modals con contenido en grid (ej. el picker de plantillas/connectors de workfloo) donde `xl` deja cada celda demasiado angosta; `4xl`–`7xl` para experiencias multi-columna de editor (ej. la wizard RULESET con 4 columnas). Preferir `lg` o menor para modals de short-form.
 - **Z-index**: SidePanel = 40, Modal/Confirm = 50.
 - **Footer actions** vía `button.Group{PrimaryAction *Options, SecondaryActions []Options}` (definido en `view/button/`, ver sección de arriba). PrimaryAction renderiza a la derecha (default variant `primary`); SecondaryActions a la izquierda en orden, default variant `secondary`. Si no hay acciones (`Group.IsEmpty()`), no se renderiza el footer.
 - **Variantes** del row alineadas con `button.Button`: `primary` (kiban-primary), `secondary` (outline border-kiban-border), `danger` (red-600 — usar para confirms destructivos).
@@ -358,6 +360,45 @@ Nested-accordion viewer for arbitrary JSON-shaped Go values (typical input: the 
 |---|---|---|
 | `jsonviewer.Options` (struct) | done | `Data any` (required — pass the raw decoded JSON), `ID string` (DOM id of the wrapper; defaults to `kiban-jsonviewer`, override when multiple viewers share a page so each master toggle stays scoped), `EmptyMessage string` (Spanish placeholder when `Data` is nil/empty; defaults to "Sin información."). |
 | `jsonviewer.View(opts)` | done | Renders the wrapper + master toggle button + recursive accordion tree. Top-level primitives don't get a redundant outer accordion (the level itself is the frame); nested objects/arrays each become a `<details>` with the key as the summary. Per-node toggle is native; the inline JS only watches `[data-jsonviewer-toggle-all]` clicks and flips every `<details data-jsonviewer-node>` inside the target wrapper. |
+
+### Code editor (`view/code_editor/`)
+
+CodeMirror 5 wrapper for code-editing surfaces (JS / Python / etc.). Page must opt in via `layout.Config.LoadCodeMirror = true` so the CDN bundle ships; the wrapper falls back to a styled `<textarea>` when CodeMirror isn't loaded.
+
+**Architecture:**
+- The templ renders a labelled `<textarea>` inside `<div data-kiban-code-editor data-language="…">`.
+- Init JS in `view/layout/base.templ` scans for `[data-kiban-code-editor]` on `DOMContentLoaded` + `htmx:afterSwap`, picks a mode from `data-language` (`nodejs20` / `javascript` → JS mode, `python312` / `python` → Python mode, default → JS), and replaces the textarea with a CodeMirror instance via `CodeMirror.fromTextArea`.
+- `editor.on('change', editor.save)` keeps the underlying textarea in sync so `new FormData(form)` reads the latest code on submit. Wrappers are stamped with `data-kiban-code-editor-ready="1"` so a second init pass (from a re-fire of `htmx:afterSwap`) doesn't double-wrap.
+- Theme: `neo`. `viewportMargin: Infinity` so the editor grows with content.
+
+**Languages:** add a new keyword to the JS `modeFor` switch in `base.templ` AND load the corresponding CodeMirror mode script in the `LoadCodeMirror` block.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `code_editor.Options` (struct) | done | `Name` (form field, required), `Label`, `Value`, `Hint`, `ErrMsg` (mutually exclusive with Hint, same contract as `view/input/*`), `Language` (`nodejs20`/`python312`/`javascript`/`python`), `Required` (red asterisk), `Rows` (pre-init textarea height; defaults to 12). |
+| `code_editor.CodeEditor(opts)` | done | Renders the wrapper + textarea. Init JS upgrades it to a CodeMirror surface when the page loads CodeMirror. |
+
+### Canvas (`view/canvas/`)
+
+Vertical tree of HTML node cards connected by SVG edges. Used by the workfloo editor for the locked, no-drag, sequential-build canvas (per the workfloo CLAUDE / spec: nodes never overlap, the user can't reposition them, building is sequential). Layout is plain flex/grid — overlap is impossible by construction; the JS only paints the lines that connect the cards.
+
+**Architecture:**
+- The cards (`Node`) and "+" edge buttons (`EdgeButton`) are plain HTML rendered server-side; `Canvas` is the outer wrapper that hosts them.
+- The wrapper carries `data-edges` as a JSON-encoded list of `{from, to, label?, variant?}`. The runtime JS (in `view/layout/base.templ`, scoped to `[data-kiban-canvas]`) measures each referenced node's DOM rect and paints SVG paths into the `<svg data-kiban-canvas-edges>` overlay.
+- Edge shape: same-column siblings → straight vertical line. Cross-column (branches) → three-segment orthogonal path (down → across → down). `variant="error"` paints the line in red-600 to mark the workfloo's `NextErrorNodeId` path.
+- Re-runs on `DOMContentLoaded`, `htmx:afterSwap` (scoped to the swap target), and debounced `window.resize`. `window.kibanCanvasRender(root?)` is exposed for callers that mutate canvas DOM outside HTMX.
+
+**Branching:** the `Canvas` body is a single flex column today. When branching is needed (decision-tree children), the caller renders multiple child columns side-by-side inside `Canvas` children; the edge JS handles cross-column lines automatically. Branch primitives (e.g. a `Branch` templ) are planned but not yet implemented — for the linear MVP the single-column layout suffices.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `canvas.NodeOptions` (struct) | done | `ID` (required, must be unique within the enclosing Canvas), `Title`, `Subtitle`, `Icon templ.Component`, `Status` (`canvas.StatusOK`/`StatusError`/`StatusNotConfigured`; empty = ok), `Href` (renders an `<a>` instead of `<div>`), `Attrs templ.Attributes` (HTMX/data-*), `ActionMenu templ.Component` (slot in the card's top-right, typically a `view/menu` kebab). |
+| `canvas.EdgeOptions` (struct) | done | `From string` + `To string` reference NodeOptions.ID values; optional `Label string` rendered at the edge midpoint (decision-tree branch labels like "Sí"/"No"); optional `Variant string` — `"error"` paints the line red. Serialized to JSON on the wrapper as `data-edges`; the runtime JS picks it up. |
+| `canvas.CanvasOptions` (struct) | done | `ID` (defaults to `kiban-canvas`), `Edges []EdgeOptions`, `EmptyMessage` (centered placeholder when caller passes no children), `EmptyAction templ.Component` (optional secondary slot under the empty message — typically a button). |
+| `canvas.EdgeButtonOptions` (struct) | done | `AriaLabel string` (required, e.g. "Agregar nodo después de X"), `Attrs templ.Attributes` (HTMX wiring or onclick to open the connector picker). |
+| `canvas.Canvas(cfg)` | done | Outer wrapper + SVG edge overlay + flex column for children. Children are typically a mix of `Node` and `EdgeButton`. Empty-state slot renders when the caller passes no node children but did supply `EmptyMessage`. |
+| `canvas.Node(opts)` | done | One card: icon + title + optional subtitle + optional action menu + status pill (rendered only for non-ok statuses). Becomes an `<a>` when `Href` is set. |
+| `canvas.EdgeButton(opts)` | done | The "+" affordance rendered between two nodes (or before the first node). Caller wires HTMX in `Attrs`. |
 
 ### Form binding (`binding/`)
 

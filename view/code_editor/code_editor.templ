@@ -1,0 +1,30 @@
+package code_editor
+
+// CodeEditor renders a labelled <textarea> wrapped in a div that the
+// runtime JS (view/layout/base.templ) turns into a CodeMirror
+// instance. Before the JS runs (or if LoadCodeMirror is false), the
+// component is just a styled textarea — the form still submits, just
+// without syntax highlighting.
+templ CodeEditor(opts Options) {
+	<div data-kiban-code-editor data-language={ opts.Language } class="space-y-1">
+		if opts.Label != "" {
+			<label for={ opts.inputID() } class="block text-sm font-medium text-kiban-ink">
+				{ opts.Label }
+				if opts.Required {
+					<span class="text-red-500" aria-hidden="true">&#42;</span>
+				}
+			</label>
+		}
+		<textarea
+			id={ opts.inputID() }
+			name={ opts.Name }
+			rows={ opts.effectiveRows() }
+			class="w-full font-mono text-sm border border-kiban-border rounded-md p-3 leading-snug focus:outline-none focus:border-kiban-primary"
+		>{ opts.Value }</textarea>
+		if opts.ErrMsg != "" {
+			<p class="text-xs text-red-600">{ opts.ErrMsg }</p>
+		} else if opts.Hint != "" {
+			<p class="text-xs text-kiban-ink3">{ opts.Hint }</p>
+		}
+	</div>
+}
