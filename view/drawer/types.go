@@ -16,7 +16,8 @@
 //     "sm" → max-w-sm, "" or "md" → max-w-md, "lg" → max-w-lg,
 //     "xl" → max-w-xl, "2xl" → max-w-2xl, "3xl" → max-w-3xl,
 //     "4xl" → max-w-4xl, "5xl" → max-w-5xl, "6xl" → max-w-6xl,
-//     "7xl" → max-w-7xl. Empty string falls back to "md".
+//     "7xl" → max-w-7xl, "full" → max-w-none (full-viewport).
+//     Empty string falls back to "md".
 //
 //     4xl–7xl are intended for multi-column editor experiences
 //     (e.g. the RULESET wizard's 4-column layout). Use sparingly
@@ -111,6 +112,14 @@ func sizeClass(size string) string {
 		return "max-w-6xl"
 	case "7xl":
 		return "max-w-7xl"
+	case "full":
+		// Full-viewport modal — drops the max-width cap so the
+		// dialog spans the available space (minus the modal's
+		// own `mx-4` horizontal gutter). Used by long-form
+		// multi-column editors (workfloo RULESET, future
+		// wide-canvas dialogs) where 7xl still leaves the
+		// right-side column too narrow on big monitors.
+		return "max-w-none"
 	default:
 		return "max-w-md"
 	}
