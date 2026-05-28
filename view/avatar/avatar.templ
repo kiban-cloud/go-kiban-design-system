@@ -3,8 +3,9 @@ package avatar
 // Avatar renders a circular profile picture with an initials fallback.
 // The initials always render in the background; when Options.Src is set
 // the image stacks on top (object-cover, full bleed). If the image
-// 404s or hasn't loaded yet, the initials show through naturally —
-// no JS needed.
+// 404s or fails to load, `onerror` removes the <img> from the DOM so
+// the broken-icon placeholder doesn't sit on top of the initials —
+// the fallback then becomes visible automatically.
 templ Avatar(o Options) {
 	<span
 		class={ "relative inline-flex items-center justify-center rounded-full bg-kiban-primary-soft text-kiban-primary font-medium overflow-hidden shrink-0 " + o.sizeClass() }
@@ -16,6 +17,7 @@ templ Avatar(o Options) {
 			<img
 				src={ o.Src }
 				alt={ o.altText() }
+				onerror="this.remove()"
 				class="absolute inset-0 h-full w-full object-cover"
 			/>
 		}

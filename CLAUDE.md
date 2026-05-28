@@ -78,6 +78,8 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `layout.Config` | done | Struct con Title, ProjectName, SectionLabel, User, SpaceID, ShellURL, LogoutAction, ToolKey, ActiveKey, Tools, Docs, SubItems. Cada proyecto crea un type alias local (`view_layout.PageData = layout.Config`) y un `enrich(data)` que añade los campos fijos (Tools, etc.) antes de pasar a `Layout`. |
 | `layout.Layout(cfg)` | done | Shell completa: HTML, head, scripts, topbar, sub-nav (siempre visible) + tools rail (toggleable), main content. |
 | `layout.Topbar(cfg)` | done | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
+| Space switcher (chip) | done | El chip de espacio en `Topbar` es un dropdown clickable cuando `len(cfg.Spaces) >= 2` + `cfg.SwitchSpaceAction != ""`. Cada item es un `<form method="POST" action={SwitchSpaceAction}>` con hidden `spaceId`; el proyecto consumidor valida acceso server-side antes de setear `kiban_space_id` cookie y redirigir. Con `len(cfg.Spaces) <= 1` cae a readonly. `cfg.CurrentSpaceName` decide el label visible (fallback al SpaceID literal o "—" si nada está set). Usa el mismo `kibanToggleMenu` y outside-click handler del menu kebab. |
+| User menu (avatar dropdown) | done | Topbar avatar es un dropdown clickable vía `window.kibanToggleMenu('topbar-user-menu')` (NO hover — el patrón anterior con `group-hover:block` fallaba en el gap mt-1 entre trigger y panel). Mismo data-attr + JS handler que el `view/menu` kebab; ARIA-completo (`aria-haspopup/expanded/controls`, `role="menu"`/`menuitem`). |
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
 | `layout.AdminConfig` | done | Struct para AdminLayout: `Title`, `ProjectName`, `HomeHref`, `User`, `LogoutAction`, `NavSections`, `ActiveSection`, `Breadcrumbs`. Distinto de `Config` — no carga el modelo multi-tool (Tools/Docs/SubItems). |
@@ -96,6 +98,8 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 |---|---|
 | `icons.Home`, `icons.Users`, `icons.ShoppingBag`, `icons.GitMerge`, `icons.CreditCard`, `icons.Code`, `icons.Database`, `icons.BookOpen`, `icons.FileText` | done |
 | `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar`, `icons.Plus` | done |
+| `icons.Eye`, `icons.EyeOff` | done | Paired affordance icons used by `input.Password`'s visibility toggle. Also reusable as generic "view / preview" / "hide" buttons. Sized 18×18 to match `Close`. |
+| `icons.Settings` | done | Standard gear/cog. Affordance for "configurar / settings / preferencias" entries (home cards, sidebar items, kebab actions). 20×20 to match navigational icons. |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
 
@@ -131,7 +135,7 @@ Convenciones del paquete (ver godoc de `types.go` para el detalle):
 | Componente | Estado | Notas |
 |---|---|---|
 | `input.Text(name, label, value, errMsg, hint string, required bool)` | done | Texto plano. Mismo contrato error/hint descrito arriba. |
-| `input.Password(name, label, value, errMsg, hint string, required bool, placeholder string)` | done | Como Text pero `type="password"` + `autocomplete="off"`. `placeholder` para renderizar el sentinel "••••••••" cuando ya hay un secreto guardado y el usuario puede dejar el campo en blanco para conservarlo. |
+| `input.Password(name, label, value, errMsg, hint string, required bool, placeholder string)` | done | Como Text pero `type="password"` + `autocomplete="off"`. `placeholder` para renderizar el sentinel "••••••••" cuando ya hay un secreto guardado y el usuario puede dejar el campo en blanco para conservarlo. **Visibility toggle siempre on**: un botón con `icons.Eye`/`icons.EyeOff` dentro del input swappea el `type` entre `password` y `text` via el handler `[data-kiban-password-toggle]` en `view/layout/base.templ` (delegado a nivel document, así también funciona en password fields inyectados por HTMX swap). Para casos donde se quiere forzar el campo enmascarado (raro — confirm-prompt one-shot), renderizar un `<input type="password">` plano en lugar de usar este componente. |
 | `input.Number(name, label, value, errMsg, hint string, required bool, min, max, step string)` | done | `type="number"`. `min`/`max`/`step` como strings para soportar decimales ("0.01") y permitir suprimir el atributo pasando `""`. `value` también string para round-trippar lo que el usuario tipeó tras un error de validación. |
 | `input.Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, required bool)` | done | Wrapper de intl-tel-input. Renderiza `<input type="tel" data-tel-visible>` (sin `name`) + dos `<input type="hidden">` (`data-tel-cc` / `data-tel-national`). El init JS de `layout/base.templ` escanea `[data-phone-input]`. `data-tel-initial` se pre-popula con `+<cc><national>` cuando ambos lados están seteados (edit). |
 | `input.Select(name, label, value, errMsg, hint string, options []SelectOption, required bool)` | done | `options []SelectOption{Value, Label}`. Si necesitas placeholder, prepéndelo como una `SelectOption{Value: "", Label: "Selecciona…"}`. |
@@ -199,6 +203,7 @@ Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-render
 |---|---|---|
 | `spinner` (CSS class `.ds-spinner`) | done | Definida en `view/layout/base.templ`. Uso: `<div class="ds-spinner" role="status"></div>`. No hay templ helper — la clase CSS es la API. |
 | `tooltip` | done | Patrón CSS-only: añade `data-tooltip="texto"` a cualquier elemento. CSS en `base.templ`. |
+| `kiban-prose` (CSS class) | done | Estiliza HTML generado a partir de markdown (catalog descriptions, comentarios largos, etc.). Tailwind's `@tailwindcss/typography` (`prose`) plugin no está cargado en la config CDN; esta clase rellena el hueco con reglas para h1/h2/h3 (font-heading + sizing tipo doc), `p`, `ul`/`ol`/`li`, `a`, `strong`, `code`, `pre`, `blockquote`, `hr`. Usage: envolvé el output de goldmark en `<div class="kiban-prose">…@templ.Raw(html)…</div>`. CSS en `base.templ`. |
 
 ### Chip (`view/chip/`)
 
