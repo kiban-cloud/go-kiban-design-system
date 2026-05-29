@@ -19,11 +19,7 @@ templ Topbar(cfg Config) {
 			<span class="font-heading font-bold text-xl text-kiban-ink">kiban</span>
 			<span class="font-heading font-normal text-xl text-kiban-primary">cloud</span>
 		</a>
-		<div class="flex items-center gap-2 px-4 py-2 border border-kiban-border rounded-md text-sm min-w-[220px] cursor-default select-none">
-			<div class="w-5 h-5 rounded-sm bg-kiban-surface"></div>
-			<span class="flex-1 text-kiban-ink">{ shortSpaceID(cfg.SpaceID) }</span>
-			@icons.ChevronDown()
-		</div>
+		@spaceSwitcher(cfg)
 		<div class="flex-1"></div>
 		if cfg.SandboxToggle != nil {
 			@sandboxSwitch(*cfg.SandboxToggle)
@@ -34,24 +30,7 @@ templ Topbar(cfg Config) {
 			</a>
 		}
 		<div class="h-8 w-px bg-kiban-border"></div>
-		<div class="relative group">
-			<button class="w-9 h-9 rounded-full bg-kiban-surface border border-kiban-border text-kiban-ink3 text-sm font-medium flex items-center justify-center overflow-hidden">
-				{ userInitials(cfg.User) }
-			</button>
-			<div class="absolute right-0 top-full mt-1 bg-white border border-kiban-border rounded-md shadow-lg py-1 min-w-[200px] hidden group-hover:block z-50">
-				<div class="px-3 py-2 border-b border-kiban-border">
-					if cfg.User.Name != "" {
-						<div class="text-sm font-medium">{ cfg.User.Name }</div>
-					}
-					<div class="text-xs text-kiban-ink4 truncate">{ cfg.User.Email }</div>
-				</div>
-				<form method="POST" action={ templ.URL(cfg.LogoutAction) }>
-					<button type="submit" class="w-full text-left px-3 py-2 text-sm hover:bg-kiban-surface text-kiban-ink">
-						Salir
-					</button>
-				</form>
-			</div>
-		</div>
+		@topbarUserMenu(cfg)
 	</header>
 }
 
@@ -101,6 +80,79 @@ func sandboxThumbClass(enabled bool) string {
 		return base + " left-4"
 	}
 	return base + " left-0.5"
+}
+
+// topbarUserMenu is the avatar dropdown on the customer-facing Layout's
+// topbar. Uses the same click-driven, outside-click-aware pattern as
+// AdminLayout's adminUserMenu (via window.kibanToggleMenu / kibanCloseMenu
+// in base.templ). The earlier `group-hover:block` approach was unusable
+// because the small gap between trigger and panel (mt-1) broke the
+// :hover chain and the menu closed before the user could reach
+// "Cerrar sesión".
+//
+// ID prefix "topbar-user-menu" is kept distinct from "admin-user-menu"
+// so a page that somehow renders both shells doesn't collide.
+templ topbarUserMenu(cfg Config) {
+	<div class="relative inline-block" data-kiban-menu="topbar-user-menu">
+		<button
+			type="button"
+			id="topbar-user-menu-trigger"
+			aria-haspopup="true"
+			aria-expanded="false"
+			aria-controls="topbar-user-menu-panel"
+			aria-label={ "Menú de " + topbarUserMenuLabel(cfg.User) }
+			onclick="window.kibanToggleMenu('topbar-user-menu')"
+			class="w-9 h-9 rounded-full bg-kiban-surface border border-kiban-border text-kiban-ink3 text-sm font-medium flex items-center justify-center overflow-hidden hover:bg-kiban-border transition-colors"
+		>
+			{ userInitials(cfg.User) }
+		</button>
+		<div
+			id="topbar-user-menu-panel"
+			role="menu"
+			aria-labelledby="topbar-user-menu-trigger"
+			class="hidden absolute right-0 top-full mt-1 z-50 min-w-[220px] bg-white border border-kiban-border rounded-md shadow-lg py-1"
+		>
+			<div class="px-3 py-2 border-b border-kiban-border">
+				if cfg.User.Name != "" {
+					<div class="text-sm font-medium text-kiban-ink truncate">{ cfg.User.Name }</div>
+				}
+				<div class="text-xs text-kiban-ink4 truncate">{ cfg.User.Email }</div>
+			</div>
+			for _, item := range cfg.UserMenuItems {
+				<a
+					href={ templ.URL(item.Href) }
+					role="menuitem"
+					class="block px-3 py-2 text-sm hover:bg-kiban-surface text-kiban-ink"
+					onclick="window.kibanCloseMenu('topbar-user-menu')"
+				>
+					{ item.Label }
+				</a>
+			}
+			<form method="POST" action={ templ.URL(cfg.LogoutAction) }>
+				<button
+					type="submit"
+					role="menuitem"
+					class="w-full text-left px-3 py-2 text-sm hover:bg-kiban-surface text-kiban-ink"
+					onclick="window.kibanCloseMenu('topbar-user-menu')"
+				>
+					Salir
+				</button>
+			</form>
+		</div>
+	</div>
+}
+
+// topbarUserMenuLabel returns the screen-reader label for the avatar
+// trigger — prefers Name, falls back to Email, falls back to a generic
+// "usuario" so the aria-label is never empty.
+func topbarUserMenuLabel(u User) string {
+	if u.Name != "" {
+		return u.Name
+	}
+	if u.Email != "" {
+		return u.Email
+	}
+	return "usuario"
 }
 
 templ IconRail(cfg Config) {
@@ -155,13 +207,110 @@ templ subItem(cfg Config, item SubItem) {
 	</a>
 }
 
-// shortSpaceID trims the space id to the last 8 chars — matches the kiban
-// shell's display convention.
-func shortSpaceID(id string) string {
-	if len(id) <= 8 {
-		return id
+// spaceSwitcher renders the space chip in the topbar. Three states:
+//
+//   - No space active (cfg.SpaceID == "" or no CurrentSpaceName)
+//     → "—" sentinel, no chevron, not clickable.
+//   - One space available (len(cfg.Spaces) <= 1) or no SwitchSpaceAction
+//     → readonly chip showing the current space's name, no chevron.
+//   - 2+ spaces available + SwitchSpaceAction set
+//     → clickable dropdown using kibanToggleMenu; each item is a tiny
+//     POST form that submits the chosen spaceId so the consuming
+//     project can validate access + set the cookie.
+//
+// The data-kiban-menu attribute ties the trigger and panel into the
+// shared outside-click handler in base.templ — same plumbing as the
+// avatar dropdown and the kebab menus.
+templ spaceSwitcher(cfg Config) {
+	if isSpaceSwitcherInteractive(cfg) {
+		<div class="relative inline-block" data-kiban-menu="topbar-space-switcher">
+			<button
+				type="button"
+				id="topbar-space-switcher-trigger"
+				aria-haspopup="true"
+				aria-expanded="false"
+				aria-controls="topbar-space-switcher-panel"
+				aria-label={ "Cambiar espacio (actual: " + spaceChipLabel(cfg) + ")" }
+				onclick="window.kibanToggleMenu('topbar-space-switcher')"
+				class="flex items-center gap-2 px-4 py-2 border border-kiban-border rounded-md text-sm min-w-[220px] hover:bg-kiban-surface transition-colors"
+			>
+				<div class="w-5 h-5 rounded-sm bg-kiban-surface flex-shrink-0"></div>
+				<span class="flex-1 text-kiban-ink text-left truncate">{ spaceChipLabel(cfg) }</span>
+				@icons.ChevronDown()
+			</button>
+			<div
+				id="topbar-space-switcher-panel"
+				role="menu"
+				aria-labelledby="topbar-space-switcher-trigger"
+				class="hidden absolute left-0 top-full mt-1 z-50 min-w-[260px] max-h-80 overflow-auto bg-white border border-kiban-border rounded-md shadow-lg py-1"
+			>
+				for _, s := range cfg.Spaces {
+					@spaceSwitcherItem(cfg, s)
+				}
+			</div>
+		</div>
+	} else {
+		<div class="flex items-center gap-2 px-4 py-2 border border-kiban-border rounded-md text-sm min-w-[220px] cursor-default select-none">
+			<div class="w-5 h-5 rounded-sm bg-kiban-surface flex-shrink-0"></div>
+			<span class="flex-1 text-kiban-ink truncate">{ spaceChipLabel(cfg) }</span>
+		</div>
 	}
-	return id[len(id)-8:]
+}
+
+// spaceSwitcherItem is one row inside the dropdown panel. We use a
+// per-item <form> (instead of links) so the consuming project can
+// validate access server-side before setting the kiban_space_id cookie —
+// a stale link in a tab open across permission revocations would
+// otherwise let the user "switch" into a space they no longer have.
+//
+// Active item gets a soft tint (kiban-primary-soft) and a non-submittable
+// form (still allowed to click, but it's a no-op on the server — the
+// redirect from the controller takes the user back to /spaces/:id which
+// is exactly where they already are).
+templ spaceSwitcherItem(cfg Config, s SpaceOption) {
+	<form
+		method="POST"
+		action={ templ.URL(cfg.SwitchSpaceAction) }
+		class="block"
+	>
+		<input type="hidden" name="spaceId" value={ s.Id }/>
+		<button
+			type="submit"
+			role="menuitem"
+			onclick="window.kibanCloseMenu('topbar-space-switcher')"
+			class={
+				"w-full text-left px-3 py-2 text-sm hover:bg-kiban-surface flex items-center gap-2",
+				templ.KV("bg-kiban-primary-soft text-kiban-primary font-medium", s.Id == cfg.SpaceID),
+				templ.KV("text-kiban-ink", s.Id != cfg.SpaceID),
+			}
+		>
+			<span class="flex-1 truncate">{ s.Name }</span>
+			if s.Id == cfg.SpaceID {
+				<span class="text-xs">Actual</span>
+			}
+		</button>
+	</form>
+}
+
+// isSpaceSwitcherInteractive decides whether the chip is a clickable
+// dropdown or a readonly label. Lifted into its own helper so the
+// branching is testable and the templ stays readable.
+func isSpaceSwitcherInteractive(cfg Config) bool {
+	return len(cfg.Spaces) >= 2 && cfg.SwitchSpaceAction != ""
+}
+
+// spaceChipLabel returns the text rendered inside the chip — prefers the
+// human-readable name, falls back to "—" when no space is active.
+func spaceChipLabel(cfg Config) string {
+	if cfg.CurrentSpaceName != "" {
+		return cfg.CurrentSpaceName
+	}
+	if cfg.SpaceID != "" {
+		// Fallback for projects that haven't populated CurrentSpaceName yet —
+		// keeps the chip showing something contextual instead of "—".
+		return cfg.SpaceID
+	}
+	return "—"
 }
 
 // userInitials returns the first character of the user's name (preferred) or

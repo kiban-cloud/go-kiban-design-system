@@ -166,6 +166,73 @@ templ Base(cfg Config) {
 				}
 				.nav-loader.is-visible { display: flex; }
 
+				/* Card-style radio (view/input/radio.templ): el highlight
+				   visual sigue el estado real del <input> nativo vía :has().
+				   Sin esto, en flujos HTMX donde la card no se re-renderiza
+				   tras el click (el trigger sólo swap-ea otra región del
+				   form), el estilo "checked" quedaría pegado al radio que
+				   estaba seleccionado al render server-side.
+				   Specificity (0,2,2) > Tailwind class (0,1,0), así pisa los
+				   defaults de `border-kiban-border` sin necesidad de
+				   !important. Colores hardcoded en línea con el resto de los
+				   tokens del DS porque Tailwind CDN no expone CSS vars. */
+				label[data-kiban-radio-card]:has(> input:checked) {
+					border-color: #0047FF;
+					background-color: rgba(0, 71, 255, 0.08);
+				}
+
+				/* Markdown-rendered content (catalog service descriptions, etc.).
+				   Tailwind's @tailwindcss/typography (`prose`) plugin isn't
+				   loaded in the CDN config — defining a small set of rules
+				   here lets any consumer wrap a `<div class="kiban-prose">`
+				   around HTML produced by goldmark / similar and get
+				   readable headings, paragraphs, and lists without
+				   per-element class soup. */
+				.kiban-prose h1,
+				.kiban-prose h2,
+				.kiban-prose h3 {
+					font-family: 'Manrope', 'Inter', sans-serif;
+					font-weight: 600;
+					color: #1A2035;
+					line-height: 1.25;
+				}
+				.kiban-prose h1 { font-size: 1.5rem; margin-top: 1.75rem; margin-bottom: 0.75rem; }
+				.kiban-prose h2 { font-size: 1.125rem; margin-top: 1.75rem; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #E8E8E8; }
+				.kiban-prose h3 { font-size: 1rem; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+				.kiban-prose h1:first-child,
+				.kiban-prose h2:first-child,
+				.kiban-prose h3:first-child { margin-top: 0; }
+				.kiban-prose p { margin: 0.5rem 0; color: #474747; }
+				.kiban-prose ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+				.kiban-prose ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0 1rem; }
+				.kiban-prose li { margin: 0.25rem 0; color: #474747; }
+				.kiban-prose li > p { margin: 0; }
+				.kiban-prose a { color: #0047FF; text-decoration: underline; }
+				.kiban-prose a:hover { text-decoration: none; }
+				.kiban-prose strong { font-weight: 600; color: #1A2035; }
+				.kiban-prose code {
+					font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+					font-size: 0.875em;
+					background: #F2F2F2;
+					padding: 0.1em 0.35em;
+					border-radius: 3px;
+				}
+				.kiban-prose pre {
+					background: #F2F2F2;
+					padding: 0.75rem 1rem;
+					border-radius: 6px;
+					overflow-x: auto;
+					margin: 0.75rem 0;
+				}
+				.kiban-prose pre code { background: transparent; padding: 0; }
+				.kiban-prose blockquote {
+					border-left: 3px solid #0047FF;
+					padding-left: 0.75rem;
+					color: #606875;
+					margin: 0.75rem 0;
+				}
+				.kiban-prose hr { border: none; border-top: 1px solid #E8E8E8; margin: 1.25rem 0; }
+
 				/* CSS-only tooltip: any element carrying data-tooltip="…" gets
 				   a small dark bubble to its right on hover/focus. Instant,
 				   themed to match the kiban palette, ignores pointer events
@@ -667,6 +734,17 @@ templ Base(cfg Config) {
 					var el = document.getElementById(id);
 					if (el) el.classList.add('hidden');
 				};
+
+				// HTMX HX-Trigger bridge: server responses can fire
+				// "kiban:close-overlay" with {id} to dismiss a drawer
+				// / modal as a side effect of a swap. Useful when a
+				// success response redirects the swap target away
+				// from the overlay (e.g. invite-users closes the
+				// drawer + refreshes the list in one shot).
+				document.body.addEventListener('kiban:close-overlay', function (e) {
+					var id = e.detail && e.detail.id;
+					if (id) window.kibanCloseOverlay(id);
+				});
 				document.addEventListener('keydown', function (e) {
 					if (e.key !== 'Escape') return;
 					// Open menus take precedence over overlays on Escape:
@@ -964,6 +1042,46 @@ templ Base(cfg Config) {
 					// consumers won't need it.
 					window.kibanCanvasRender = renderAll;
 				})();
+
+				// Password visibility toggle — used by view/input/Password.
+				//
+				// Delegated at the document level so password fields injected
+				// by HTMX swaps also get the behaviour without any per-component
+				// re-init. The component markup contract is:
+				//
+				//   <div data-kiban-password-field>
+				//     <input type="password" …/>
+				//     <button data-kiban-password-toggle …>
+				//       <span data-kiban-password-icon-show>…Eye…</span>
+				//       <span data-kiban-password-icon-hide class="hidden">…EyeOff…</span>
+				//     </button>
+				//   </div>
+				//
+				// Click on the button → swap the input's type and flip which
+				// icon shows. The aria-label tracks the next action so screen
+				// readers announce "Mostrar contraseña" / "Ocultar contraseña"
+				// correctly.
+				document.addEventListener('click', function (e) {
+					var btn = e.target.closest && e.target.closest('[data-kiban-password-toggle]');
+					if (!btn) return;
+					var wrapper = btn.closest('[data-kiban-password-field]');
+					if (!wrapper) return;
+					var input = wrapper.querySelector('input');
+					if (!input) return;
+					var revealing = input.type === 'password';
+					input.type = revealing ? 'text' : 'password';
+					btn.setAttribute('aria-label', revealing ? 'Ocultar contraseña' : 'Mostrar contraseña');
+					var iconShow = btn.querySelector('[data-kiban-password-icon-show]');
+					var iconHide = btn.querySelector('[data-kiban-password-icon-hide]');
+					if (iconShow) {
+						iconShow.classList.toggle('hidden', revealing);
+						iconShow.classList.toggle('flex', !revealing);
+					}
+					if (iconHide) {
+						iconHide.classList.toggle('hidden', !revealing);
+						iconHide.classList.toggle('flex', revealing);
+					}
+				});
 
 				// kibanLogger — browser-side error reporting bridge.
 				//

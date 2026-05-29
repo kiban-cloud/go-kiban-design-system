@@ -11,13 +11,19 @@ package input
 // projects that want a partial re-render on selection change (e.g. the
 // PF/PM toggle on the customers form) pass hx-post / hx-target / hx-swap
 // here without the design system having to know about HTMX.
+//
+// Visual contract: the label carries `data-kiban-radio-card` and CSS in
+// `view/layout/base.templ` paints the highlight via `:has(input:checked)`,
+// so the selected look follows the *real* state of the native input — not
+// the server-rendered `checked` bool. This matters for HTMX flows where
+// the radio is clicked but the card itself is not re-rendered (e.g. the
+// trigger only swaps a different region). Without the CSS the highlight
+// would stay stuck on whichever option was originally checked at server
+// render time.
 templ RadioCard(name, value, title, subtitle string, checked bool, attrs templ.Attributes) {
 	<label
-		class={
-			"border rounded-md px-4 py-3 cursor-pointer flex items-center gap-3",
-			templ.KV("border-kiban-primary bg-kiban-primary-soft", checked),
-			templ.KV("border-kiban-border hover:border-kiban-ink3", !checked),
-		}
+		data-kiban-radio-card
+		class="border border-kiban-border rounded-md px-4 py-3 cursor-pointer flex items-center gap-3 hover:border-kiban-ink3"
 	>
 		<input
 			type="radio"

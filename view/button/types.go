@@ -36,6 +36,23 @@ type Options struct {
 	// button-only attributes (type/disabled/form). Empty -> renders <button>.
 	Href string
 
+	// AllowDataURL opts out of templ.URL's scheme allowlist (http, https,
+	// mailto, tel) so Href can be a `data:` URL — typical use case is a
+	// server-side base64-encoded download (CSV export, generated report,
+	// inline image). templ.URL rewrites unknown schemes to
+	// `about:invalid#TemplFailedSanitizationURL` for XSS safety; setting
+	// this flag bypasses that rewrite by passing the Href through
+	// templ.SafeURL instead.
+	//
+	// ONLY set this when the URL is constructed server-side from trusted
+	// data. NEVER from user input — that re-opens the XSS vector
+	// templ.URL exists to block. The caller assumes responsibility for
+	// the Href being safe to render.
+	//
+	// Pair with Attrs["download"]="<filename>" so the browser saves the
+	// payload to disk instead of attempting to render it inline.
+	AllowDataURL bool
+
 	IsSubmit bool // when true, renders type="submit" (button only)
 	IsReset  bool // when true, renders type="reset" (wins over IsSubmit; button only)
 
@@ -160,6 +177,21 @@ func resolvedAttrs(p Options) templ.Attributes {
 
 func hasHref(p Options) bool {
 	return strings.TrimSpace(p.Href) != ""
+}
+
+// hrefFor resolves the safe-URL value emitted into the <a href="…">.
+// Default path: templ.URL — the standard sanitizer that rewrites
+// non-allowlisted schemes (data:, javascript:, …) to about:invalid#... to
+// prevent XSS via untrusted URLs.
+// Opt-in path: when Options.AllowDataURL is true the caller has explicitly
+// declared the Href is server-built trusted data (e.g. a base64 CSV download),
+// so we bypass sanitization via templ.SafeURL. See the AllowDataURL godoc
+// for the security contract.
+func hrefFor(p Options) templ.SafeURL {
+	if p.AllowDataURL {
+		return templ.SafeURL(p.Href)
+	}
+	return templ.URL(p.Href)
 }
 
 // Group is a small ordered collection of buttons sharing a row of controls

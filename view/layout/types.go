@@ -68,6 +68,25 @@ func (s SandboxToggle) LabelOrDefault() string {
 	return "Modo sandbox"
 }
 
+// SpaceOption is one entry in the topbar's space switcher dropdown. The
+// switcher only renders as a clickable dropdown when len(Config.Spaces) >= 2;
+// with 0 or 1 spaces the chip falls back to a non-interactive label showing
+// the current space's name (or a "—" sentinel when no space is active yet).
+type SpaceOption struct {
+	Id   string // mongo ObjectId — submitted to SwitchSpaceAction in the spaceId form field
+	Name string // user-visible display name (the shell formerly showed the trailing 8 chars of Id)
+}
+
+// UserMenuItem is one row in the topbar avatar dropdown. The DS
+// renders these as plain anchor links between the user-info header
+// and the logout form. Permission checks (e.g. "only owners see
+// Usuarios") are the consuming project's responsibility — the slice
+// it builds is what the menu shows verbatim.
+type UserMenuItem struct {
+	Label string // user-visible label, e.g. "Perfil"
+	Href  string // destination path or full URL
+}
+
 // Config carries everything the Layout templ needs. Each consuming project
 // builds this once per render (typically in a project-specific PageData
 // helper) and hands it to Layout.
@@ -92,10 +111,36 @@ type Config struct {
 	// User context
 	User    User
 	SpaceID string
+	// CurrentSpaceName is the human-readable name of SpaceID. Used by the
+	// topbar's space chip so the user sees "Mi espacio" instead of the last
+	// 8 chars of the ObjectId. Falls back to a "—" sentinel when empty.
+	CurrentSpaceName string
+	// Spaces is the list shown in the topbar's space-switcher dropdown.
+	// When len(Spaces) < 2 the chip is non-interactive (no menu, no
+	// chevron). When >= 2 the chip becomes a clickable dropdown whose
+	// items each POST to SwitchSpaceAction with a hidden spaceId field.
+	Spaces []SpaceOption
+	// SwitchSpaceAction is the POST URL the space-switcher submits to.
+	// Owned by the hosting project (kibancloud sets it to
+	// "/cloud-htmx/spaces/switch"). Empty disables the dropdown even if
+	// Spaces has items — defensive default so a misconfigured shell
+	// can't issue submits to "".
+	SwitchSpaceAction string
 
 	// Routing
 	ShellURL     string // kiban shell base URL (logo link + external tool prefix)
 	LogoutAction string // POST URL that clears auth cookies
+	// UserMenuItems are the links rendered inside the topbar avatar
+	// dropdown, between the user-info header and the "Salir" button.
+	// Each project decides what goes there (kibancloud surfaces
+	// Perfil / Facturación / Usuarios; other tools may surface
+	// different shortcuts or none).
+	//
+	// Order is preserved. Empty slice / nil → menu renders just the
+	// header + logout. Pages that need permission gating do the
+	// filtering before building the slice; the DS itself just
+	// renders.
+	UserMenuItems []UserMenuItem
 	// DevelopersURL is the topbar "Developers" link target. The button is
 	// opt-in: leave this empty to hide it entirely. Set it (typically to an
 	// in-project route or to the kiban shell's developers hub) to render the
