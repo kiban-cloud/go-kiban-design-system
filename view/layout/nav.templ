@@ -239,7 +239,6 @@ templ spaceSwitcher(cfg Config) {
 				onclick="window.kibanToggleMenu('topbar-space-switcher')"
 				class="flex items-center gap-2 px-4 py-2 border border-kiban-border rounded-md text-sm min-w-[220px] hover:bg-kiban-surface transition-colors"
 			>
-				<div class="w-5 h-5 rounded-sm bg-kiban-surface flex-shrink-0"></div>
 				<span class="flex-1 text-kiban-ink text-left truncate">{ spaceChipLabel(cfg) }</span>
 				@icons.ChevronDown()
 			</button>
@@ -256,7 +255,6 @@ templ spaceSwitcher(cfg Config) {
 		</div>
 	} else {
 		<div class="flex items-center gap-2 px-4 py-2 border border-kiban-border rounded-md text-sm min-w-[220px] cursor-default select-none">
-			<div class="w-5 h-5 rounded-sm bg-kiban-surface flex-shrink-0"></div>
 			<span class="flex-1 text-kiban-ink truncate">{ spaceChipLabel(cfg) }</span>
 		</div>
 	}

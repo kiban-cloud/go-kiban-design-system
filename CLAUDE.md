@@ -92,6 +92,48 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | intl-tel-input init | done | JS en `base.templ` escanea `[data-phone-input]` al DOMContentLoaded y tras cada htmx swap; sincroniza hiddens (`data-tel-cc`, `data-tel-national`) con el widget. |
 | Spinner CSS (`.ds-spinner`) | done | Spinner kiban-primary, 32×32, en `base.templ`. |
 
+#### Cómo implementar el space switcher en un proyecto consumidor
+
+El DS sólo dibuja la UI (chip + dropdown + form HTML). La lista de espacios, la validación de acceso y el manejo de cookies son responsabilidad del proyecto consumidor. Esta sección documenta el contrato y los patrones canónicos (vistos en `crm-backend` y `rekon-backend`).
+
+**Lo que el DS provee** — tres campos en `layout.Config` que el consumidor llena por request:
+
+- `Spaces []SpaceOption` — opciones del dropdown (cada una `{Id, Name}`)
+- `CurrentSpaceName string` — label visible del chip (fallback al `SpaceID` literal o "—" cuando vacío)
+- `SwitchSpaceAction string` — URL POST a la que cada item submite (con hidden `spaceId`)
+
+Con `len(Spaces) >= 2 && SwitchSpaceAction != ""` el chip renderiza como dropdown clickable. Con cualquier otra combinación cae al chip readonly automáticamente.
+
+**Lo que el consumidor debe implementar** — tres piezas:
+
+1. **Fetcher**: un struct con un método `List(auth) ([]SpaceOption, error)` que llama `GET {KIBAN_CLOUD_URL}/v1/spaces` con `Authorization: Bearer <auth.Token>`. La forma canónica es vía `service_core_kibancloud_interface.IKibanCloudService.ForwardSessionMethods(url, http.MethodGet, auth.Token, nil)` de `go-kiban`. La response decodifica como `[{id, name}, …]`. Errores del fetch propagan; el caller los swallowea (ver "Edge cases" abajo).
+
+2. **Endpoint POST `/<tool>/spaces/switch`**: handler que (a) lee `spaceId` del form, (b) re-fetchea la lista del Fetcher y valida que el target esté incluido (defensa server-side contra forms stale o revocación de permisos mid-sesión), (c) setea cookie `kiban_space_id` con el mismo path/expiry/SameSite que el auth middleware espera, (d) redirige (usar `ds_htmx.Redirect`) al entry point del tool (`/crm/customers`, `/rekon/payments`, etc.). En falla devolver `400/403/502` según corresponda — el DS no maneja error states del switcher porque el form es submit nativo del browser.
+
+3. **PageData wiring**: al construir el `layout.Config` por request, poblar los tres campos. Si el fetch falla, `Spaces` queda `nil`/vacío — el DS cae al chip readonly automáticamente sin romper el render de la página.
+
+**Recetas según el estilo de DI del proyecto:**
+
+- **Inject-tag DI** (`crm-backend`): el `PageData(c, title, activeKey, fetcher)` helper en `controller_htmx/htmx_common.go` threadea el fetcher como argumento. Cada controller declara `SpacesFetcher controller_htmx_spaces.IFetcher \`inject:""\`` y se lo pasa al helper. El `Fetcher` + `Controller` viven en `internal/controller/http/htmx/spaces/`.
+
+- **Manual DI** (`rekon-backend`): un helper `view_layout.PopulateSpaces(cfg, auth, fetcher) Config` se llama justo después de construir el literal `view_layout.PageData{…}` en cada `renderXxx`. El fetcher entra como campo del controller via su constructor. La interfaz `view_layout.SpacesFetcher` se declara en `view_layout/spaces.go` para evitar que `view_layout` dependa del paquete del controller. El `Fetcher` + `Controller` viven en `internal/controller/http/spaces/`.
+
+Ambos patrones son equivalentes en outcome; usar el que matchee la convención DI del proyecto, no introducir un tercero.
+
+**Convenciones cross-project:**
+
+- **URL del switch**: siempre `/<tool>/spaces/switch` (p.ej. `/crm/spaces/switch`, `/rekon/spaces/switch`). La constante vive en el paquete del consumidor, no acá.
+- **Re-validación server-side en el switch**: obligatoria. No confiar en el `spaceId` posteado — re-fetchear la lista permitida en el handler. Un tab abierto durante revocación de permisos no debe permitir "cambiar" a un space ya inaccesible.
+- **DB scoping**: para que un cambio de cookie efectivamente cambie los datos, el repo layer del proyecto debe resolver su database name a partir de `auth.SpaceId` (`<companyId>_<spaceId>` es el patrón estándar via `repository_core.GetNameDataBase`). Sin esto, la cookie cambia pero el listado no.
+- **Performance**: el fetch a `/v1/spaces` corre en cada page render por default. Si la latencia se vuelve sensible, cada proyecto puede agregar caching por session token — el DS no opina. No cachear en el DS.
+
+**Edge cases que el contrato cubre por construcción:**
+
+- Fetcher devuelve error → `Spaces` queda vacío → DS rinde chip readonly mostrando `CurrentSpaceName` (o el `SpaceID` literal como fallback). La página renderiza normal, sin error visible al usuario.
+- `auth.SpaceId` activo no aparece en la lista fetcheada → `CurrentSpaceName` queda `""` → DS muestra el ObjectId crudo. Indicador de que kiban-cloud no devolvió el space activo del usuario (config issue upstream, no bug del consumidor).
+- 0 o 1 espacios en la lista → DS rinde el chip readonly automáticamente (sin chevron, sin menu).
+- `SwitchSpaceAction == ""` con `Spaces` poblado → DS fuerza el chip readonly aunque haya items, como guard defensivo contra submits a string vacío.
+
 ### Iconos (`view/icons/`)
 
 | Componente | Estado |
