@@ -39,9 +39,14 @@ templ Topbar(cfg Config) {
 // ToggleHref (the caller-computed URL with sandbox flipped) — no JS, no
 // HTMX, no state to reconcile. The visual is a label + a switch track:
 // filled in kiban-primary when Enabled, neutral when not.
+//
+// data-nav-loader makes the full-screen nav overlay (base.templ) appear on
+// click, since flipping sandbox/prod triggers a full page reload that can
+// take a moment.
 templ sandboxSwitch(t SandboxToggle) {
 	<a
 		href={ templ.URL(t.ToggleHref) }
+		data-nav-loader
 		role="switch"
 		aria-checked={ sandboxAriaChecked(t.Enabled) }
 		title={ t.LabelOrDefault() }

@@ -112,6 +112,10 @@ func Topbar(cfg Config) templ.Component {
 // ToggleHref (the caller-computed URL with sandbox flipped) — no JS, no
 // HTMX, no state to reconcile. The visual is a label + a switch track:
 // filled in kiban-primary when Enabled, neutral when not.
+//
+// data-nav-loader makes the full-screen nav overlay (base.templ) appear on
+// click, since flipping sandbox/prod triggers a full page reload that can
+// take a moment.
 func sandboxSwitch(t SandboxToggle) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -140,20 +144,20 @@ func sandboxSwitch(t SandboxToggle) templ.Component {
 		var templ_7745c5c3_Var5 templ.SafeURL
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(t.ToggleHref))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 44, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 48, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" role=\"switch\" aria-checked=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" data-nav-loader role=\"switch\" aria-checked=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(sandboxAriaChecked(t.Enabled))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 46, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 51, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -166,7 +170,7 @@ func sandboxSwitch(t SandboxToggle) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(t.LabelOrDefault())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 47, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 52, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +183,7 @@ func sandboxSwitch(t SandboxToggle) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(t.LabelOrDefault())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 50, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 55, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -303,7 +307,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("Menú de " + topbarUserMenuLabel(cfg.User))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 103, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 108, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -316,7 +320,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(userInitials(cfg.User))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 107, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 112, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -334,7 +338,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.User.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 117, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 122, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -352,7 +356,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.User.Email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 119, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 124, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -370,7 +374,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 			var templ_7745c5c3_Var18 templ.SafeURL
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(item.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 123, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 128, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -383,7 +387,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 128, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 133, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -401,7 +405,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 		var templ_7745c5c3_Var20 templ.SafeURL
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(cfg.LogoutAction))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 131, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 136, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -513,7 +517,7 @@ func toolIcon(cfg Config, t Tool) templ.Component {
 		var templ_7745c5c3_Var24 templ.SafeURL
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(t.Href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 172, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 177, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -526,7 +530,7 @@ func toolIcon(cfg Config, t Tool) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(t.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 174, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 179, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -560,7 +564,7 @@ func toolIcon(cfg Config, t Tool) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(t.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 184, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 189, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -602,7 +606,7 @@ func SubNav(cfg Config) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.SectionLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 190, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 195, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -662,7 +666,7 @@ func subItem(cfg Config, item SubItem) templ.Component {
 		var templ_7745c5c3_Var32 templ.SafeURL
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(item.Href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 199, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 204, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -688,7 +692,7 @@ func subItem(cfg Config, item SubItem) templ.Component {
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 206, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 211, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -745,7 +749,7 @@ func spaceSwitcher(cfg Config) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs("Cambiar espacio (actual: " + spaceChipLabel(cfg) + ")")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 233, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 238, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -758,7 +762,7 @@ func spaceSwitcher(cfg Config) templ.Component {
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(spaceChipLabel(cfg))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 238, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 243, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
@@ -794,7 +798,7 @@ func spaceSwitcher(cfg Config) templ.Component {
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(spaceChipLabel(cfg))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 255, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 260, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -847,7 +851,7 @@ func spaceSwitcherItem(cfg Config, s SpaceOption) templ.Component {
 		var templ_7745c5c3_Var40 templ.SafeURL
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(cfg.SwitchSpaceAction))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 273, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 278, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -860,7 +864,7 @@ func spaceSwitcherItem(cfg Config, s SpaceOption) templ.Component {
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(s.Id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 276, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 281, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -898,7 +902,7 @@ func spaceSwitcherItem(cfg Config, s SpaceOption) templ.Component {
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(s.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 287, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/nav.templ`, Line: 292, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {
