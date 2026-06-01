@@ -108,6 +108,33 @@ templ Base(cfg Config) {
 					animation: kiban-spin 0.8s linear infinite;
 				}
 
+				/* Global HTMX busy region (regla cross-module: link / rekon /
+				   crm / klin). Cuando un trigger HTMX dispara un swap parcial,
+				   su target queda marcado .kiban-busy: gris, no-interactivo
+				   (pointer-events: none) y con un spinner centrado encima —
+				   así toda la app muestra de forma uniforme que "algo está
+				   pasando y esta zona está bloqueada", sin wiring por botón.
+				   La clase la pone htmx:beforeRequest y la quita
+				   htmx:afterRequest (handler al final del <body>). Dimeamos los
+				   hijos (no el elemento) para que el ::after spinner quede
+				   nítido. min-height evita que un target chico colapse y esconda
+				   el spinner. Convive con .htmx-indicator (opt-in por
+				   componente) — esto es el default automático encima. */
+				.kiban-busy { position: relative; pointer-events: none; user-select: none; min-height: 2.5rem; }
+				.kiban-busy > * { opacity: 0.5; transition: opacity 120ms ease-in-out; }
+				.kiban-busy::after {
+					content: "";
+					position: absolute;
+					top: 50%; left: 50%;
+					width: 28px; height: 28px;
+					margin: -14px 0 0 -14px;
+					border: 3px solid rgba(0, 71, 255, 0.15);
+					border-top-color: #0047FF;
+					border-radius: 50%;
+					animation: kiban-spin 0.8s linear infinite;
+					z-index: 40;
+				}
+
 				/* tabs.Panel — CSS-only switching driven by the parent
 				   [data-kiban-tabs-active-key] attribute. Bodies whose
 				   key matches show; everything else hides. The strip
@@ -261,7 +288,7 @@ templ Base(cfg Config) {
 				}
 			</style>
 		</head>
-		<body class="bg-white text-kiban-ink antialiased">
+		<body class="bg-white text-kiban-ink antialiased" hx-disabled-elt="this">
 			{ children... }
 			<script>
 				// Global row-click delegation: any element with [data-href] acts
@@ -707,6 +734,34 @@ templ Base(cfg Config) {
 						show();
 					});
 					window.addEventListener('pageshow', hide);
+				})();
+
+				// Global HTMX busy-region blocking (regla cross-module:
+				// link / rekon / crm / klin). Mientras una request HTMX está en
+				// vuelo, su target de swap se marca .kiban-busy — gris,
+				// no-interactivo y con spinner overlay (CSS al inicio de este
+				// file) — para que toda la app muestre de forma uniforme que
+				// "algo está pasando y esta zona está bloqueada" durante un
+				// refresh parcial, sin wiring por botón. evt.detail.target es el
+				// swap target ya resuelto por htmx; saltamos body/html para que
+				// un swap full-page no tape toda la pantalla (de eso ya se ocupa
+				// el nav-loader). afterRequest dispara en éxito y en error, así
+				// que limpia siempre.
+				(function () {
+					function regionFor(evt) {
+						var t = evt && evt.detail && evt.detail.target;
+						if (!t || t.nodeType !== 1) return null;
+						if (t === document.body || t === document.documentElement) return null;
+						return t;
+					}
+					document.body.addEventListener('htmx:beforeRequest', function (evt) {
+						var region = regionFor(evt);
+						if (region) region.classList.add('kiban-busy');
+					});
+					document.body.addEventListener('htmx:afterRequest', function (evt) {
+						var region = regionFor(evt);
+						if (region) region.classList.remove('kiban-busy');
+					});
 				})();
 
 				// Overlay helpers for the design-system drawer package
