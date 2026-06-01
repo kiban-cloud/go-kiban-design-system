@@ -148,17 +148,20 @@ templ Base(cfg Config) {
 					width: 14rem;          /* matches the inner IconRail w-56 */
 				}
 
-				/* Navigation loader: full-screen overlay shown while a
-				   browser navigation is in flight (e.g. the user clicked a
-				   tools-rail link to a different backend). The .is-visible
-				   class is added by the click handler below; the overlay is
-				   removed on `pageshow` so back/forward cache restores
-				   don't leave a frozen loader on screen. */
+				/* Navigation loader: overlay shown while a browser
+				   navigation is in flight (e.g. the user clicked a
+				   tools-rail link to a different backend). It's scoped to
+				   the <main> content area (position: absolute inside a
+				   `relative` <main>), so the topbar and side menu stay
+				   visible and interactive while the next page loads. The
+				   .is-visible class is added by the click handler below;
+				   the overlay is removed on `pageshow` so back/forward
+				   cache restores don't leave a frozen loader on screen. */
 				.nav-loader {
 					display: none;
-					position: fixed;
+					position: absolute;
 					inset: 0;
-					z-index: 1000;
+					z-index: 30;
 					align-items: center;
 					justify-content: center;
 					background: rgba(255, 255, 255, 0.85);
@@ -260,17 +263,6 @@ templ Base(cfg Config) {
 		</head>
 		<body class="bg-white text-kiban-ink antialiased">
 			{ children... }
-			<!-- Navigation loader: full-screen, hidden by default. Shown by
-			     the click handler below when the user clicks a link tagged
-			     with [data-nav-loader]. The new page's HTML restarts this
-			     element in its hidden state, so no explicit hide-on-load
-			     is needed (except for back/forward cache, handled below). -->
-			<div id="nav-loader" class="nav-loader" aria-hidden="true" role="status">
-				<div class="flex flex-col items-center gap-4">
-					<div class="ds-spinner"></div>
-					<div class="text-sm text-kiban-ink3">Cargando…</div>
-				</div>
-			</div>
 			<script>
 				// Global row-click delegation: any element with [data-href] acts
 				// like a link, but only on a "real" click — we skip the
@@ -1247,6 +1239,22 @@ templ Base(cfg Config) {
 	</html>
 }
 
+// navLoader is the in-flight navigation overlay. It lives inside the
+// <main> content area (which is position: relative) so the .nav-loader
+// rule scopes the overlay to the content only — the topbar and side menu
+// stay visible while the next page loads. Shown by the [data-nav-loader]
+// click handler in Base; hidden again when the new page's HTML renders
+// (and on bfcache restore via the pageshow handler). The fixed id
+// "nav-loader" is what that handler looks up with getElementById.
+templ navLoader() {
+	<div id="nav-loader" class="nav-loader" aria-hidden="true" role="status">
+		<div class="flex flex-col items-center gap-4">
+			<div class="ds-spinner"></div>
+			<div class="text-sm text-kiban-ink3">Cargando…</div>
+		</div>
+	</div>
+}
+
 templ Layout(cfg Config) {
 	@Base(cfg) {
 		<div
@@ -1265,10 +1273,11 @@ templ Layout(cfg Config) {
 				</div>
 				<!-- Sub-nav (level 2). Always visible. -->
 				@SubNav(cfg)
-				<main class="flex-1 overflow-x-hidden">
+				<main class="relative flex-1 overflow-x-hidden">
 					<div class="p-8 max-w-[1400px]">
 						{ children... }
 					</div>
+					@navLoader()
 				</main>
 			</div>
 		</div>
