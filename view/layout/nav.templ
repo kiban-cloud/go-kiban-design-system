@@ -176,6 +176,10 @@ templ toolIcon(cfg Config, t Tool) {
 	<a
 		href={ templ.URL(t.Href) }
 		data-nav-loader
+		if t.External {
+			target="_blank"
+			rel="noopener noreferrer"
+		}
 		aria-label={ t.Label }
 		class={
 			"flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm",
@@ -202,6 +206,7 @@ templ SubNav(cfg Config) {
 templ subItem(cfg Config, item SubItem) {
 	<a
 		href={ templ.URL(item.Href) }
+		data-nav-loader
 		class={
 			"block px-3 py-2 rounded-md text-sm transition-colors",
 			templ.KV("bg-kiban-primary-soft text-kiban-primary font-medium", cfg.ActiveKey == item.Key),
