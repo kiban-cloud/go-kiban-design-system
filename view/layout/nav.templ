@@ -163,20 +163,24 @@ func topbarUserMenuLabel(u User) string {
 templ IconRail(cfg Config) {
 	<nav class="w-56 shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
 		for _, t := range cfg.Tools {
-			@toolIcon(cfg, t)
+			@toolIcon(cfg, t, false)
 		}
 		<div class="flex-1"></div>
 		for _, t := range cfg.Docs {
-			@toolIcon(cfg, t)
+			@toolIcon(cfg, t, true)
 		}
 	</nav>
 }
 
-templ toolIcon(cfg Config, t Tool) {
+// toolIcon renders one rail entry. newTab is true only for the Docs links
+// at the bottom of the rail (knowledge center, API documentation) — those
+// are reference material that opens in a separate tab. Tool links navigate
+// in the current tab, even when External=true points at the kiban shell.
+templ toolIcon(cfg Config, t Tool, newTab bool) {
 	<a
 		href={ templ.URL(t.Href) }
 		data-nav-loader
-		if t.External {
+		if newTab {
 			target="_blank"
 			rel="noopener noreferrer"
 		}
