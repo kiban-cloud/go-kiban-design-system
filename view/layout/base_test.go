@@ -53,3 +53,30 @@ func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 	assert.Contains(t, body, "classList.add('kiban-busy')")
 	assert.Contains(t, body, "classList.remove('kiban-busy')")
 }
+
+// Non-HTMX navigations (a form submit that posts then redirects, or a
+// [data-block-ui] button) must show a full-screen blocking overlay so the
+// user gets feedback + can't double-submit during the server round-trip.
+// The overlay lives in Base (not just Layout) so login-style bare pages get
+// it too. This guards the element, the CSS, and the submit/click handlers —
+// including the skip for HTMX forms (those use the per-region block).
+func TestBase_GlobalActionOverlay(t *testing.T) {
+	body := renderBase(t, layout.Config{
+		Title:       "T",
+		ProjectName: "kiban",
+	})
+
+	// The overlay element + its CSS.
+	assert.Contains(t, body, `id="kiban-action-overlay"`)
+	assert.Contains(t, body, ".kiban-action-overlay")
+	assert.Contains(t, body, "position: fixed")
+
+	// JS: show on a real form submit, opt-in via [data-block-ui].
+	assert.Contains(t, body, "addEventListener('submit'")
+	assert.Contains(t, body, "data-block-ui")
+
+	// HTMX forms / boosted forms are skipped (region block handles them);
+	// forms can also opt out with data-no-block-ui.
+	assert.Contains(t, body, "hx-boost")
+	assert.Contains(t, body, "data-no-block-ui")
+}
