@@ -38,6 +38,7 @@ view/
   avatar/               Circular profile picture con fallback de iniciales — usado por AdminLayout user menu
   breadcrumbs/          Breadcrumbs(items) — nav trail con separador "/", último item no-clickeable
   icons/                set compartido de iconos SVG (currentColor stroke)
+  logo/                 marcas de marca kiban (SVG multi-color fill, paleta de marca baked-in; NO colorables vía text-*) — usadas por las dos shells de layout
   input/                text, password, number, phone (intl-tel-input wrapper), select, checkbox, checkbox_card, toggle, radio_card, textarea, hidden, date, month, file
   button/               Button(Options) — variant via Options.Variant; renders <button> or <a> (when Href set); Group + RenderGroup for footer/bar rows
   card/                 Card (chrome wrapper) + Section (sub-section divider)
@@ -77,14 +78,14 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `view.Render(c, status, component)` | done | En `view/render.go`. Consumido por crm + rekon. |
 | `layout.Config` | done | Struct con Title, ProjectName, SectionLabel, User, SpaceID, ShellURL, LogoutAction, ToolKey, ActiveKey, Tools, Docs, SubItems. Cada proyecto crea un type alias local (`view_layout.PageData = layout.Config`) y un `enrich(data)` que añade los campos fijos (Tools, etc.) antes de pasar a `Layout`. |
 | `layout.Layout(cfg)` | done | Shell completa: HTML, head, scripts, topbar, sub-nav (siempre visible) + tools rail (toggleable), main content. |
-| `layout.Topbar(cfg)` | done | Hamburger izquierda + logo kiban + space chip + Developers button + user menu con logout. |
+| `layout.Topbar(cfg)` | done | Hamburger izquierda + logo `logo.KibanCloud` (SVG, `w-32` = 128px, link a `ShellURL`) + space chip + Developers button + user menu con logout. |
 | Space switcher (chip) | done | El chip de espacio en `Topbar` es un dropdown clickable cuando `len(cfg.Spaces) >= 2` + `cfg.SwitchSpaceAction != ""`. Cada item es un `<form method="POST" action={SwitchSpaceAction}>` con hidden `spaceId`; el proyecto consumidor valida acceso server-side antes de setear `kiban_space_id` cookie y redirigir. Con `len(cfg.Spaces) <= 1` cae a readonly. `cfg.CurrentSpaceName` decide el label visible (fallback al SpaceID literal o "—" si nada está set). Usa el mismo `kibanToggleMenu` y outside-click handler del menu kebab. |
 | User menu (avatar dropdown) | done | Topbar avatar es un dropdown clickable vía `window.kibanToggleMenu('topbar-user-menu')` (NO hover — el patrón anterior con `group-hover:block` fallaba en el gap mt-1 entre trigger y panel). Mismo data-attr + JS handler que el `view/menu` kebab; ARIA-completo (`aria-haspopup/expanded/controls`, `role="menu"`/`menuitem`). |
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
 | `layout.AdminConfig` | done | Struct para AdminLayout: `Title`, `ProjectName`, `HomeHref`, `User`, `LogoutAction`, `NavSections`, `ActiveSection`, `Breadcrumbs`. Distinto de `Config` — no carga el modelo multi-tool (Tools/Docs/SubItems). |
 | `layout.NavSection` | done | Una entrada de la nav horizontal del topbar admin: `Key`, `Label`, `Href`. `Key` matchea `AdminConfig.ActiveSection` para resaltar. |
-| `layout.AdminLayout(cfg)` | done | Shell minimal para apps admin/internal: topbar (logo + horizontal nav + user menu) + breadcrumbs strip opcional + main. Reusa `Base()` para el chrome HTML; los blocks JS de Base que dependen de elementos del shell customer-facing (sidebar, sub-nav) son no-ops cuando esos elementos no existen. Para apps con 2-5 secciones top-level y autenticación propia, sin multi-tool switcher. |
+| `layout.AdminLayout(cfg)` | done | Shell minimal para apps admin/internal: topbar (logo `logo.KibanCloud` `w-32` = 128px + divider + `ProjectName` como label de la app + horizontal nav + user menu) + breadcrumbs strip opcional + main. Reusa `Base()` para el chrome HTML; los blocks JS de Base que dependen de elementos del shell customer-facing (sidebar, sub-nav) son no-ops cuando esos elementos no existen. Para apps con 2-5 secciones top-level y autenticación propia, sin multi-tool switcher. |
 | Admin user menu | done | Dentro de `AdminLayout` topbar: avatar + nombre como trigger de un dropdown que muestra email + form de logout. Reusa los handlers JS de `view/menu` (kibanToggleMenu/kibanCloseMenu) sin código nuevo. ID fijo `admin-user-menu`. |
 | Tools rail toggle (slide) | done | CSS-only en `base.templ` con `.sidebar-rail-slot` (width 0 ↔ 14rem). El hamburger toggla el atributo booleano `data-sidebar-rail-open` en el root; JS persiste en `localStorage[<ProjectName>-sidebar-rail-open]` (key namespaceada por proyecto). |
 | Navigation loader (`#nav-loader`) | done | Overlay full-screen mostrado al hacer click en cualquier `<a data-nav-loader>` (los items del tool rail lo llevan automáticamente). Cubre el wait del navegador mientras la siguiente página carga — útil cuando se cambia entre tools de backends distintos. Skip para clicks con modificadores, target=_blank, anchors `#…`, y links HTMX. Auto-hide via `pageshow` para no quedarse pegado en restores de bfcache. |
@@ -144,6 +145,16 @@ Ambos patrones son equivalentes en outcome; usar el que matchee la convención D
 | `icons.Settings` | done | Standard gear/cog. Affordance for "configurar / settings / preferencias" entries (home cards, sidebar items, kebab actions). 20×20 to match navigational icons. |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
+
+### Logo (`view/logo/`)
+
+Marcas de marca kiban. **Distinto de `view/icons`**: los logos son SVGs multi-color con la paleta de marca baked-in (iso `#0047FF`/`#0000CC`, wordmark negro) — **NO** son colorables vía `text-*`. Cada mark toma un argumento `class` que se aplica al `<svg>` raíz para que el caller controle el tamaño (el `viewBox` preserva el aspect ratio); pasá un height + width-auto, ej. `logo.KibanCloud("h-7 w-auto")`. Las path data y los fills se portaron 1:1 desde kds (`src/components/Logo/Logos/`) y son la fuente de verdad — no recolorear.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `logo.KibanCloud(class string)` | done | Lockup completo "kiban cloud": iso azul + wordmark "kiban" (negro) + "cloud" (negro 60% opacity). viewBox `0 0 384 48` (ratio 8:1). `role="img"` + `aria-label="kiban cloud"`. Usado por `layout.Topbar` y `layout.AdminLayout` con `w-32` (128px → ~16px alto). Portado de kds `Logo/Logos/KibanCloud/KibanCloud.tsx`. |
+
+Para agregar otra mark (ej. `Kiban` sin "cloud", o variantes white/de producto como `Klin`/`Rekon`), portá el SVG de kds 1:1 a un nuevo `templ` en este package con la misma firma `(class string)` y agregá la fila acá.
 
 ### Avatar (`view/avatar/`)
 

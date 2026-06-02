@@ -4,6 +4,7 @@ import (
 	"github.com/kiban-cloud/go-kiban-design-system/view/avatar"
 	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
+	"github.com/kiban-cloud/go-kiban-design-system/view/logo"
 )
 
 // AdminLayout is the minimal admin/internal shell. Topbar with logo +
@@ -37,15 +38,29 @@ templ adminTopbar(cfg AdminConfig) {
 	<header class="border-b border-kiban-border bg-white">
 		<div class="flex items-center justify-between px-6 h-16">
 			<div class="flex items-center gap-8">
-				if cfg.HomeHref != "" {
-					<a href={ templ.URL(cfg.HomeHref) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors">
-						{ cfg.ProjectName }
-					</a>
-				} else {
-					<span class="font-heading font-medium text-base text-kiban-ink">
-						{ cfg.ProjectName }
-					</span>
-				}
+				<div class="flex items-center gap-3">
+					if cfg.HomeHref != "" {
+						<a href={ templ.URL(cfg.HomeHref) } aria-label="kiban cloud" class="flex items-center">
+							@logo.KibanCloud("w-32 h-auto")
+						</a>
+					} else {
+						<span class="flex items-center" aria-label="kiban cloud">
+							@logo.KibanCloud("w-32 h-auto")
+						</span>
+					}
+					if cfg.ProjectName != "" {
+						<span class="h-6 w-px bg-kiban-border"></span>
+						if cfg.HomeHref != "" {
+							<a href={ templ.URL(cfg.HomeHref) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors">
+								{ cfg.ProjectName }
+							</a>
+						} else {
+							<span class="font-heading font-medium text-base text-kiban-ink">
+								{ cfg.ProjectName }
+							</span>
+						}
+					}
+				</div>
 				if len(cfg.NavSections) > 0 {
 					<nav class="flex items-center gap-1">
 						for _, section := range cfg.NavSections {
