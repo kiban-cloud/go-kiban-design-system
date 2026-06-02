@@ -25,10 +25,11 @@ templ AdminLayout(cfg AdminConfig) {
 					@breadcrumbs.Breadcrumbs(cfg.Breadcrumbs)
 				</div>
 			}
-			<main class="flex-1 overflow-x-hidden">
+			<main class="relative flex-1 overflow-x-hidden">
 				<div class="p-8 max-w-[1600px] mx-auto w-full">
 					{ children... }
 				</div>
+				@navLoader()
 			</main>
 		</div>
 	}

@@ -108,6 +108,33 @@ templ Base(cfg Config) {
 					animation: kiban-spin 0.8s linear infinite;
 				}
 
+				/* Global HTMX busy region (regla cross-module: link / rekon /
+				   crm / klin). Cuando un trigger HTMX dispara un swap parcial,
+				   su target queda marcado .kiban-busy: gris, no-interactivo
+				   (pointer-events: none) y con un spinner centrado encima —
+				   así toda la app muestra de forma uniforme que "algo está
+				   pasando y esta zona está bloqueada", sin wiring por botón.
+				   La clase la pone htmx:beforeRequest y la quita
+				   htmx:afterRequest (handler al final del <body>). Dimeamos los
+				   hijos (no el elemento) para que el ::after spinner quede
+				   nítido. min-height evita que un target chico colapse y esconda
+				   el spinner. Convive con .htmx-indicator (opt-in por
+				   componente) — esto es el default automático encima. */
+				.kiban-busy { position: relative; pointer-events: none; user-select: none; min-height: 2.5rem; }
+				.kiban-busy > * { opacity: 0.5; transition: opacity 120ms ease-in-out; }
+				.kiban-busy::after {
+					content: "";
+					position: absolute;
+					top: 50%; left: 50%;
+					width: 28px; height: 28px;
+					margin: -14px 0 0 -14px;
+					border: 3px solid rgba(0, 71, 255, 0.15);
+					border-top-color: #0047FF;
+					border-radius: 50%;
+					animation: kiban-spin 0.8s linear infinite;
+					z-index: 40;
+				}
+
 				/* tabs.Panel — CSS-only switching driven by the parent
 				   [data-kiban-tabs-active-key] attribute. Bodies whose
 				   key matches show; everything else hides. The strip
@@ -148,23 +175,52 @@ templ Base(cfg Config) {
 					width: 14rem;          /* matches the inner IconRail w-56 */
 				}
 
-				/* Navigation loader: full-screen overlay shown while a
-				   browser navigation is in flight (e.g. the user clicked a
-				   tools-rail link to a different backend). The .is-visible
-				   class is added by the click handler below; the overlay is
-				   removed on `pageshow` so back/forward cache restores
-				   don't leave a frozen loader on screen. */
+				/* Navigation loader: overlay shown while a browser
+				   navigation is in flight (e.g. the user clicked a
+				   tools-rail link to a different backend). It's scoped to
+				   the <main> content area (position: absolute inside a
+				   `relative` <main>), so the topbar and side menu stay
+				   visible and interactive while the next page loads. The
+				   .is-visible class is added by the click handler below;
+				   the overlay is removed on `pageshow` so back/forward
+				   cache restores don't leave a frozen loader on screen. */
 				.nav-loader {
 					display: none;
-					position: fixed;
+					position: absolute;
 					inset: 0;
-					z-index: 1000;
+					z-index: 30;
 					align-items: center;
 					justify-content: center;
 					background: rgba(255, 255, 255, 0.85);
 					backdrop-filter: blur(2px);
 				}
 				.nav-loader.is-visible { display: flex; }
+
+				/* Action-blocking overlay (regla cross-module). Se muestra
+				   mientras una acción NO-HTMX que va a navegar/recargar la
+				   página está en vuelo: típicamente un <form> que postea y
+				   luego redirige (login, crear/editar, etc.), o un botón que
+				   opta-in con [data-block-ui]. A diferencia de .nav-loader
+				   (scoped a <main>), éste cubre TODO el viewport — el usuario
+				   se está yendo de la página, así que bloqueamos todo para que
+				   no pueda doble-submit ni tocar nada. Vive en Base (no sólo en
+				   Layout) para cubrir también páginas sin shell, como login.
+				   pointer-events queda activo para que efectivamente bloquee los
+				   clics. Lo muestra el handler `submit` del final del <body>; se
+				   esconde en `pageshow` para que un restore de bfcache no lo deje
+				   pegado. NO se dispara en clicks client-side (menús, modales,
+				   tabs): esos botones son type="button" y no submitean. */
+				.kiban-action-overlay {
+					display: none;
+					position: fixed;
+					inset: 0;
+					z-index: 60;
+					align-items: center;
+					justify-content: center;
+					background: rgba(255, 255, 255, 0.6);
+					backdrop-filter: blur(1px);
+				}
+				.kiban-action-overlay.is-visible { display: flex; }
 
 				/* Card-style radio (view/input/radio.templ): el highlight
 				   visual sigue el estado real del <input> nativo vía :has().
@@ -258,19 +314,9 @@ templ Base(cfg Config) {
 				}
 			</style>
 		</head>
-		<body class="bg-white text-kiban-ink antialiased">
+		<body class="bg-white text-kiban-ink antialiased" hx-disabled-elt="this">
 			{ children... }
-			<!-- Navigation loader: full-screen, hidden by default. Shown by
-			     the click handler below when the user clicks a link tagged
-			     with [data-nav-loader]. The new page's HTML restarts this
-			     element in its hidden state, so no explicit hide-on-load
-			     is needed (except for back/forward cache, handled below). -->
-			<div id="nav-loader" class="nav-loader" aria-hidden="true" role="status">
-				<div class="flex flex-col items-center gap-4">
-					<div class="ds-spinner"></div>
-					<div class="text-sm text-kiban-ink3">Cargando…</div>
-				</div>
-			</div>
+			@actionOverlay()
 			<script>
 				// Global row-click delegation: any element with [data-href] acts
 				// like a link, but only on a "real" click — we skip the
@@ -714,6 +760,93 @@ templ Base(cfg Config) {
 						if (link.hasAttribute('hx-get') || link.hasAttribute('hx-post')) return;
 						show();
 					});
+					window.addEventListener('pageshow', hide);
+				})();
+
+				// Global HTMX busy-region blocking (regla cross-module:
+				// link / rekon / crm / klin). Mientras una request HTMX está en
+				// vuelo, su target de swap se marca .kiban-busy — gris,
+				// no-interactivo y con spinner overlay (CSS al inicio de este
+				// file) — para que toda la app muestre de forma uniforme que
+				// "algo está pasando y esta zona está bloqueada" durante un
+				// refresh parcial, sin wiring por botón. evt.detail.target es el
+				// swap target ya resuelto por htmx; saltamos body/html para que
+				// un swap full-page no tape toda la pantalla (de eso ya se ocupa
+				// el nav-loader). afterRequest dispara en éxito y en error, así
+				// que limpia siempre.
+				(function () {
+					function regionFor(evt) {
+						var t = evt && evt.detail && evt.detail.target;
+						if (!t || t.nodeType !== 1) return null;
+						if (t === document.body || t === document.documentElement) return null;
+						return t;
+					}
+					document.body.addEventListener('htmx:beforeRequest', function (evt) {
+						var region = regionFor(evt);
+						if (region) region.classList.add('kiban-busy');
+					});
+					document.body.addEventListener('htmx:afterRequest', function (evt) {
+						var region = regionFor(evt);
+						if (region) region.classList.remove('kiban-busy');
+					});
+				})();
+
+				// Global action-blocking overlay for non-HTMX navigations
+				// (regla cross-module: link / rekon / crm / klin).
+				//
+				// Deliberately NOT "block on every button click": menu /
+				// modal / tab / password-toggle buttons are type="button"
+				// with instant client-side effects and no form submission —
+				// blocking those would just freeze the UI. We trigger on the
+				// *consequence* (a real navigation), not the click:
+				//
+				//   1. Any non-HTMX <form> submit — the classic "do something
+				//      on the server, then redirect/reload" flow (login,
+				//      create/edit, …). HTMX forms swap a partial instead and
+				//      carry hx-* attrs (or sit under hx-boost) → skipped,
+				//      because the per-region .kiban-busy block already covers
+				//      them.
+				//   2. Any element opting in with [data-block-ui] on click —
+				//      escape hatch for the rare button that navigates via
+				//      JS (window.location, programmatic submit) with no form.
+				//
+				// The overlay captures pointer events, so it also prevents
+				// double-submits. Hidden on `pageshow` so a back/forward
+				// bfcache restore doesn't leave it stuck on screen.
+				(function () {
+					var overlay = document.getElementById('kiban-action-overlay');
+					if (!overlay) return;
+					function show() { overlay.classList.add('is-visible'); }
+					function hide() { overlay.classList.remove('is-visible'); }
+
+					function isHtmxForm(form) {
+						// hx-* on the form itself, or an hx-boost ancestor that
+						// makes htmx hijack the native submit into an AJAX swap.
+						return !!form.closest(
+							'[hx-post],[hx-get],[hx-put],[hx-delete],[hx-patch],[hx-boost]'
+						);
+					}
+
+					document.addEventListener('submit', function (e) {
+						var form = e.target;
+						if (!form || form.nodeName !== 'FORM') return;
+						if (e.defaultPrevented) return;              // validation / JS cancelled it
+						if (form.hasAttribute('data-no-block-ui')) return;
+						if (form.getAttribute('target') === '_blank') return;
+						if (isHtmxForm(form)) return;                // partial swap → region block handles it
+						show();
+					});
+
+					// Opt-in for buttons that navigate via custom JS rather
+					// than a form submit. The handler shows the overlay; the
+					// caller's own code does the navigation.
+					document.addEventListener('click', function (e) {
+						var el = e.target.closest && e.target.closest('[data-block-ui]');
+						if (!el) return;
+						if (e.defaultPrevented) return;
+						show();
+					});
+
 					window.addEventListener('pageshow', hide);
 				})();
 
@@ -1247,6 +1380,38 @@ templ Base(cfg Config) {
 	</html>
 }
 
+// navLoader is the in-flight navigation overlay. It lives inside the
+// <main> content area (which is position: relative) so the .nav-loader
+// rule scopes the overlay to the content only — the topbar and side menu
+// stay visible while the next page loads. Shown by the [data-nav-loader]
+// click handler in Base; hidden again when the new page's HTML renders
+// (and on bfcache restore via the pageshow handler). The fixed id
+// "nav-loader" is what that handler looks up with getElementById.
+templ navLoader() {
+	<div id="nav-loader" class="nav-loader" aria-hidden="true" role="status">
+		<div class="flex flex-col items-center gap-4">
+			<div class="ds-spinner"></div>
+			<div class="text-sm text-kiban-ink3">Cargando…</div>
+		</div>
+	</div>
+}
+
+// actionOverlay is the full-screen blocking overlay shown while a non-HTMX
+// action that will navigate/reload the page is in flight (a form submit
+// that posts then redirects, or a [data-block-ui] button). It's rendered
+// inside Base — so it exists on every page, including bare ones without the
+// Layout shell (e.g. login) — and toggled by the `submit` / click handlers
+// in Base. The fixed id "kiban-action-overlay" is what those handlers look
+// up with getElementById.
+templ actionOverlay() {
+	<div id="kiban-action-overlay" class="kiban-action-overlay" aria-hidden="true" role="status">
+		<div class="flex flex-col items-center gap-4">
+			<div class="ds-spinner"></div>
+			<div class="text-sm text-kiban-ink3">Procesando…</div>
+		</div>
+	</div>
+}
+
 templ Layout(cfg Config) {
 	@Base(cfg) {
 		<div
@@ -1265,10 +1430,11 @@ templ Layout(cfg Config) {
 				</div>
 				<!-- Sub-nav (level 2). Always visible. -->
 				@SubNav(cfg)
-				<main class="flex-1 overflow-x-hidden">
+				<main class="relative flex-1 overflow-x-hidden">
 					<div class="p-8 max-w-[1400px]">
 						{ children... }
 					</div>
+					@navLoader()
 				</main>
 			</div>
 		</div>

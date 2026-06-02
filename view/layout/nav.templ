@@ -39,9 +39,14 @@ templ Topbar(cfg Config) {
 // ToggleHref (the caller-computed URL with sandbox flipped) — no JS, no
 // HTMX, no state to reconcile. The visual is a label + a switch track:
 // filled in kiban-primary when Enabled, neutral when not.
+//
+// data-nav-loader makes the full-screen nav overlay (base.templ) appear on
+// click, since flipping sandbox/prod triggers a full page reload that can
+// take a moment.
 templ sandboxSwitch(t SandboxToggle) {
 	<a
 		href={ templ.URL(t.ToggleHref) }
+		data-nav-loader
 		role="switch"
 		aria-checked={ sandboxAriaChecked(t.Enabled) }
 		title={ t.LabelOrDefault() }
@@ -158,19 +163,27 @@ func topbarUserMenuLabel(u User) string {
 templ IconRail(cfg Config) {
 	<nav class="w-56 shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
 		for _, t := range cfg.Tools {
-			@toolIcon(cfg, t)
+			@toolIcon(cfg, t, false)
 		}
 		<div class="flex-1"></div>
 		for _, t := range cfg.Docs {
-			@toolIcon(cfg, t)
+			@toolIcon(cfg, t, true)
 		}
 	</nav>
 }
 
-templ toolIcon(cfg Config, t Tool) {
+// toolIcon renders one rail entry. newTab is true only for the Docs links
+// at the bottom of the rail (knowledge center, API documentation) — those
+// are reference material that opens in a separate tab. Tool links navigate
+// in the current tab, even when External=true points at the kiban shell.
+templ toolIcon(cfg Config, t Tool, newTab bool) {
 	<a
 		href={ templ.URL(t.Href) }
 		data-nav-loader
+		if newTab {
+			target="_blank"
+			rel="noopener noreferrer"
+		}
 		aria-label={ t.Label }
 		class={
 			"flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm",
@@ -197,6 +210,7 @@ templ SubNav(cfg Config) {
 templ subItem(cfg Config, item SubItem) {
 	<a
 		href={ templ.URL(item.Href) }
+		data-nav-loader
 		class={
 			"block px-3 py-2 rounded-md text-sm transition-colors",
 			templ.KV("bg-kiban-primary-soft text-kiban-primary font-medium", cfg.ActiveKey == item.Key),
