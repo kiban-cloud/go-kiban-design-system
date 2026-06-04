@@ -392,6 +392,19 @@ Cada row es `[dot] [label]                              [date]`, flexed para que
 | `timeline.KindSuccess` / `KindWarning` / `KindInfo` / `KindDanger` / `KindDefault` (consts) | done | Exported para evitar stringly-typed values. |
 | `timeline.Timeline(events []Event)` | done | Renderiza un `<ul>` vertical de events. Empty input renderiza nada (sin wrapper) para que un parent block no termine con un `<ul>` vacío. Unknown Kind colapsa al "default" gris para que un valor inesperado nunca rompa la row. |
 
+### Graphic bars (`view/graphic_bars/`)
+
+Titled card de barras horizontales labeladas donde el label vive *adentro* del fill coloreado y el total (+ porcentaje opcional) va en una columna a la derecha. Reemplaza una librería de charts para las visuales de "share of ejecuciones" (estadísticas de A/B Testing, breakdowns de dashboard…): cuando la data son pocas categorías con un percent cada una, una barra CSS se lee mejor que un canvas y mantiene el label legible adentro de la barra en lugar de pelear con un eje externo. Replica el look del `AlphaGraphicCard` de React.
+
+6-variant palette (fill / border / label): `error #ffe3e3/#ffc5c5/#b70000`, `success #ecfdf5/#aefcdd/#047857`, `warning #fff4d9/#ffce5f/#a76100`, `workfloo #f6efff/#d0b4ff/#2d02bb`, `primary #f1f7ff/#c7dfff/#0000cc`, `neutral #f5f6f7/#dee1e5/#2f3946`. Variante desconocida colapsa a `neutral` para que un valor inesperado nunca renderice una barra sin color.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `graphic_bars.Bar` (struct) | done | Una barra. `Label string` (se dibuja adentro del fill), `Total string` (display ya formateado por el caller — un count "5", un money "$12.50", una duración "1h 30m"; el componente nunca formatea), `Percent float64` (0..100, maneja el ancho del fill y, salvo `HidePercent`, el label "%" de la derecha). |
+| `graphic_bars.Options` (struct) | done | `Title string` (opcional), `Variant string` (uno de los `Variant*`), `HidePercent bool` (dropea el "%" de la columna derecha para métricas donde un porcentaje no aplica — duraciones, costos), `Bars []Bar`. |
+| `graphic_bars.VariantError` / `VariantSuccess` / `VariantWarning` / `VariantWorkfloo` / `VariantPrimary` / `VariantNeutral` (consts) | done | Exported para evitar stringly-typed values. |
+| `graphic_bars.GraphicBars(opts)` | done | Renderiza el card: título opcional + una barra por datum. Input vacío (`len(Bars)==0`) renderiza nada (ni título ni frame) para que un parent block no termine con un heading suelto sobre un card vacío. El ancho del fill se clampea a `[0,100]`. |
+
 ### Comment input (`view/comment_input/`)
 
 Composición de alto nivel: textarea + `[file_chip_input.Field]` + botón submit, todo bajo un único `<form>`. Encapsula el look-and-feel para que cualquier proyecto que necesite un "post a comment" UI lo consuma con un solo callsite. Hoy lo usa klin para los comentarios de entrega; fue diseñado para que rekon (notas en órdenes de pago) / crm (actividad por cliente) / futuros tools tengan la misma UX sin re-implementar.

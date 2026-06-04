@@ -1,0 +1,47 @@
+package graphic_bars
+
+// GraphicBars renders one card: an optional title plus a labelled
+// horizontal bar per datum. Each bar's label sits *inside* the
+// coloured fill (absolutely positioned over it, left-padded) so it
+// stays legible even when the bar is short; the total — and, unless
+// HidePercent, the percentage — sit in a right-hand column.
+//
+// Empty input renders nothing (no title, no frame) so a parent block
+// doesn't end up with a stray heading over an empty card.
+templ GraphicBars(opts Options) {
+	if len(opts.Bars) > 0 {
+		<div class="w-full">
+			if opts.Title != "" {
+				<div class="text-sm font-semibold text-kiban-ink mb-3">{ opts.Title }</div>
+			}
+			<div class="space-y-2">
+				for _, b := range opts.Bars {
+					@bar(opts, b)
+				}
+			</div>
+		</div>
+	}
+}
+
+// bar is one row: the bar wrapper (fill + in-bar label) on the left
+// taking the free space, and the total/percent column on the right.
+// Unexported — a bar outside a GraphicBars card has no meaning.
+templ bar(opts Options, b Bar) {
+	<div class="flex items-center gap-3">
+		<div class="relative flex-1 h-9 min-w-0">
+			<div class="absolute inset-y-0 left-0" style={ barFillStyle(opts.Variant, b.Percent) }></div>
+			<div
+				class="absolute inset-y-0 left-2 flex items-center text-sm font-semibold whitespace-nowrap"
+				style={ labelStyle(opts.Variant) }
+			>
+				{ b.Label }
+			</div>
+		</div>
+		<div class="shrink-0 text-right text-sm leading-tight">
+			<div class="font-semibold text-kiban-ink">{ b.Total }</div>
+			if !opts.HidePercent {
+				<div class="text-xs text-kiban-ink3">{ percentLabel(b.Percent) }</div>
+			}
+		</div>
+	</div>
+}
