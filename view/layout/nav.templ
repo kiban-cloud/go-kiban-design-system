@@ -16,7 +16,7 @@ templ Topbar(cfg Config) {
 		>
 			@icons.Hamburger()
 		</button>
-		<a href={ templ.URL(cfg.ShellURL) } aria-label="kiban cloud" class="flex items-center pr-4 border-r border-kiban-border h-full">
+		<a href={ templ.URL(DefaultLogoHref) } aria-label="kiban cloud" class="flex items-center pr-4 border-r border-kiban-border h-full">
 			@logo.KibanCloud("w-32 h-auto")
 		</a>
 		@spaceSwitcher(cfg)

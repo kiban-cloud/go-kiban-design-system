@@ -12,6 +12,27 @@ import (
 	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
 )
 
+// DefaultLogoHref is the destination of the topbar kiban logo in BOTH shells
+// (Topbar and AdminLayout). It is a global, project-agnostic link: every
+// kiban tool's logo points at the same kiban-cloud landing, so no project
+// has to wire the logo URL. It is intentionally host-relative so it resolves
+// against whatever host served the page — the same link works in
+// local/dev/qa/alpha/prod without per-environment configuration. The logo
+// always uses this value and ignores Config.ShellURL / AdminConfig.HomeHref
+// (those remain for other purposes — see their field docs).
+const DefaultLogoHref = "/kiban-cloud"
+
+// logoHref resolves the AdminLayout topbar's ProjectName label link (the app
+// name shown next to the logo): the project-supplied HomeHref when set,
+// otherwise DefaultLogoHref. The logo image itself does not use this — it is
+// always DefaultLogoHref.
+func logoHref(explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	return DefaultLogoHref
+}
+
 // User is the minimal identity displayed in the topbar's avatar dropdown.
 //
 // Picture is optional. The customer-facing Layout doesn't render it
@@ -128,7 +149,7 @@ type Config struct {
 	SwitchSpaceAction string
 
 	// Routing
-	ShellURL     string // kiban shell base URL (logo link + external tool prefix)
+	ShellURL     string // kiban shell base URL — external tool prefix (icon rail builds links as ShellURL + "/crm/customers", etc.). NOT used by the logo (the logo is always DefaultLogoHref).
 	LogoutAction string // POST URL that clears auth cookies
 	// UserMenuItems are the links rendered inside the topbar avatar
 	// dropdown, between the user-info header and the "Salir" button.
@@ -198,7 +219,7 @@ type AdminConfig struct {
 
 	// Identity. Used for the <title> suffix and the topbar logo link.
 	ProjectName string
-	HomeHref    string // where the topbar logo links to (e.g. /klin-internal-htmx/)
+	HomeHref    string // where the topbar ProjectName label links to (the app's own home, e.g. /klin-internal-htmx/). Empty → falls back to DefaultLogoHref. The logo itself always links to DefaultLogoHref regardless.
 
 	// User context (avatar + dropdown in the topbar)
 	User User

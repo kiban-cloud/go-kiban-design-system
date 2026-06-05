@@ -312,6 +312,19 @@ templ Base(cfg Config) {
 					z-index: 100;
 					box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 				}
+				/* Inside any overlay (drawer / modal) the tooltip flips to
+				   the LEFT of its trigger. Drawers and modals constrain
+				   width, so a right-side bubble routinely overflows the
+				   panel and gets clipped — anchoring to the right edge of
+				   the trigger keeps the bubble inside the panel where the
+				   user can read it. Applies to every overlay class
+				   uniformly because the failure mode is identical
+				   regardless of which overlay primitive renders it. */
+				[data-kiban-overlay] [data-tooltip]:hover::after,
+				[data-kiban-overlay] [data-tooltip]:focus-visible::after {
+					left: auto;
+					right: calc(100% + 10px);
+				}
 			</style>
 		</head>
 		<body class="bg-white text-kiban-ink antialiased" hx-disabled-elt="this">
@@ -861,7 +874,35 @@ templ Base(cfg Config) {
 				// a time, matching native browser-modal behaviour.
 				window.kibanOpenOverlay = function (id) {
 					var el = document.getElementById(id);
-					if (el) el.classList.remove('hidden');
+					if (!el) return;
+					el.classList.remove('hidden');
+					// Repaint any canvas inside the now-visible overlay.
+					// The canvas edge-painter measures node positions via
+					// getBoundingClientRect; while the overlay carries
+					// `hidden` those rects are 0×0 and the htmx:afterSwap
+					// paint that ran during swap produced an empty SVG.
+					// Calling kibanCanvasRender after the overlay
+					// becomes visible re-measures with real geometry
+					// and repaints the edges. No-op when the overlay
+					// hosts no canvas.
+					//
+					// Wrapped in a double rAF so the paint runs AFTER
+					// the browser has done its layout pass on the newly
+					// visible element: removing `hidden` mutates the
+					// DOM synchronously, but flex centering / font
+					// metrics / scrollbar adjustment all settle on the
+					// next frame. Measuring on the current tick can
+					// produce node rects that are still mid-transition,
+					// which paints the SVG paths against stale
+					// coordinates. Two rAFs gives one frame for the
+					// style recalc + one for the post-layout paint.
+					if (typeof window.kibanCanvasRender === 'function') {
+						requestAnimationFrame(function () {
+							requestAnimationFrame(function () {
+								window.kibanCanvasRender(el);
+							});
+						});
+					}
 				};
 				window.kibanCloseOverlay = function (id) {
 					var el = document.getElementById(id);
@@ -1073,9 +1114,12 @@ templ Base(cfg Config) {
 				(function () {
 					var STROKE_DEFAULT = '#94A1B9'; // kiban-ink4-ish
 					var STROKE_ERROR = '#DC2626';   // red-600
+					var STROKE_SUCCESS = '#16A34A'; // emerald-600
 
 					function strokeFor(variant) {
-						return variant === 'error' ? STROKE_ERROR : STROKE_DEFAULT;
+						if (variant === 'error') return STROKE_ERROR;
+						if (variant === 'success') return STROKE_SUCCESS;
+						return STROKE_DEFAULT;
 					}
 
 					function render(canvas) {
@@ -1085,15 +1129,28 @@ templ Base(cfg Config) {
 						var svg = canvas.querySelector('[data-kiban-canvas-edges]');
 						if (!svg) return;
 
+						// Compute the effective ancestor CSS-transform
+						// scale. getBoundingClientRect returns POST-
+						// transform pixels; offsetWidth is pre-transform
+						// layout width. Their ratio is the live scale
+						// applied by every CSS transform ancestor between
+						// the canvas and the viewport. We size the SVG
+						// + path coords in LAYOUT pixels so that when the
+						// SVG itself is rendered inside the same scaled
+						// ancestor it scales uniformly with the cards.
+						// If we instead used the post-transform rect
+						// (layout × scale) as the intrinsic SVG width,
+						// the SVG would visually become layout × scale²
+						// while cards stay at layout × scale — paths
+						// drift by exactly the scale factor.
 						var rect = canvas.getBoundingClientRect();
-						// Set explicit width/height + viewBox so the SVG
-						// coordinate system matches CSS pixels relative to
-						// the canvas top-left. Without this, percentage-
-						// sized SVGs stretch lines weirdly when the canvas
-						// is taller than the viewport.
-						svg.setAttribute('width', rect.width);
-						svg.setAttribute('height', rect.height);
-						svg.setAttribute('viewBox', '0 0 ' + rect.width + ' ' + rect.height);
+						var layoutWidth = canvas.offsetWidth || rect.width || 1;
+						var layoutHeight = canvas.offsetHeight || rect.height || 1;
+						var ancestorScale = rect.width > 0 ? rect.width / layoutWidth : 1;
+
+						svg.setAttribute('width', layoutWidth);
+						svg.setAttribute('height', layoutHeight);
+						svg.setAttribute('viewBox', '0 0 ' + layoutWidth + ' ' + layoutHeight);
 
 						// Clear previous paths before redrawing.
 						while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -1107,10 +1164,17 @@ templ Base(cfg Config) {
 
 							var fr = from.getBoundingClientRect();
 							var tr = to.getBoundingClientRect();
-							var x1 = fr.left + fr.width / 2 - rect.left;
-							var y1 = fr.bottom - rect.top;
-							var x2 = tr.left + tr.width / 2 - rect.left;
-							var y2 = tr.top - rect.top;
+							// Divide each rect-relative offset by the
+							// ancestor scale to land in LAYOUT space —
+							// the same coord system the SVG is sized in
+							// above. Pre-transform layouts are how the
+							// edge math was originally written; the
+							// scale division restores that contract
+							// even when an ancestor transforms us.
+							var x1 = (fr.left + fr.width / 2 - rect.left) / ancestorScale;
+							var y1 = (fr.bottom - rect.top) / ancestorScale;
+							var x2 = (tr.left + tr.width / 2 - rect.left) / ancestorScale;
+							var y2 = (tr.top - rect.top) / ancestorScale;
 
 							var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 							var d;

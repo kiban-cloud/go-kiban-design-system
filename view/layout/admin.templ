@@ -40,26 +40,14 @@ templ adminTopbar(cfg AdminConfig) {
 		<div class="flex items-center justify-between px-6 h-16">
 			<div class="flex items-center gap-8">
 				<div class="flex items-center gap-3">
-					if cfg.HomeHref != "" {
-						<a href={ templ.URL(cfg.HomeHref) } aria-label="kiban cloud" class="flex items-center">
-							@logo.KibanCloud("w-32 h-auto")
-						</a>
-					} else {
-						<span class="flex items-center" aria-label="kiban cloud">
-							@logo.KibanCloud("w-32 h-auto")
-						</span>
-					}
+					<a href={ templ.URL(DefaultLogoHref) } aria-label="kiban cloud" class="flex items-center">
+						@logo.KibanCloud("w-32 h-auto")
+					</a>
 					if cfg.ProjectName != "" {
 						<span class="h-6 w-px bg-kiban-border"></span>
-						if cfg.HomeHref != "" {
-							<a href={ templ.URL(cfg.HomeHref) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors">
-								{ cfg.ProjectName }
-							</a>
-						} else {
-							<span class="font-heading font-medium text-base text-kiban-ink">
-								{ cfg.ProjectName }
-							</span>
-						}
+						<a href={ templ.URL(logoHref(cfg.HomeHref)) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors">
+							{ cfg.ProjectName }
+						</a>
 					}
 				</div>
 				if len(cfg.NavSections) > 0 {
