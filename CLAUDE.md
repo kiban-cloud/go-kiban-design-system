@@ -143,6 +143,8 @@ Ambos patrones son equivalentes en outcome; usar el que matchee la convención D
 | `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar`, `icons.Plus` | done |
 | `icons.Eye`, `icons.EyeOff` | done | Paired affordance icons used by `input.Password`'s visibility toggle. Also reusable as generic "view / preview" / "hide" buttons. Sized 18×18 to match `Close`. |
 | `icons.Settings` | done | Standard gear/cog. Affordance for "configurar / settings / preferencias" entries (home cards, sidebar items, kebab actions). 20×20 to match navigational icons. |
+| `icons.Clipboard`, `icons.GitBranch`, `icons.Cpu`, `icons.Sliders`, `icons.Clock`, `icons.Tag` | done | Workfloo connector-picker glyphs for the basic node types (FORM, RULESET, API, VARIABLES, TIMER, LABEL). `GitMerge` (decision tree) + `FileText` (document/PDF) reused for the rest. 20×20. |
+| `icons.Camera`, `icons.MessageSquare`, `icons.Shield`, `icons.Plug` | done | Workfloo LINK-service family glyphs: biometrics/OCR (`Camera`), messaging/contact (`MessageSquare`), risk/PLD/blocklist (`Shield`), and the generic connector fallback (`Plug`). 20×20. |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
 
