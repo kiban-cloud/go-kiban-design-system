@@ -977,6 +977,68 @@ templ Base(cfg Config) {
 					});
 				});
 
+				// flash.Banner — click-to-dismiss. Each banner carries
+				// [data-kiban-flash] and its × button carries
+				// [data-kiban-flash-dismiss]; the delegated click
+				// listener walks up to the wrapping banner and removes
+				// it. Dismiss is purely client-side — the next HTMX
+				// swap can re-render the banner from server state if
+				// the underlying flash cookie / form error is still
+				// set. No init or htmx:afterSwap hook needed: the
+				// listener is bound to document, so banners swapped in
+				// later are dismissed by the same handler.
+				document.addEventListener('click', function (e) {
+					var btn = e.target.closest && e.target.closest('[data-kiban-flash-dismiss]');
+					if (!btn) return;
+					var banner = btn.closest('[data-kiban-flash]');
+					if (!banner) return;
+					banner.remove();
+				});
+
+				// flash.Banner — auto-dismiss timer. Success / info
+				// variants carry [data-kiban-flash-autodismiss-ms="<n>"];
+				// after that many ms the banner fades out and removes
+				// itself. Hovering pauses the countdown so the user has
+				// time to read; mouseleave restarts a fresh timer from
+				// the full duration (simpler than tracking elapsed time
+				// and matches what users expect from notification
+				// libraries). Each banner is tagged with
+				// data-kiban-flash-autodismiss-armed so the init pass
+				// doesn't double-schedule timers on htmx swaps that
+				// merely re-attach an already-armed banner.
+				function kibanArmFlashAutodismiss(banner) {
+					if (banner.hasAttribute('data-kiban-flash-autodismiss-armed')) return;
+					var ms = parseInt(banner.getAttribute('data-kiban-flash-autodismiss-ms') || '0', 10);
+					if (!ms || ms <= 0) return;
+					banner.setAttribute('data-kiban-flash-autodismiss-armed', '1');
+					var timer = null;
+					var fade = function () {
+						banner.style.opacity = '0';
+						// `transition-opacity duration-200` on the
+						// banner makes the fade animate. Wait for the
+						// transition to finish before removing so the
+						// user sees the fade-out rather than a snap.
+						setTimeout(function () { banner.remove(); }, 220);
+					};
+					var schedule = function () {
+						if (timer) clearTimeout(timer);
+						timer = setTimeout(fade, ms);
+					};
+					banner.addEventListener('mouseenter', function () {
+						if (timer) { clearTimeout(timer); timer = null; }
+					});
+					banner.addEventListener('mouseleave', schedule);
+					schedule();
+				}
+				document.addEventListener('DOMContentLoaded', function () {
+					document.querySelectorAll('[data-kiban-flash-autodismiss-ms]').forEach(kibanArmFlashAutodismiss);
+				});
+				document.addEventListener('htmx:afterSwap', function (e) {
+					var root = e.target || document;
+					if (!root.querySelectorAll) return;
+					root.querySelectorAll('[data-kiban-flash-autodismiss-ms]').forEach(kibanArmFlashAutodismiss);
+				});
+
 				// tabs.Panel — CSS-only in-page tab switching. Each Panel
 				// instance carries [data-kiban-tabs-panel] +
 				// [data-kiban-tabs-active-key="<currentKey>"]; clicking a
@@ -1181,7 +1243,54 @@ templ Base(cfg Config) {
 							if (Math.abs(x1 - x2) < 0.5) {
 								d = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
 							} else {
+								// Default bend at the vertical midpoint
+								// between source-bottom and target-top.
+								// Good enough when the source's row is
+								// no taller than the source card itself.
 								var midY = (y1 + y2) / 2;
+								// When the source's row is inflated by
+								// a side affordance (e.g. a LINK card's
+								// error column with its own chain of
+								// nodes), the row extends past the
+								// source card's bottom — often almost
+								// all the way to the next card. The
+								// naive midpoint then drops the
+								// across-segment flush with one of the
+								// inflated cards, so the edge visually
+								// reads as "originates from that
+								// inflated card" instead of from the
+								// source.
+								//
+								// Re-anchor the bend to the midpoint of
+								// the *remaining* gap below the row,
+								// however narrow: the across-segment is
+								// then guaranteed to sit between the
+								// row's bottom and the target's top,
+								// never flush with row content. A
+								// fixed offset (e.g. rowBottom + 12)
+								// doesn't generalize — in dense
+								// layouts the gap can be smaller than
+								// the offset, the guard fails, and the
+								// bend silently falls back to the
+								// midpoint we're trying to avoid.
+								var fromRow = from.closest(
+									'[data-kiban-canvas-row], [data-kiban-canvas-chain-row]'
+								);
+								if (fromRow) {
+									var fromRowRect = fromRow.getBoundingClientRect();
+									var rowBottom = (fromRowRect.bottom - rect.top) / ancestorScale;
+									// Only adjust when (a) the row is
+									// actually inflated past the
+									// source card and (b) there's at
+									// least a few pixels of gap below
+									// the row before the target. If
+									// the row abuts the target, no
+									// placement avoids overlap, so we
+									// leave the default midpoint.
+									if (rowBottom > y1 + 4 && y2 > rowBottom + 4) {
+										midY = (rowBottom + y2) / 2;
+									}
+								}
 								d = 'M ' + x1 + ' ' + y1 +
 								    ' L ' + x1 + ' ' + midY +
 								    ' L ' + x2 + ' ' + midY +
@@ -1238,6 +1347,95 @@ templ Base(cfg Config) {
 					// that doesn't go through HTMX). Optional — most
 					// consumers won't need it.
 					window.kibanCanvasRender = renderAll;
+				})();
+
+				// Canvas error-branch column mirror.
+				//
+				// A canvasNodeWithErrorBranch grid (LINK card with a
+				// non-empty error chain to its right) is rendered as
+				//
+				//   [empty col 1 (1fr)] [card (auto)] [error col 3 (1fr)]
+				//
+				// `1fr` is CSS `minmax(auto, 1fr)`: when the error
+				// chain's content is wider than its 1fr share, column
+				// 3 grows past the share to fit. The empty column 1
+				// stays at its smaller share, the two outer columns
+				// end up unequal, and the centered `auto` card column
+				// drifts left — the next chain item below it no
+				// longer sits straight under the card.
+				//
+				// This observer keeps column 1's empty
+				// `[data-kiban-canvas-error-mirror]` div the same
+				// width as its sibling column 3's
+				// `[data-kiban-canvas-error-col]`. Once they match,
+				// CSS sizes both columns identically and the card
+				// recenters. We observe the error column rather than
+				// the row so a deeper change (chain item added inside
+				// an error branch, nested LINK with its own error
+				// expanding) fires the callback without us re-arming.
+				//
+				// The templ only emits the markers when the error
+				// chain is non-empty, so this observer is a no-op
+				// on the common case (LINK card with the bare
+				// `Salida de error` + `+` affordance).
+				(function () {
+					if (typeof ResizeObserver === 'undefined') return;
+					var rerenderQueued = false;
+					function queueCanvasRerender() {
+						// The mirror's width change shifts every
+						// card in inflated rows. The canvas edge
+						// painter measured the pre-shift positions
+						// on DOMContentLoaded (or htmx:afterSwap),
+						// so the SVG paths are drawn relative to
+						// stale card positions — edges look
+						// orphaned until a resize event triggers
+						// renderAll(). Schedule one re-paint per
+						// observer batch once the browser has
+						// applied our width writes.
+						if (rerenderQueued) return;
+						rerenderQueued = true;
+						requestAnimationFrame(function () {
+							rerenderQueued = false;
+							if (typeof window.kibanCanvasRender === 'function') {
+								window.kibanCanvasRender();
+							}
+						});
+					}
+					var observer = new ResizeObserver(function (entries) {
+						var didResize = false;
+						entries.forEach(function (entry) {
+							var errorCol = entry.target;
+							var parent = errorCol.parentElement;
+							if (!parent) return;
+							var mirror = parent.querySelector('[data-kiban-canvas-error-mirror]');
+							if (!mirror) return;
+							// `contentRect.width` is more accurate
+							// than offsetWidth for fractional
+							// layouts (subpixel-aware browsers).
+							var next = entry.contentRect.width + 'px';
+							// Skip the write when the value is
+							// unchanged — every `.style.width =
+							// …` triggers a style recalc and a
+							// post-write ResizeObserver echo, so
+							// pingponging on equal values is real
+							// work for zero layout benefit.
+							if (mirror.style.width === next) return;
+							mirror.style.width = next;
+							didResize = true;
+						});
+						if (didResize) queueCanvasRerender();
+					});
+					function armAll(root) {
+						(root || document).querySelectorAll('[data-kiban-canvas-error-col]').forEach(function (col) {
+							observer.observe(col);
+						});
+					}
+					document.addEventListener('DOMContentLoaded', function () { armAll(); });
+					// HTMX swap can bring in fresh error columns
+					// (new node added on an error branch, etc.);
+					// re-observing already-observed elements is a
+					// no-op so this is safe to run every swap.
+					document.addEventListener('htmx:afterSwap', function (e) { armAll(e.target); });
 				})();
 
 				// Password visibility toggle — used by view/input/Password.

@@ -250,7 +250,7 @@ Convenciones del grupo:
 | `flash.Warning(msg string)` | done | Wrapper tipado: warnings suaves donde el usuario puede continuar pero debería leer algo ("Banco Donde no está configurado todavía", …). |
 | `flash.Info(msg string)` | done | Wrapper tipado: mensajes informativos neutrales — el catch-all cuando nada salió mal pero hay algo que comunicar. |
 
-Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-renderizan con la siguiente request / HTMX swap. Esto coincide con cómo los controllers ya piensan en `FlashSuccess`/`FlashError` en sus views.
+Banners son **dismissibles client-side**: cada banner lleva un × a la derecha y un handler delegado en `view/layout/base.templ` lo remueve del DOM al click. No hay localStorage — el dismiss es puramente visual: si el siguiente HTMX swap (o page render) trae de vuelta el `FlashSuccess`/`FlashError` desde el state del server, el banner reaparece. Controllers no necesitan código para soportar esto; el contrato de "render server-side, dismiss client-side" es transparente.
 
 #### Spinner / Tooltip (CSS-only, no templ helpers)
 
