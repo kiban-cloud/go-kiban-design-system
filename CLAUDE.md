@@ -81,6 +81,7 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `layout.Topbar(cfg)` | done | Hamburger izquierda + logo `logo.KibanCloud` (SVG, `w-32` = 128px; **siempre** linkea a `layout.DefaultLogoHref` = `/kiban-cloud`, host-relativo y global — NO usa `ShellURL`, así ningún proyecto cablea la URL del logo) + space chip + Developers button + user menu con logout. |
 | Space switcher (chip) | done | El chip de espacio en `Topbar` es un dropdown clickable cuando `len(cfg.Spaces) >= 2` + `cfg.SwitchSpaceAction != ""`. Cada item es un `<form method="POST" action={SwitchSpaceAction}>` con hidden `spaceId`; el proyecto consumidor valida acceso server-side antes de setear `kiban_space_id` cookie y redirigir. Con `len(cfg.Spaces) <= 1` cae a readonly. `cfg.CurrentSpaceName` decide el label visible (fallback al SpaceID literal o "—" si nada está set). Usa el mismo `kibanToggleMenu` y outside-click handler del menu kebab. |
 | User menu (avatar dropdown) | done | Topbar avatar es un dropdown clickable vía `window.kibanToggleMenu('topbar-user-menu')` (NO hover — el patrón anterior con `group-hover:block` fallaba en el gap mt-1 entre trigger y panel). Mismo data-attr + JS handler que el `view/menu` kebab; ARIA-completo (`aria-haspopup/expanded/controls`, `role="menu"`/`menuitem`). |
+| Notifications bell (topbar) | done | Campana + badge de no-leídas + dropdown, junto al user menu. **Opt-in** vía `Config.NotificationsBaseURL` (vacío = sin campana). El DS sólo dibuja el chrome; los datos los sirve el backend dueño de ese path (kiban-cloud). Ver "Cómo conectar el bell de notificaciones" abajo. |
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
 | `layout.AdminConfig` | done | Struct para AdminLayout: `Title`, `ProjectName`, `HomeHref`, `User`, `LogoutAction`, `NavSections`, `ActiveSection`, `Breadcrumbs`. Distinto de `Config` — no carga el modelo multi-tool (Tools/Docs/SubItems). |
@@ -134,6 +135,23 @@ Ambos patrones son equivalentes en outcome; usar el que matchee la convención D
 - `auth.SpaceId` activo no aparece en la lista fetcheada → `CurrentSpaceName` queda `""` → DS muestra el ObjectId crudo. Indicador de que kiban-cloud no devolvió el space activo del usuario (config issue upstream, no bug del consumidor).
 - 0 o 1 espacios en la lista → DS rinde el chip readonly automáticamente (sin chevron, sin menu).
 - `SwitchSpaceAction == ""` con `Spaces` poblado → DS fuerza el chip readonly aunque haya items, como guard defensivo contra submits a string vacío.
+
+#### Cómo conectar el bell de notificaciones
+
+El DS dibuja la campana, el badge y el panel; **los datos los sirve el backend** (kiban-cloud es el dueño hoy). Como todos los tools kiban viven en el mismo origen, cualquier backend puede apuntar su shell al path de kiban-cloud y obtener la campana en sus propias páginas — la cookie `kiban_session` compartida autentica los requests.
+
+**Lo que el DS provee** — dos campos en `layout.Config`:
+
+- `NotificationsBaseURL string` — path base de los endpoints. Vacío = sin campana. Los tools lo setean a `/kiban-cloud/notifications`.
+- `NotificationsUnread int` — conteo inicial del badge (para que el número sea correcto en el primer paint; el poller lo refresca después).
+
+**Lo que el backend debe servir** bajo `NotificationsBaseURL`:
+
+- `GET <base>/dropdown` → el fragmento de lista del panel (lazy-load al abrir).
+- `GET <base>/badge` → un `<span id="kiban-notif-badge" hx-swap-oob="true">` (el DS provee `layout.NotificationBadgeOOB(count)` para emitirlo). El bell lo pollea cada 30s.
+- `GET <base>` → la página completa de notificaciones (target del link "Ver todas", se abre en pestaña nueva).
+
+**Contrato de runtime**: el badge `#kiban-notif-badge` se rinde siempre (oculto cuando 0) para que el poller y las respuestas de mark-read/unread puedan reemplazarlo vía OOB swap. El toggle leído/no-leído de cada item es responsabilidad de la página, no del dropdown.
 
 ### Iconos (`view/icons/`)
 
