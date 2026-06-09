@@ -1,6 +1,8 @@
 package layout
 
 import (
+	"strconv"
+
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
 	"github.com/kiban-cloud/go-kiban-design-system/view/logo"
 )
@@ -29,9 +31,101 @@ templ Topbar(cfg Config) {
 				Developers
 			</a>
 		}
+		if cfg.NotificationsBaseURL != "" {
+			@notificationsBell(cfg)
+		}
 		<div class="h-8 w-px bg-kiban-border"></div>
 		@topbarUserMenu(cfg)
 	</header>
+}
+
+// notificationsBell renders the topbar notifications affordance shared by
+// every kiban tool: a bell button with an unread-count badge, a dropdown
+// panel whose list is lazy-loaded from <base>/dropdown on open, and a
+// hidden poller that refreshes the badge every 30s from <base>/badge via
+// an out-of-band swap. The bell only renders when cfg.NotificationsBaseURL
+// is set (see Topbar). The dropdown list markup itself is owned by the
+// serving backend (kiban-cloud) — the DS just provides the chrome and the
+// scroll container the fragment swaps into.
+templ notificationsBell(cfg Config) {
+	<div class="relative inline-block" data-kiban-menu="topbar-notifications">
+		<button
+			type="button"
+			id="topbar-notifications-trigger"
+			aria-haspopup="true"
+			aria-expanded="false"
+			aria-controls="topbar-notifications-panel"
+			aria-label="Notificaciones"
+			onclick="window.kibanToggleMenu('topbar-notifications')"
+			hx-get={ cfg.NotificationsBaseURL + "/dropdown" }
+			hx-target="#topbar-notifications-list"
+			hx-swap="innerHTML"
+			hx-trigger="click"
+			class="relative w-9 h-9 flex items-center justify-center rounded-md text-kiban-ink3 hover:text-kiban-ink hover:bg-kiban-surface transition-colors"
+		>
+			@icons.Bell()
+			@notificationBadgeEl(cfg.NotificationsUnread, false)
+		</button>
+		<div
+			id="topbar-notifications-panel"
+			role="menu"
+			aria-labelledby="topbar-notifications-trigger"
+			class="hidden absolute right-0 top-full mt-1 z-50 w-[380px] max-w-[90vw] bg-white border border-kiban-border rounded-md shadow-lg overflow-hidden"
+		>
+			<div class="px-4 py-3 border-b border-kiban-border">
+				<div class="text-sm font-semibold text-kiban-ink">Notificaciones</div>
+			</div>
+			<div id="topbar-notifications-list" class="max-h-[420px] overflow-y-auto">
+				<div class="px-4 py-6 text-sm text-kiban-ink4 text-center">Cargando…</div>
+			</div>
+		</div>
+		<div
+			hx-get={ cfg.NotificationsBaseURL + "/badge" }
+			hx-trigger="every 30s"
+			hx-swap="none"
+			class="hidden"
+			aria-hidden="true"
+		></div>
+	</div>
+}
+
+// notificationBadgeEl is the unread-count pill anchored to the bell. The
+// element is ALWAYS rendered (hidden when the count is zero) so the 30s
+// poller and the mark-read/unread responses can target it by id for an
+// out-of-band swap — htmx can only OOB-swap an element that already
+// exists in the DOM. oob=true emits the hx-swap-oob marker the serving
+// backend uses when it returns just this span.
+templ notificationBadgeEl(count int, oob bool) {
+	<span
+		id="kiban-notif-badge"
+		if oob {
+			hx-swap-oob="true"
+		}
+		class={ "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-semibold leading-none pointer-events-none",
+			templ.KV("hidden", count <= 0) }
+	>
+		{ notificationBadgeText(count) }
+	</span>
+}
+
+// NotificationBadgeOOB is the public fragment the serving backend (kiban-cloud)
+// returns from <base>/badge and from mark-read/unread responses. It carries
+// the hx-swap-oob marker so htmx replaces the live #kiban-notif-badge in the
+// topbar wherever the user currently is.
+templ NotificationBadgeOOB(count int) {
+	@notificationBadgeEl(count, true)
+}
+
+// notificationBadgeText caps the displayed count at "99+" so the pill never
+// blows out the bell. Zero still renders (the span is hidden via class).
+func notificationBadgeText(count int) string {
+	if count > 99 {
+		return "99+"
+	}
+	if count < 0 {
+		return "0"
+	}
+	return strconv.Itoa(count)
 }
 
 // sandboxSwitch renders the topbar's prod/sandbox switch as a styled

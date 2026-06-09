@@ -194,6 +194,20 @@ type Config struct {
 	LoadSortable   bool // SortableJS — drag-to-reorder lists (view/sortable_list)
 	LoadFlatpickr  bool // flatpickr + es locale — date range picker (view/date_range)
 	LoadMarked     bool // marked.js — markdown rendering
+
+	// NotificationsBaseURL opts the topbar notifications bell in. Empty
+	// hides the bell entirely. Set it to the base path of the endpoints
+	// that serve notifications (every kiban tool points it at the
+	// kiban-cloud shell, e.g. "/kiban-cloud/notifications", since all
+	// backends share one origin). The bell expects three routes under it:
+	//   - GET  <base>/dropdown → the panel list fragment (lazy-loaded on open)
+	//   - GET  <base>/badge    → an OOB <span id="kiban-notif-badge"> (polled)
+	//   - GET  <base>          → the full notifications page (the "ver todas" link)
+	NotificationsBaseURL string
+	// NotificationsUnread is the unread count rendered into the bell badge
+	// on first paint, so the number is correct before the 30s poller runs.
+	// Zero (or negative) renders the bell with no badge.
+	NotificationsUnread int
 }
 
 // NavSection is one entry in AdminLayout's horizontal top-level nav.
