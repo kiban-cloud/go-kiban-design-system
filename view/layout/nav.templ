@@ -31,9 +31,7 @@ templ Topbar(cfg Config) {
 				Developers
 			</a>
 		}
-		if cfg.NotificationsBaseURL != "" {
-			@notificationsBell(cfg)
-		}
+		@notificationsBell(cfg)
 		<div class="h-8 w-px bg-kiban-border"></div>
 		@topbarUserMenu(cfg)
 	</header>
@@ -42,12 +40,15 @@ templ Topbar(cfg Config) {
 // notificationsBell renders the topbar notifications affordance shared by
 // every kiban tool: a bell button with an unread-count badge, a dropdown
 // panel whose list is lazy-loaded from <base>/dropdown on open, and a
-// hidden poller that refreshes the badge every 30s from <base>/badge via
-// an out-of-band swap. The bell only renders when cfg.NotificationsBaseURL
-// is set (see Topbar). The dropdown list markup itself is owned by the
+// hidden poller that refreshes the badge from <base>/badge on page load
+// and then every 30s via an out-of-band swap. The bell is always rendered
+// in the Topbar; the base path resolves to cfg.NotificationsBaseURL when
+// set, otherwise DefaultNotificationsBaseURL — so every tool gets it with
+// no per-project wiring. The dropdown list markup itself is owned by the
 // serving backend (kiban-cloud) — the DS just provides the chrome and the
 // scroll container the fragment swaps into.
 templ notificationsBell(cfg Config) {
+	{{ base := notificationsBaseURL(cfg.NotificationsBaseURL) }}
 	<div class="relative inline-block" data-kiban-menu="topbar-notifications">
 		<button
 			type="button"
@@ -57,7 +58,7 @@ templ notificationsBell(cfg Config) {
 			aria-controls="topbar-notifications-panel"
 			aria-label="Notificaciones"
 			onclick="window.kibanToggleMenu('topbar-notifications')"
-			hx-get={ cfg.NotificationsBaseURL + "/dropdown" }
+			hx-get={ base + "/dropdown" }
 			hx-target="#topbar-notifications-list"
 			hx-swap="innerHTML"
 			hx-trigger="click"
@@ -80,8 +81,8 @@ templ notificationsBell(cfg Config) {
 			</div>
 		</div>
 		<div
-			hx-get={ cfg.NotificationsBaseURL + "/badge" }
-			hx-trigger="every 30s"
+			hx-get={ base + "/badge" }
+			hx-trigger="load, every 30s"
 			hx-swap="none"
 			class="hidden"
 			aria-hidden="true"

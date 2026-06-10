@@ -33,6 +33,26 @@ func logoHref(explicit string) string {
 	return DefaultLogoHref
 }
 
+// DefaultNotificationsBaseURL is the base path the topbar notifications bell
+// uses when a Config doesn't set NotificationsBaseURL explicitly. Like
+// DefaultLogoHref, it is a global, project-agnostic, host-relative link:
+// every kiban tool shares one origin, and the notification endpoints
+// (dropdown/badge/page) are served by the kiban-cloud backend under this
+// path. Defaulting it here means every tool that wraps its pages with
+// Layout gets the bell for free — no per-project wiring, just a DS bump.
+const DefaultNotificationsBaseURL = "/kiban-cloud/notifications"
+
+// notificationsBaseURL resolves the bell's base path: the project-supplied
+// NotificationsBaseURL when set, otherwise DefaultNotificationsBaseURL. The
+// bell is always rendered in the customer-facing Topbar — there is no
+// opt-out, since every kiban tool surfaces the same shared notifications.
+func notificationsBaseURL(explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	return DefaultNotificationsBaseURL
+}
+
 // User is the minimal identity displayed in the topbar's avatar dropdown.
 //
 // Picture is optional. The customer-facing Layout doesn't render it
@@ -195,18 +215,22 @@ type Config struct {
 	LoadFlatpickr  bool // flatpickr + es locale — date range picker (view/date_range)
 	LoadMarked     bool // marked.js — markdown rendering
 
-	// NotificationsBaseURL opts the topbar notifications bell in. Empty
-	// hides the bell entirely. Set it to the base path of the endpoints
-	// that serve notifications (every kiban tool points it at the
-	// kiban-cloud shell, e.g. "/kiban-cloud/notifications", since all
-	// backends share one origin). The bell expects three routes under it:
+	// NotificationsBaseURL overrides the base path the topbar
+	// notifications bell uses. Leave it empty in normal use: the bell is
+	// always rendered and falls back to DefaultNotificationsBaseURL
+	// ("/kiban-cloud/notifications"), so every tool gets it with no
+	// wiring. Set it only to point the bell at a non-default path. The
+	// bell expects three routes under the resolved base:
 	//   - GET  <base>/dropdown → the panel list fragment (lazy-loaded on open)
 	//   - GET  <base>/badge    → an OOB <span id="kiban-notif-badge"> (polled)
 	//   - GET  <base>          → the full notifications page (the "ver todas" link)
 	NotificationsBaseURL string
-	// NotificationsUnread is the unread count rendered into the bell badge
-	// on first paint, so the number is correct before the 30s poller runs.
-	// Zero (or negative) renders the bell with no badge.
+	// NotificationsUnread is an optional seed for the bell badge on first
+	// paint, avoiding a flash before the count loads. It is purely a
+	// nicety: the badge poller fires on page load (not just every 30s),
+	// so the count self-corrects over HTTP from <base>/badge immediately
+	// — tools that can't compute the count locally (everything except
+	// kiban-cloud, which owns the count usecase) just leave this zero.
 	NotificationsUnread int
 }
 
