@@ -108,6 +108,13 @@ templ Base(cfg Config) {
 					animation: kiban-spin 0.8s linear infinite;
 				}
 
+				/* intl-tel-input: the lib's wrapper is inline-block by default,
+				   which collapses the styled <input>'s w-full. Make it fill the
+				   field container so the phone input matches the width + box of
+				   the other inputs (input.Phone now carries the same kiban
+				   border/rounded/padding classes as input.Text). */
+				.iti { display: block; width: 100%; }
+
 				/* Global HTMX busy region (regla cross-module: link / rekon /
 				   crm / klin). Cuando un trigger HTMX dispara un swap parcial,
 				   su target queda marcado .kiban-busy: gris, no-interactivo
