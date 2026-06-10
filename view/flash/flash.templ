@@ -1,5 +1,7 @@
 package flash
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
 // Banner renders a single full-width notification rectangle. Caller
 // decides the variant; the component picks border-/bg-/text- triples
 // from the shared kiban palette so the visual is consistent across
@@ -10,10 +12,30 @@ package flash
 // `variant` accepts: "success" | "error" | "warning" | "info" (empty
 // falls back to "info" so an unset variant doesn't render an
 // unstyled banner).
+//
+// Dismiss behaviour, both wired up by `view/layout/base.templ`:
+//
+//   - Click on the trailing × removes the banner from the DOM.
+//   - "Ephemeral" variants (success / info) carry
+//     `data-kiban-flash-autodismiss-ms` and disappear on their own
+//     after the timeout — confirmations and neutral notices don't
+//     need user acknowledgement, so leaving them up forever just
+//     clutters the page. Hovering pauses the timer so the user has
+//     time to read; moving the cursor away resumes a fresh count.
+//     Warning and error variants intentionally have no timer — the
+//     user should see (and dismiss) them deliberately.
+//
+// Dismiss is purely client-side. The next HTMX swap / page render
+// can still bring the banner back from server state if the
+// underlying flash cookie / form error is still set.
 templ Banner(variant, msg string) {
 	<div
+		data-kiban-flash
+		if autoDismissMs(variant) > 0 {
+			data-kiban-flash-autodismiss-ms={ autoDismissMsAttr(variant) }
+		}
 		class={
-			"rounded-md border px-4 py-3 text-sm",
+			"relative rounded-md border pl-4 pr-10 py-3 text-sm transition-opacity duration-200",
 			templ.KV("border-emerald-200 bg-emerald-50 text-emerald-700", variant == "success"),
 			templ.KV("border-red-200 bg-red-50 text-red-700", variant == "error"),
 			templ.KV("border-amber-200 bg-amber-50 text-amber-700", variant == "warning"),
@@ -21,6 +43,14 @@ templ Banner(variant, msg string) {
 		}
 	>
 		{ msg }
+		<button
+			type="button"
+			data-kiban-flash-dismiss
+			class="absolute top-1/2 right-2 -translate-y-1/2 p-1 rounded-md text-current/70 hover:text-current hover:bg-black/5 transition-colors"
+			aria-label="Cerrar"
+		>
+			@icons.Close()
+		</button>
 	</div>
 }
 

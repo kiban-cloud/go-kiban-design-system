@@ -32,8 +32,8 @@ REPOS=(
   "crm=$SIBLINGS/crm"
   "link=$SIBLINGS/link"
   "klin=$SIBLINGS/klin-backend"
-  # "workfloo=$SIBLINGS/workfloo-backend"
-  # "kiban-cloud=$SIBLINGS/kiban-cloud-backend"
+  "workfloo=$SIBLINGS/workfloo-backend"
+  "kiban-cloud=$SIBLINGS/kiban-cloud"
 )
 
 die() { echo "erreur: $*" >&2; exit 1; }

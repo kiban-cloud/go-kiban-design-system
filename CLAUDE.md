@@ -78,14 +78,15 @@ Estado: `[done]` = implementado, `[planned]` = pendiente. Cuando implementes uno
 | `view.Render(c, status, component)` | done | En `view/render.go`. Consumido por crm + rekon. |
 | `layout.Config` | done | Struct con Title, ProjectName, SectionLabel, User, SpaceID, ShellURL, LogoutAction, ToolKey, ActiveKey, Tools, Docs, SubItems. Cada proyecto crea un type alias local (`view_layout.PageData = layout.Config`) y un `enrich(data)` que añade los campos fijos (Tools, etc.) antes de pasar a `Layout`. |
 | `layout.Layout(cfg)` | done | Shell completa: HTML, head, scripts, topbar, sub-nav (siempre visible) + tools rail (toggleable), main content. |
-| `layout.Topbar(cfg)` | done | Hamburger izquierda + logo `logo.KibanCloud` (SVG, `w-32` = 128px, link a `ShellURL`) + space chip + Developers button + user menu con logout. |
+| `layout.Topbar(cfg)` | done | Hamburger izquierda + logo `logo.KibanCloud` (SVG, `w-32` = 128px; **siempre** linkea a `layout.DefaultLogoHref` = `/kiban-cloud`, host-relativo y global — NO usa `ShellURL`, así ningún proyecto cablea la URL del logo) + space chip + Developers button + user menu con logout. |
 | Space switcher (chip) | done | El chip de espacio en `Topbar` es un dropdown clickable cuando `len(cfg.Spaces) >= 2` + `cfg.SwitchSpaceAction != ""`. Cada item es un `<form method="POST" action={SwitchSpaceAction}>` con hidden `spaceId`; el proyecto consumidor valida acceso server-side antes de setear `kiban_space_id` cookie y redirigir. Con `len(cfg.Spaces) <= 1` cae a readonly. `cfg.CurrentSpaceName` decide el label visible (fallback al SpaceID literal o "—" si nada está set). Usa el mismo `kibanToggleMenu` y outside-click handler del menu kebab. |
 | User menu (avatar dropdown) | done | Topbar avatar es un dropdown clickable vía `window.kibanToggleMenu('topbar-user-menu')` (NO hover — el patrón anterior con `group-hover:block` fallaba en el gap mt-1 entre trigger y panel). Mismo data-attr + JS handler que el `view/menu` kebab; ARIA-completo (`aria-haspopup/expanded/controls`, `role="menu"`/`menuitem`). |
+| Notifications bell (topbar) | done | Campana + badge de no-leídas + dropdown, junto al user menu. **Opt-in** vía `Config.NotificationsBaseURL` (vacío = sin campana). El DS sólo dibuja el chrome; los datos los sirve el backend dueño de ese path (kiban-cloud). Ver "Cómo conectar el bell de notificaciones" abajo. |
 | `layout.IconRail(cfg)` | done | Tools rail con `icon + label` por entrada (kiban tools + docs en la parte inferior). w-56. Hidden por defecto, slide-in cuando el hamburger está activo. Tool activo resaltado. |
 | `layout.SubNav(cfg)` | done | Sub-nav siempre visible (no se oculta nunca). Items de la sección activa. Item activo resaltado. |
 | `layout.AdminConfig` | done | Struct para AdminLayout: `Title`, `ProjectName`, `HomeHref`, `User`, `LogoutAction`, `NavSections`, `ActiveSection`, `Breadcrumbs`. Distinto de `Config` — no carga el modelo multi-tool (Tools/Docs/SubItems). |
 | `layout.NavSection` | done | Una entrada de la nav horizontal del topbar admin: `Key`, `Label`, `Href`. `Key` matchea `AdminConfig.ActiveSection` para resaltar. |
-| `layout.AdminLayout(cfg)` | done | Shell minimal para apps admin/internal: topbar (logo `logo.KibanCloud` `w-32` = 128px + divider + `ProjectName` como label de la app + horizontal nav + user menu) + breadcrumbs strip opcional + main. Reusa `Base()` para el chrome HTML; los blocks JS de Base que dependen de elementos del shell customer-facing (sidebar, sub-nav) son no-ops cuando esos elementos no existen. Para apps con 2-5 secciones top-level y autenticación propia, sin multi-tool switcher. |
+| `layout.AdminLayout(cfg)` | done | Shell minimal para apps admin/internal: topbar (logo `logo.KibanCloud` `w-32` = 128px, **siempre** link a `DefaultLogoHref` = `/kiban-cloud` + divider + `ProjectName` como label de la app, link a `HomeHref` o fallback `DefaultLogoHref` + horizontal nav + user menu) + breadcrumbs strip opcional + main. Reusa `Base()` para el chrome HTML; los blocks JS de Base que dependen de elementos del shell customer-facing (sidebar, sub-nav) son no-ops cuando esos elementos no existen. Para apps con 2-5 secciones top-level y autenticación propia, sin multi-tool switcher. |
 | Admin user menu | done | Dentro de `AdminLayout` topbar: avatar + nombre como trigger de un dropdown que muestra email + form de logout. Reusa los handlers JS de `view/menu` (kibanToggleMenu/kibanCloseMenu) sin código nuevo. ID fijo `admin-user-menu`. |
 | Tools rail toggle (slide) | done | CSS-only en `base.templ` con `.sidebar-rail-slot` (width 0 ↔ 14rem). El hamburger toggla el atributo booleano `data-sidebar-rail-open` en el root; JS persiste en `localStorage[<ProjectName>-sidebar-rail-open]` (key namespaceada por proyecto). |
 | Navigation loader (`#nav-loader`) | done | Overlay full-screen mostrado al hacer click en cualquier `<a data-nav-loader>` (los items del tool rail lo llevan automáticamente). Cubre el wait del navegador mientras la siguiente página carga — útil cuando se cambia entre tools de backends distintos. Skip para clicks con modificadores, target=_blank, anchors `#…`, y links HTMX. Auto-hide via `pageshow` para no quedarse pegado en restores de bfcache. |
@@ -135,6 +136,23 @@ Ambos patrones son equivalentes en outcome; usar el que matchee la convención D
 - 0 o 1 espacios en la lista → DS rinde el chip readonly automáticamente (sin chevron, sin menu).
 - `SwitchSpaceAction == ""` con `Spaces` poblado → DS fuerza el chip readonly aunque haya items, como guard defensivo contra submits a string vacío.
 
+#### Cómo conectar el bell de notificaciones
+
+El DS dibuja la campana, el badge y el panel; **los datos los sirve el backend** (kiban-cloud es el dueño hoy). Como todos los tools kiban viven en el mismo origen, cualquier backend puede apuntar su shell al path de kiban-cloud y obtener la campana en sus propias páginas — la cookie `kiban_session` compartida autentica los requests.
+
+**Lo que el DS provee** — dos campos en `layout.Config`:
+
+- `NotificationsBaseURL string` — path base de los endpoints. Vacío = sin campana. Los tools lo setean a `/kiban-cloud/notifications`.
+- `NotificationsUnread int` — conteo inicial del badge (para que el número sea correcto en el primer paint; el poller lo refresca después).
+
+**Lo que el backend debe servir** bajo `NotificationsBaseURL`:
+
+- `GET <base>/dropdown` → el fragmento de lista del panel (lazy-load al abrir).
+- `GET <base>/badge` → un `<span id="kiban-notif-badge" hx-swap-oob="true">` (el DS provee `layout.NotificationBadgeOOB(count)` para emitirlo). El bell lo pollea cada 30s.
+- `GET <base>` → la página completa de notificaciones (target del link "Ver todas", se abre en pestaña nueva).
+
+**Contrato de runtime**: el badge `#kiban-notif-badge` se rinde siempre (oculto cuando 0) para que el poller y las respuestas de mark-read/unread puedan reemplazarlo vía OOB swap. El toggle leído/no-leído de cada item es responsabilidad de la página, no del dropdown.
+
 ### Iconos (`view/icons/`)
 
 | Componente | Estado |
@@ -143,12 +161,16 @@ Ambos patrones son equivalentes en outcome; usar el que matchee la convención D
 | `icons.ChevronDown`, `icons.Filter`, `icons.Sort`, `icons.More`, `icons.Close`, `icons.Hamburger`, `icons.Sidebar`, `icons.Plus` | done |
 | `icons.Eye`, `icons.EyeOff` | done | Paired affordance icons used by `input.Password`'s visibility toggle. Also reusable as generic "view / preview" / "hide" buttons. Sized 18×18 to match `Close`. |
 | `icons.Settings` | done | Standard gear/cog. Affordance for "configurar / settings / preferencias" entries (home cards, sidebar items, kebab actions). 20×20 to match navigational icons. |
+| `icons.Clipboard`, `icons.GitBranch`, `icons.Cpu`, `icons.Sliders`, `icons.Clock`, `icons.Tag` | done | Workfloo connector-picker glyphs for the basic node types (FORM, RULESET, API, VARIABLES, TIMER, LABEL). `GitMerge` (decision tree) + `FileText` (document/PDF) reused for the rest. 20×20. |
+| `icons.Camera`, `icons.MessageSquare`, `icons.Shield`, `icons.Plug` | done | Workfloo LINK-service family glyphs: biometrics/OCR (`Camera`), messaging/contact (`MessageSquare`), risk/PLD/blocklist (`Shield`), and the generic connector fallback (`Plug`). 20×20. |
 
 Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables con clases `text-…` de Tailwind. Nombres sin prefijo `Icon` (el package ya lo aporta — `icons.Home` no `icons.IconHome`).
 
 ### Logo (`view/logo/`)
 
 Marcas de marca kiban. **Distinto de `view/icons`**: los logos son SVGs multi-color con la paleta de marca baked-in (iso `#0047FF`/`#0000CC`, wordmark negro) — **NO** son colorables vía `text-*`. Cada mark toma un argumento `class` que se aplica al `<svg>` raíz para que el caller controle el tamaño (el `viewBox` preserva el aspect ratio); pasá un height + width-auto, ej. `logo.KibanCloud("h-7 w-auto")`. Las path data y los fills se portaron 1:1 desde kds (`src/components/Logo/Logos/`) y son la fuente de verdad — no recolorear.
+
+**El componente del logo es SVG puro, sin anchor.** El click/link lo aporta la shell de layout (`Topbar`, `AdminLayout`) envolviendo el logo en un `<a>`. El destino es **siempre** `layout.DefaultLogoHref` (`/kiban-cloud`, host-relativo → mismo link en local/dev/qa/prod sin config por entorno), global e idéntico en todos los tools — el logo NO usa `Config.ShellURL` / `AdminConfig.HomeHref`, así ningún proyecto cablea la URL del logo. (`ShellURL` sigue usándose para el prefijo de los links del icon rail; `HomeHref` para el link del label `ProjectName` en `AdminLayout`.)
 
 | Componente | Estado | Notas |
 |---|---|---|
@@ -248,7 +270,7 @@ Convenciones del grupo:
 | `flash.Warning(msg string)` | done | Wrapper tipado: warnings suaves donde el usuario puede continuar pero debería leer algo ("Banco Donde no está configurado todavía", …). |
 | `flash.Info(msg string)` | done | Wrapper tipado: mensajes informativos neutrales — el catch-all cuando nada salió mal pero hay algo que comunicar. |
 
-Banners son **estáticos**: no hay JS de dismiss, no hay localStorage. Re-renderizan con la siguiente request / HTMX swap. Esto coincide con cómo los controllers ya piensan en `FlashSuccess`/`FlashError` en sus views.
+Banners son **dismissibles client-side**: cada banner lleva un × a la derecha y un handler delegado en `view/layout/base.templ` lo remueve del DOM al click. No hay localStorage — el dismiss es puramente visual: si el siguiente HTMX swap (o page render) trae de vuelta el `FlashSuccess`/`FlashError` desde el state del server, el banner reaparece. Controllers no necesitan código para soportar esto; el contrato de "render server-side, dismiss client-side" es transparente.
 
 #### Spinner / Tooltip (CSS-only, no templ helpers)
 

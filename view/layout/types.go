@@ -12,6 +12,47 @@ import (
 	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
 )
 
+// DefaultLogoHref is the destination of the topbar kiban logo in BOTH shells
+// (Topbar and AdminLayout). It is a global, project-agnostic link: every
+// kiban tool's logo points at the same kiban-cloud landing, so no project
+// has to wire the logo URL. It is intentionally host-relative so it resolves
+// against whatever host served the page — the same link works in
+// local/dev/qa/alpha/prod without per-environment configuration. The logo
+// always uses this value and ignores Config.ShellURL / AdminConfig.HomeHref
+// (those remain for other purposes — see their field docs).
+const DefaultLogoHref = "/kiban-cloud"
+
+// logoHref resolves the AdminLayout topbar's ProjectName label link (the app
+// name shown next to the logo): the project-supplied HomeHref when set,
+// otherwise DefaultLogoHref. The logo image itself does not use this — it is
+// always DefaultLogoHref.
+func logoHref(explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	return DefaultLogoHref
+}
+
+// DefaultNotificationsBaseURL is the base path the topbar notifications bell
+// uses when a Config doesn't set NotificationsBaseURL explicitly. Like
+// DefaultLogoHref, it is a global, project-agnostic, host-relative link:
+// every kiban tool shares one origin, and the notification endpoints
+// (dropdown/badge/page) are served by the kiban-cloud backend under this
+// path. Defaulting it here means every tool that wraps its pages with
+// Layout gets the bell for free — no per-project wiring, just a DS bump.
+const DefaultNotificationsBaseURL = "/kiban-cloud/notifications"
+
+// notificationsBaseURL resolves the bell's base path: the project-supplied
+// NotificationsBaseURL when set, otherwise DefaultNotificationsBaseURL. The
+// bell is always rendered in the customer-facing Topbar — there is no
+// opt-out, since every kiban tool surfaces the same shared notifications.
+func notificationsBaseURL(explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	return DefaultNotificationsBaseURL
+}
+
 // User is the minimal identity displayed in the topbar's avatar dropdown.
 //
 // Picture is optional. The customer-facing Layout doesn't render it
@@ -128,7 +169,7 @@ type Config struct {
 	SwitchSpaceAction string
 
 	// Routing
-	ShellURL     string // kiban shell base URL (logo link + external tool prefix)
+	ShellURL     string // kiban shell base URL — external tool prefix (icon rail builds links as ShellURL + "/crm/customers", etc.). NOT used by the logo (the logo is always DefaultLogoHref).
 	LogoutAction string // POST URL that clears auth cookies
 	// UserMenuItems are the links rendered inside the topbar avatar
 	// dropdown, between the user-info header and the "Salir" button.
@@ -173,6 +214,24 @@ type Config struct {
 	LoadSortable   bool // SortableJS — drag-to-reorder lists (view/sortable_list)
 	LoadFlatpickr  bool // flatpickr + es locale — date range picker (view/date_range)
 	LoadMarked     bool // marked.js — markdown rendering
+
+	// NotificationsBaseURL overrides the base path the topbar
+	// notifications bell uses. Leave it empty in normal use: the bell is
+	// always rendered and falls back to DefaultNotificationsBaseURL
+	// ("/kiban-cloud/notifications"), so every tool gets it with no
+	// wiring. Set it only to point the bell at a non-default path. The
+	// bell expects three routes under the resolved base:
+	//   - GET  <base>/dropdown → the panel list fragment (lazy-loaded on open)
+	//   - GET  <base>/badge    → an OOB <span id="kiban-notif-badge"> (polled)
+	//   - GET  <base>          → the full notifications page (the "ver todas" link)
+	NotificationsBaseURL string
+	// NotificationsUnread is an optional seed for the bell badge on first
+	// paint, avoiding a flash before the count loads. It is purely a
+	// nicety: the badge poller fires on page load (not just every 30s),
+	// so the count self-corrects over HTTP from <base>/badge immediately
+	// — tools that can't compute the count locally (everything except
+	// kiban-cloud, which owns the count usecase) just leave this zero.
+	NotificationsUnread int
 }
 
 // NavSection is one entry in AdminLayout's horizontal top-level nav.
@@ -198,7 +257,7 @@ type AdminConfig struct {
 
 	// Identity. Used for the <title> suffix and the topbar logo link.
 	ProjectName string
-	HomeHref    string // where the topbar logo links to (e.g. /klin-internal-htmx/)
+	HomeHref    string // where the topbar ProjectName label links to (the app's own home, e.g. /klin-internal-htmx/). Empty → falls back to DefaultLogoHref. The logo itself always links to DefaultLogoHref regardless.
 
 	// User context (avatar + dropdown in the topbar)
 	User User

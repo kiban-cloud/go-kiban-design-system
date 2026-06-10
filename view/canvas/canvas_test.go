@@ -43,6 +43,7 @@ func TestCanvas_RendersWrapperAndEdges(t *testing.T) {
 		Edges: []canvas.EdgeOptions{
 			{From: "node-a", To: "node-b"},
 			{From: "node-b", To: "node-c", Variant: "error", Label: "Sí"},
+			{From: "node-a", To: "node-d", Variant: "success", Label: "Verdadero"},
 		},
 	}, `<span data-test-child="yes">child</span>`)
 
@@ -57,6 +58,9 @@ func TestCanvas_RendersWrapperAndEdges(t *testing.T) {
 	}
 	if !strings.Contains(out, `error`) || !strings.Contains(out, `variant`) {
 		t.Errorf("expected variant in data-edges JSON: %s", out)
+	}
+	if !strings.Contains(out, `success`) {
+		t.Errorf("expected success variant in data-edges JSON: %s", out)
 	}
 	if !strings.Contains(out, `data-kiban-canvas-edges`) {
 		t.Errorf("expected svg overlay")

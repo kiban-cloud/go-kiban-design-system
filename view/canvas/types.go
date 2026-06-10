@@ -58,7 +58,9 @@ type NodeOptions struct {
 // optional small text rendered at the midpoint of the edge (used for
 // decision-tree branch labels like "Sí" / "No"). Variant tints the line:
 // "" or "default" → neutral grey, "error" → red (used to mark the
-// NextErrorNodeId path in a workfloo).
+// NextErrorNodeId path in a workfloo), "success" → green (used to mark
+// the Verdadero / true branch of a decision-tree step so it pairs visually
+// with the "error" Falso branch).
 type EdgeOptions struct {
 	From    string `json:"from"`
 	To      string `json:"to"`
