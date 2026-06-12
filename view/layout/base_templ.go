@@ -269,7 +269,7 @@ func Layout(cfg Config) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<main class=\"relative flex-1 overflow-x-hidden\"><div class=\"p-8 max-w-[1400px]\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<main class=\"relative flex-1 overflow-x-hidden\"><div class=\"p-8 w-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
