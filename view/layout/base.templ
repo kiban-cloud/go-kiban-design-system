@@ -391,7 +391,12 @@ templ Base(cfg Config) {
 
 						function sync() {
 							var data = iti.getSelectedCountryData();
-							if (ccInput) ccInput.value = data && data.dialCode ? data.dialCode : '';
+							// Emit the dial code WITH a leading "+" (e.g. "+52"): that's
+							// the kiban backend contract (the React MF submits "+52", and
+							// kiban-cloud / crm normalize against it). Consumers that strip
+							// "+" still work; those that forward it raw now get the right
+							// shape.
+							if (ccInput) ccInput.value = data && data.dialCode ? '+' + data.dialCode : '';
 							if (nationalInput) nationalInput.value = (visible.value || '').replace(/\D/g, '');
 						}
 
