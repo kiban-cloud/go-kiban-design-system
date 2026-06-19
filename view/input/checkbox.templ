@@ -17,6 +17,13 @@ package input
 // hx-target, hx-include, etc.). The design system stays HTMX-agnostic — it
 // just spreads the attributes onto the `<input>`. Pass `nil` (or
 // `templ.Attributes{}`) when there's no extra wiring.
+//
+// Passing `"value"` in `attrs` OVERRIDES the default `value="true"` — use
+// this for multi-value checkbox groups that bind to a `[]string` (one
+// checkbox per catalog key/email, each submitting its own value) instead
+// of a single `bool`. Without this, the spread would emit a SECOND `value`
+// attribute and the browser keeps the first (`"true"`), so the real value
+// would never reach the server.
 templ Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, disabledHint string) {
 	<label
 		class={
@@ -28,7 +35,9 @@ templ Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, 
 		<input
 			type="checkbox"
 			name={ name }
-			value="true"
+			if _, ok := attrs["value"]; !ok {
+				value="true"
+			}
 			checked?={ value }
 			disabled?={ !enabled }
 			class="cursor-pointer disabled:cursor-not-allowed"
