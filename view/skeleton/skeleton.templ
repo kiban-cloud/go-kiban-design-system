@@ -1,0 +1,59 @@
+// Package skeleton renders shimmer placeholders shown while a region's
+// real content is still loading — typically the body a lazy-load box
+// (view/lazy) swaps in on its second request.
+//
+// Table mirrors the React `SkeletonTable` (kds): a REAL table with the
+// real column headers + N body rows whose every cell is a small shimmer
+// bar (the React `SkeletonTitle size='small'`). Rendering through the
+// shared table component means the header row, column widths, and row
+// borders match the loaded table exactly, so the swap from skeleton →
+// data has no layout shift.
+package skeleton
+
+import dstable "github.com/kiban-cloud/go-kiban-design-system/view/table"
+
+// DefaultRows is the body-row count used by Skeleton() / when callers
+// don't override it — matches the React SkeletonTable (7 rows).
+const DefaultRows = 7
+
+// Table renders a loading placeholder shaped exactly like the table it
+// stands in for: the given headers in a real header row, then `rows`
+// body rows of shimmer cells. Pass the same headers the real table uses.
+templ Table(headers []string, rows int) {
+	<div class="animate-pulse" data-kiban-skeleton aria-hidden="true">
+		@dstable.Table(dstable.TableConfig{Headers: headers}) {
+			for range count(rows) {
+				<tr class="border-b border-kiban-border">
+					for range headers {
+						<td class="py-4 px-4">
+							@Bar()
+						</td>
+					}
+				</tr>
+			}
+		}
+	</div>
+}
+
+// Bar is a single shimmer cell — a gray rounded block mirroring the React
+// `SkeletonTitle size='small'` (≈24px tall, rounded, neutral fill).
+templ Bar() {
+	<div class="h-6 w-3/4 max-w-[180px] rounded-md bg-kiban-border/70"></div>
+}
+
+// Skeleton is the generic default placeholder for list/table regions
+// whose headers aren't known at the call site: a four-column table
+// skeleton with blank headers. Prefer Table(headers, rows) when you have
+// the real headers — it mirrors the loaded table 1:1.
+templ Skeleton() {
+	@Table([]string{"", "", "", ""}, DefaultRows)
+}
+
+// count returns a length-n slice so the templ `for range` loop can emit
+// n rows (templ has no numeric range form). Clamps to at least 1.
+func count(n int) []struct{} {
+	if n < 1 {
+		n = 1
+	}
+	return make([]struct{}, n)
+}

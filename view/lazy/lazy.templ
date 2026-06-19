@@ -1,0 +1,39 @@
+// Package lazy renders the HTMX lazy-load pattern: a page returns its
+// shell immediately with a placeholder box, and that box fetches the
+// real (slow) content in a second request on load. This keeps the menu
+// + topbar + page chrome interactive while Mongo / CRM enrichment runs.
+//
+// Usage — the page renders its shell (layout, header, action bar) and
+// drops a stable content wrapper holding the lazy box, passing the
+// placeholder to show while loading as children (a table page passes a
+// skeleton shaped like its real table):
+//
+//	<div id="payments-content">
+//		@lazy.Content("/rekon/payments/content?"+query) {
+//			@skeleton.Table(headers, skeleton.DefaultRows)
+//		}
+//	</div>
+//
+// The page's own handler stays split in two: the shell route returns the
+// markup above (no data fetch); the contentURL route does the fetch and
+// returns the real fragment. Filter / pagination HTMX swaps keep
+// targeting the stable wrapper (#payments-content here).
+package lazy
+
+// Content renders a placeholder box that, on insertion (hx-trigger=load),
+// GETs contentURL and replaces ITSELF (hx-swap=outerHTML on this) with
+// the response. Because it self-replaces, the page's surrounding wrapper
+// (e.g. #payments-content) survives for later filter / pagination swaps.
+// The children render as the loading placeholder (pass a skeleton).
+templ Content(contentURL string) {
+	<div
+		hx-get={ contentURL }
+		hx-trigger="load"
+		hx-target="this"
+		hx-swap="outerHTML"
+		aria-busy="true"
+		data-kiban-lazy
+	>
+		{ children... }
+	</div>
+}
