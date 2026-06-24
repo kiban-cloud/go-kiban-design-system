@@ -31,6 +31,17 @@ func renderBase(t *testing.T, cfg layout.Config) string {
 // wiring. This guards the three moving parts: the CSS class, the spinner
 // overlay, and the JS that flags the swap target on htmx:beforeRequest /
 // clears it on htmx:afterRequest.
+func TestBase_DataHrefRowShowsNavLoader(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	// The data-href row-click delegation must trigger the shared
+	// #nav-loader overlay before navigating, so list→detail row clicks
+	// aren't a frozen wait.
+	assert.Contains(t, body, "getElementById('nav-loader')")
+	assert.Contains(t, body, "navLoader.classList.add('is-visible')")
+	assert.Contains(t, body, "window.location.href = el.getAttribute('data-href')")
+}
+
 func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 	body := renderBase(t, layout.Config{
 		Title:       "T",

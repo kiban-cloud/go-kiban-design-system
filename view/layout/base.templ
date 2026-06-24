@@ -359,6 +359,11 @@ templ Base(cfg Config) {
 							|| Math.abs(e.clientY - downY) > DRAG_THRESHOLD_PX) return;
 						var sel = window.getSelection && window.getSelection();
 						if (sel && sel.toString().length > 0) return;
+						// Full-page nav ahead — show the nav overlay so the
+						// row click isn't a frozen wait (same loader the
+						// [data-nav-loader] links use). Auto-hides on pageshow.
+						var navLoader = document.getElementById('nav-loader');
+						if (navLoader) navLoader.classList.add('is-visible');
 						window.location.href = el.getAttribute('data-href');
 					});
 				})();
