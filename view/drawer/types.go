@@ -16,8 +16,9 @@
 //     "sm" → max-w-sm, "" or "md" → max-w-md, "lg" → max-w-lg,
 //     "xl" → max-w-xl, "2xl" → max-w-2xl, "3xl" → max-w-3xl,
 //     "4xl" → max-w-4xl, "5xl" → max-w-5xl, "6xl" → max-w-6xl,
-//     "7xl" → max-w-7xl, "full" → max-w-none (full-viewport).
-//     Empty string falls back to "md".
+//     "7xl" → max-w-7xl, "8xl" → max-w-[min(88rem,92vw)] (wide but
+//     still modal — keeps a backdrop strip), "full" → max-w-none
+//     (full-viewport). Empty string falls back to "md".
 //
 //     4xl–7xl are intended for multi-column editor experiences
 //     (e.g. the RULESET wizard's 4-column layout). Use sparingly
@@ -112,6 +113,14 @@ func sizeClass(size string) string {
 		return "max-w-6xl"
 	case "7xl":
 		return "max-w-7xl"
+	case "8xl":
+		// One step past 7xl for wide two-pane editors (e.g. workfloo's
+		// FORM node preview + field picker) that need more room than
+		// 7xl but should still read as a modal — the `92vw` cap always
+		// leaves a strip of backdrop on the left instead of spanning
+		// the whole viewport like `full`. Rendered via Tailwind's
+		// arbitrary-value + min() (supported by the Play CDN runtime).
+		return "max-w-[min(88rem,92vw)]"
 	case "full":
 		// Full-viewport modal — drops the max-width cap so the
 		// dialog spans the available space (minus the modal's
