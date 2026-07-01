@@ -67,6 +67,7 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 			return
 		}
 		authorization.Ip = utils_http.GetClientIpv4(c)
+		authorization = authorization.WithCorrelation(c.Request.Context())
 
 		c.Set(controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT, authorization)
 		c.Next()
