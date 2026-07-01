@@ -75,6 +75,25 @@ func TestPanel_RendersStripAndBodies(t *testing.T) {
 	assert.True(t, strings.Contains(body, "Detalles content here"))
 }
 
+// HasError stamps a red dot on the offending tab's pill so a
+// validation error living in an inactive (hidden) body is still
+// signalled. Tabs without HasError get no dot.
+func TestPanel_HasErrorRendersDot(t *testing.T) {
+	body := renderPanel(t, tabs.PanelConfig{
+		ID:        "err-panel",
+		ActiveKey: "prod",
+		Tabs: []tabs.TabHeader{
+			{Key: "prod", Label: "Producción"},
+			{Key: "sandbox", Label: "Sandbox", HasError: true},
+		},
+	}, []bodyEntry{
+		{Key: "prod", Content: "prod body"},
+		{Key: "sandbox", Content: "sandbox body"},
+	})
+	// Exactly one dot, on the Sandbox pill.
+	assert.Equal(t, 1, strings.Count(body, "bg-red-500"))
+}
+
 // Empty Tabs renders just the body container (no strip). The
 // caller's children still render so a degenerate one-tab layout
 // can still flow through Panel without visual chrome.

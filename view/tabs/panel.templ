@@ -47,7 +47,14 @@ templ strip(tabs []TabHeader) {
 					data-kiban-tabs-tab
 					data-kiban-tabs-key={ t.Key }
 					class="px-3 py-2 text-sm transition-colors border-b"
-				>{ t.Label }</button>
+				>
+					<span class="inline-flex items-center gap-1.5">
+						<span>{ t.Label }</span>
+						if t.HasError {
+							<span aria-hidden="true" class="inline-block w-1.5 h-1.5 rounded-full bg-red-500"></span>
+						}
+					</span>
+				</button>
 			}
 		</nav>
 	</div>

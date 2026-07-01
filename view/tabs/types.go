@@ -94,7 +94,15 @@ type PanelConfig struct {
 // minimal (no Href / Icon / Count / Disabled) — Panel is for
 // CSS-only in-page switching, so the navigation affordances that
 // matter for Strip don't apply here.
+//
+//   - HasError=true renders a small red dot to the right of the
+//     label. Since Panel bodies are all pre-rendered and only the
+//     active one is visible, a validation error living in an
+//     inactive tab's body would otherwise be invisible; the dot
+//     signals "this tab has something to fix" without switching to
+//     it.
 type TabHeader struct {
-	Key   string
-	Label string
+	Key      string
+	Label    string
+	HasError bool
 }
