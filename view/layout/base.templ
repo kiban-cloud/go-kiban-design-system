@@ -1196,10 +1196,19 @@ templ Base(cfg Config) {
 					}
 					window.kibanCodeEditorModeFor = modeFor;
 					function initOne(wrapper) {
-						if (wrapper.getAttribute('data-kiban-code-editor-ready') === '1') return;
 						if (!window.CodeMirror) return;
 						var textarea = wrapper.querySelector('textarea');
 						if (!textarea) return;
+						// Idempotency by DOM truth, not just the ready flag.
+						// If a live widget is already attached, leave it. If
+						// the wrapper kept a stray .CodeMirror but lost its
+						// instance (or the ready flag) — e.g. a re-scan of
+						// content that was partially reused — drop the orphan
+						// and re-show the textarea first, so we can never stack
+						// a second editor on the same field.
+						if (wrapper._kibanCm && wrapper.querySelector('.CodeMirror')) return;
+						wrapper.querySelectorAll('.CodeMirror').forEach(function (el) { el.remove(); });
+						textarea.style.display = '';
 						var lang = wrapper.getAttribute('data-language') || 'javascript';
 						var editor = CodeMirror.fromTextArea(textarea, {
 							mode: modeFor(lang),
