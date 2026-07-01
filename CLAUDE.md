@@ -414,6 +414,17 @@ Cada row es `[dot] [label]                              [date]`, flexed para que
 | `timeline.KindSuccess` / `KindWarning` / `KindInfo` / `KindDanger` / `KindDefault` (consts) | done | Exported para evitar stringly-typed values. |
 | `timeline.Timeline(events []Event)` | done | Renderiza un `<ul>` vertical de events. Empty input renderiza nada (sin wrapper) para que un parent block no termine con un `<ul>` vacío. Unknown Kind colapsa al "default" gris para que un valor inesperado nunca rompa la row. |
 
+### Datetime (`view/datetime/`)
+
+Renderiza instantes UTC como `<time>` que el script del `base` layout reescribe a la **timezone del navegador** del viewer (y su locale) en `DOMContentLoaded` y tras cada `htmx:afterSwap`. Patrón cross-kiban para "la DB guarda UTC pero cada usuario debe ver su hora local, sin ambigüedad": el servidor se mantiene timezone-agnostic (solo emite el instante en UTC RFC3339 en el atributo `datetime`), el cliente decide cómo mostrarlo. **No formatees fechas created/modified server-side con `.In(LocationMexico)` / `.Local()` / `.Format(...)` para HTML: pasá el `time.Time` crudo a `datetime.Local`.** (Sí seguí formateando server-side para outputs no-HTML como CSVs, donde no hay navegador que convierta.)
+
+El JS que hace la conversión vive en `view/layout/base.templ` (una IIFE junto a las demás): busca `[data-ds-localtime]` y reescribe su texto con `toLocaleString`, y rellena `[data-ds-tzlabel]` con `Intl.DateTimeFormat().resolvedOptions().timeZone` + offset GMT.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `datetime.Local(t time.Time)` | done | Renderiza `<time datetime="<RFC3339 UTC>" data-ds-localtime>` con un fallback server-side (UTC, sufijado " UTC") que el script pisa al cargar. `t.IsZero()` renderiza nada (celda vacía) — preserva el comportamiento "never-modified → empty" que los callers tenían al formatear server-side. |
+| `datetime.TimezoneBanner()` | done | Línea `<p data-ds-tzlabel>` que el script rellena con la zona detectada ("Horarios mostrados en tu zona horaria: America/Mexico_City (GMT-6)"). Ponela una vez arriba de cualquier página/tabla con fechas para levantar la ambigüedad de fuseo. Vacía antes de que corra el script (sin flash engañoso). |
+
 ### Graphic bars (`view/graphic_bars/`)
 
 Titled card de barras horizontales labeladas donde el label vive *adentro* del fill coloreado y el total (+ porcentaje opcional) va en una columna a la derecha. Reemplaza una librería de charts para las visuales de "share of ejecuciones" (estadísticas de A/B Testing, breakdowns de dashboard…): cuando la data son pocas categorías con un percent cada una, una barra CSS se lee mejor que un canvas y mantiene el label legible adentro de la barra en lugar de pelear con un eje externo. Replica el look del `AlphaGraphicCard` de React.

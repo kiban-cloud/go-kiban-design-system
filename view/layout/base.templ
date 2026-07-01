@@ -368,6 +368,58 @@ templ Base(cfg Config) {
 					});
 				})();
 
+				// Browser-timezone localizer (view/datetime package). The
+				// server renders every created/modified timestamp as a
+				// <time datetime="…Z" data-ds-localtime> carrying the instant
+				// in UTC; this rewrites the visible text into the viewer's own
+				// browser timezone (and locale) so a user in Madrid and one in
+				// CDMX each see their own wall-clock for the same DB row.
+				// [data-ds-tzlabel] elements (the TimezoneBanner) get filled
+				// with the detected zone so the page never leaves the reader
+				// guessing which offset the numbers are in. Runs on DOM ready
+				// and after every HTMX swap so partials pick it up; each <time>
+				// is marked done so re-scans don't reformat already-localized
+				// (and now non-ISO) text.
+				(function () {
+					function gmtOffset() {
+						var mins = -new Date().getTimezoneOffset(); // minutes east of UTC
+						var sign = mins >= 0 ? '+' : '-';
+						var abs = Math.abs(mins);
+						var h = Math.floor(abs / 60);
+						var m = abs % 60;
+						return 'GMT' + sign + h + (m ? ':' + (m < 10 ? '0' + m : m) : '');
+					}
+					function tzName() {
+						try {
+							return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+						} catch (_) { return ''; }
+					}
+					function localizeTimes(root) {
+						(root || document).querySelectorAll('[data-ds-localtime]').forEach(function (el) {
+							if (el.dataset.dsLocaltimeDone === '1') return;
+							var iso = el.getAttribute('datetime');
+							if (!iso) return;
+							var d = new Date(iso);
+							if (isNaN(d.getTime())) return;
+							el.textContent = d.toLocaleString(undefined, {
+								day: '2-digit', month: '2-digit', year: 'numeric',
+								hour: '2-digit', minute: '2-digit',
+							});
+							el.dataset.dsLocaltimeDone = '1';
+						});
+					}
+					function fillTzLabels(root) {
+						var name = tzName();
+						var label = name ? name + ' (' + gmtOffset() + ')' : gmtOffset();
+						(root || document).querySelectorAll('[data-ds-tzlabel]').forEach(function (el) {
+							el.textContent = 'Horarios mostrados en tu zona horaria: ' + label;
+						});
+					}
+					function run(root) { localizeTimes(root); fillTzLabels(root); }
+					document.addEventListener('DOMContentLoaded', function () { run(document); });
+					document.body.addEventListener('htmx:afterSwap', function (e) { run(e.target || document); });
+				})();
+
 				// intl-tel-input init: scan for [data-phone-input] containers
 				// and attach the widget to each. Called once on DOM ready and
 				// again after any HTMX swap so dynamically-added contact rows

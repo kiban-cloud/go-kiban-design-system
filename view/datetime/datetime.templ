@@ -1,0 +1,42 @@
+// Package datetime renders absolute instants as <time> elements that the
+// shared base-layout script rewrites into the viewer's *browser* timezone on
+// load and after every HTMX swap. The server stays timezone-agnostic: it only
+// emits the instant in UTC (RFC3339) — the client decides how to show it.
+//
+// This is the cross-kiban answer to "the DB stores UTC, but each user should
+// see their own local time, unambiguously": pair `Local` (per timestamp) with
+// `TimezoneBanner` (once per page) so the viewer always knows which zone the
+// numbers are in.
+package datetime
+
+import "time"
+
+// isoUTC renders the instant as RFC3339 in UTC — the machine-readable value
+// the client-side localizer reads from the `datetime` attribute.
+func isoUTC(t time.Time) string {
+	return t.UTC().Format(time.RFC3339)
+}
+
+// serverFallback is the text shown until the localizer script runs (and in the
+// rare no-JS case). Rendered in UTC and suffixed so it is never silently wrong
+// about which zone the number is in.
+func serverFallback(t time.Time) string {
+	return t.UTC().Format("02/01/2006 15:04") + " UTC"
+}
+
+// Local renders an absolute instant as a <time> element localized to the
+// viewer's browser timezone by the base-layout script. Zero times render
+// nothing — callers relied on the same "never-modified → empty cell" behaviour
+// when they formatted server-side.
+templ Local(t time.Time) {
+	if !t.IsZero() {
+		<time datetime={ isoUTC(t) } data-ds-localtime>{ serverFallback(t) }</time>
+	}
+}
+
+// TimezoneBanner renders a one-line note stating which timezone the page's
+// dates are shown in. The base-layout script fills the text from the browser's
+// resolved timezone; before it runs the line is empty (no misleading flash).
+templ TimezoneBanner() {
+	<p data-ds-tzlabel class="text-xs text-kiban-ink3 mb-3"></p>
+}
