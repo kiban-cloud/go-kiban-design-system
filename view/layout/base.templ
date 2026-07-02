@@ -780,6 +780,220 @@ templ Base(cfg Config) {
 					});
 				})();
 
+				// MultiSelect input. Each [data-kiban-multiselect] wraps a
+				// chips control (removable chips + a filtering text input) +
+				// a <ul> dropdown of options. Picking an option (click / Enter
+				// on the highlighted row) appends a chip; each chip carries a
+				// sibling hidden <input name="<data-name>" value="<key>"> so
+				// N selections submit the same name repeated (server reads via
+				// PostFormArray). When data-allow-create="true" and the typed
+				// text matches no option, a "Crear: <typed>" row adds a free
+				// value. Backspace on the empty input removes the last chip.
+				// Init re-runs on htmx:afterSwap so a server-swapped value
+				// cell (field change) re-mounts cleanly.
+				(function () {
+					function setupOne(wrap) {
+						if (wrap._kibanMultiselectWired) return;
+						wrap._kibanMultiselectWired = true;
+						var control = wrap.querySelector('[data-kiban-multiselect-control]');
+						var input = wrap.querySelector('[data-kiban-multiselect-input]');
+						var list = wrap.querySelector('[data-kiban-multiselect-list]');
+						if (!control || !input || !list) return;
+						var name = wrap.getAttribute('data-name') || '';
+						var allowCreate = wrap.getAttribute('data-allow-create') === 'true';
+						var createRow = list.querySelector('[data-kiban-multiselect-create]');
+						var createText = createRow ? createRow.querySelector('[data-kiban-multiselect-create-text]') : null;
+						var emptyRow = list.querySelector('[data-kiban-multiselect-empty]');
+						var options = Array.prototype.slice.call(
+							list.querySelectorAll('[data-kiban-multiselect-option]')
+						);
+						var activeIndex = -1;
+
+						function selectedValues() {
+							return Array.prototype.slice
+								.call(control.querySelectorAll('[data-kiban-multiselect-chip]'))
+								.map(function (c) { return c.getAttribute('data-value') || ''; });
+						}
+						function optionFor(value) {
+							for (var i = 0; i < options.length; i++) {
+								if ((options[i].getAttribute('data-value') || '') === value) return options[i];
+							}
+							return null;
+						}
+						function makeChip(value, label) {
+							var chip = document.createElement('span');
+							chip.setAttribute('data-kiban-multiselect-chip', '');
+							chip.setAttribute('data-value', value);
+							chip.className = 'inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft/50 text-kiban-primary px-2 py-0.5 text-xs';
+							var lbl = document.createElement('span');
+							lbl.setAttribute('data-kiban-multiselect-chip-label', '');
+							lbl.textContent = label;
+							var btn = document.createElement('button');
+							btn.type = 'button';
+							btn.setAttribute('data-kiban-multiselect-remove', '');
+							btn.className = 'text-kiban-primary/70 hover:text-kiban-primary leading-none';
+							btn.setAttribute('aria-label', 'Quitar');
+							btn.innerHTML = '&times;';
+							var hidden = document.createElement('input');
+							hidden.type = 'hidden';
+							hidden.name = name;
+							hidden.value = value;
+							hidden.setAttribute('data-kiban-multiselect-hidden', '');
+							chip.appendChild(lbl);
+							chip.appendChild(btn);
+							chip.appendChild(hidden);
+							return chip;
+						}
+						function addValue(value, label) {
+							if (!value) return;
+							if (selectedValues().indexOf(value) !== -1) return;
+							control.insertBefore(makeChip(value, label || value), input);
+							var opt = optionFor(value);
+							if (opt) opt.hidden = true;
+							input.value = '';
+							filter('');
+							wrap.dispatchEvent(new Event('change', { bubbles: true }));
+						}
+						function removeChip(chip) {
+							if (!chip) return;
+							var value = chip.getAttribute('data-value') || '';
+							chip.parentNode.removeChild(chip);
+							var opt = optionFor(value);
+							if (opt) opt.hidden = false;
+							filter(input.value);
+							wrap.dispatchEvent(new Event('change', { bubbles: true }));
+						}
+
+						function visibleOptions() {
+							return options.filter(function (o) { return !o.hidden; });
+						}
+						function setActive(i) {
+							var vis = visibleOptions();
+							activeIndex = Math.max(-1, Math.min(i, vis.length - 1));
+							options.forEach(function (o) {
+								o.classList.remove('bg-kiban-primary-soft/60', 'text-kiban-primary');
+							});
+							if (activeIndex >= 0 && vis[activeIndex]) {
+								vis[activeIndex].classList.add('bg-kiban-primary-soft/60', 'text-kiban-primary');
+							}
+						}
+						function open() { list.hidden = false; }
+						function close() { list.hidden = true; setActive(-1); }
+						function filter(q) {
+							var needle = (q || '').trim().toLowerCase();
+							var selected = selectedValues();
+							var anyVisible = false;
+							var exactMatch = false;
+							options.forEach(function (opt) {
+								var val = opt.getAttribute('data-value') || '';
+								var lbl = (opt.getAttribute('data-label') || opt.textContent || '').trim();
+								var isSelected = selected.indexOf(val) !== -1;
+								var matches = !isSelected && (needle === '' || lbl.toLowerCase().indexOf(needle) !== -1);
+								opt.hidden = !matches;
+								if (matches) anyVisible = true;
+								if (lbl.toLowerCase() === needle && needle !== '') exactMatch = true;
+							});
+							if (createRow) {
+								var showCreate = allowCreate && needle !== '' && !exactMatch &&
+									selected.indexOf((q || '').trim()) === -1;
+								createRow.hidden = !showCreate;
+								if (showCreate && createText) createText.textContent = '“' + (q || '').trim() + '”';
+								if (showCreate) anyVisible = true;
+							}
+							if (emptyRow) emptyRow.hidden = anyVisible;
+						}
+
+						control.addEventListener('mousedown', function (e) {
+							// Clicking blank control area (not a chip / its remove
+							// button) focuses the text input so the dropdown opens.
+							if (e.target === control) {
+								e.preventDefault();
+								input.focus();
+							}
+						});
+						control.addEventListener('click', function (e) {
+							var rm = e.target.closest && e.target.closest('[data-kiban-multiselect-remove]');
+							if (rm) {
+								e.preventDefault();
+								removeChip(rm.closest('[data-kiban-multiselect-chip]'));
+							}
+						});
+						input.addEventListener('focus', function () {
+							filter(input.value);
+							open();
+						});
+						input.addEventListener('input', function () {
+							filter(input.value);
+							open();
+							setActive(0);
+						});
+						input.addEventListener('blur', function () {
+							setTimeout(close, 120);
+						});
+						input.addEventListener('keydown', function (e) {
+							var vis = visibleOptions();
+							if (e.key === 'ArrowDown') {
+								e.preventDefault();
+								open();
+								setActive(activeIndex + 1);
+							} else if (e.key === 'ArrowUp') {
+								e.preventDefault();
+								setActive(activeIndex - 1);
+							} else if (e.key === 'Enter') {
+								if (activeIndex >= 0 && vis[activeIndex]) {
+									e.preventDefault();
+									addValue(
+										vis[activeIndex].getAttribute('data-value') || '',
+										vis[activeIndex].getAttribute('data-label') || ''
+									);
+								} else if (allowCreate && (input.value || '').trim()) {
+									e.preventDefault();
+									var typed = input.value.trim();
+									addValue(typed, typed);
+								}
+							} else if (e.key === 'Escape') {
+								close();
+							} else if (e.key === 'Backspace' && input.value === '') {
+								var chips = control.querySelectorAll('[data-kiban-multiselect-chip]');
+								if (chips.length) removeChip(chips[chips.length - 1]);
+							}
+						});
+						options.forEach(function (opt) {
+							opt.addEventListener('mousedown', function (e) {
+								e.preventDefault();
+								addValue(opt.getAttribute('data-value') || '', opt.getAttribute('data-label') || '');
+							});
+						});
+						if (createRow) {
+							createRow.addEventListener('mousedown', function (e) {
+								e.preventDefault();
+								var typed = (input.value || '').trim();
+								if (typed) addValue(typed, typed);
+							});
+						}
+					}
+					function scan() {
+						document.querySelectorAll('[data-kiban-multiselect]').forEach(setupOne);
+					}
+					// Listen on `document` (NOT document.body): the
+					// decision-tree step drawer opens via fetch +
+					// insertAdjacentHTML and fires a SYNTHETIC htmx:afterSwap
+					// dispatched ON `document`, which never reaches a
+					// document.body listener — so a body-scoped scan left the
+					// multi-select inert (chips couldn't be removed, the
+					// dropdown never opened). Real htmx swaps bubble up to
+					// document too, so this covers both. setupOne is
+					// idempotent via its per-element wired guard.
+					['htmx:afterSwap', 'htmx:afterSettle'].forEach(function (ev) {
+						document.addEventListener(ev, scan);
+					});
+					if (document.readyState === 'loading') {
+						document.addEventListener('DOMContentLoaded', scan);
+					} else {
+						scan();
+					}
+				})();
+
 				// Sidebar tools-rail toggle. The sub-nav is always visible;
 				// the hamburger flips a boolean attribute on the layout
 				// root that controls whether the tools rail slides in/out.

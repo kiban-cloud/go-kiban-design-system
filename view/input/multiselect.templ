@@ -1,0 +1,170 @@
+package input
+
+// MultiSelect is a chips + filtered-options-dropdown control for
+// picking ONE OR MANY values out of a catalog. It mirrors the
+// production "Valor" control of the decision-tree condition
+// builder: each pick renders as a removable chip showing the
+// option's *label* (human description) while the form submits the
+// option's *value* (the catalog key). When `AllowCreate` is true
+// and the typed text matches no existing option, a
+// "Crear: «<typed>»" row lets the user add a free value (chip
+// value == typed text) — used for LIST fields with no catalog.
+//
+// Wire shape: every selected chip carries a sibling
+// `<input type="hidden" name="<Name>" value="<key>">`. Multiple
+// selections therefore submit the same `Name` repeated, so the
+// server reads them with `c.PostFormArray("<Name>")`. Removing a
+// chip removes its hidden input; adding one inserts a new chip +
+// hidden input. When `Name` is empty the hidden inputs render with
+// an empty `name` and the browser skips them on submit — this lets
+// a consumer render the control in an inactive pane without it
+// shipping any value (mirrors input.Select's empty-name idiom).
+//
+// JS lives in `view/layout/base.templ` scoped to
+// `[data-kiban-multiselect]`. Re-runs on `htmx:afterSwap` so the
+// control re-mounts cleanly after partial swaps (including a value
+// cell re-rendered server-side when the user changes the field).
+//
+// Error/hint contract mirrors input.Select: `ErrMsg` renders red
+// under the control when non-empty and suppresses `Hint`;
+// otherwise `Hint` shows in muted ink.
+type MultiSelectOptions struct {
+	Name        string
+	Label       string
+	Selected    []string       // currently-selected values (catalog keys)
+	Items       []SelectOption // available options (Value=key, Label=description)
+	ErrMsg      string
+	Hint        string
+	Required    bool
+	Placeholder string
+	AllowCreate bool // true → allow adding a typed value with no catalog match
+}
+
+// MultiSelect renders the labelled chips control.
+templ MultiSelect(opts MultiSelectOptions) {
+	<div
+		class="space-y-1 relative"
+		data-kiban-multiselect
+		data-name={ opts.Name }
+		data-allow-create={ multiSelectBoolAttr(opts.AllowCreate) }
+	>
+		if opts.Label != "" {
+			<label class="text-xs font-medium text-kiban-ink2">
+				{ opts.Label }
+				if opts.Required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<div
+			data-kiban-multiselect-control
+			class={
+				"w-full border rounded-md px-2 py-1.5 text-sm bg-white flex flex-wrap gap-1 items-center cursor-text",
+				templ.KV("border-kiban-border focus-within:border-kiban-primary", opts.ErrMsg == ""),
+				templ.KV("border-red-400 focus-within:border-red-500", opts.ErrMsg != ""),
+			}
+		>
+			for _, sel := range opts.Selected {
+				@multiSelectChip(opts.Name, sel, multiSelectLabelForValue(opts, sel))
+			}
+			<input
+				type="text"
+				data-kiban-multiselect-input
+				autocomplete="off"
+				placeholder={ opts.Placeholder }
+				class="flex-1 min-w-[6rem] border-0 outline-none text-sm py-0.5 bg-transparent"
+			/>
+		</div>
+		<ul
+			data-kiban-multiselect-list
+			class="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-kiban-border bg-white shadow-md text-sm"
+			hidden
+		>
+			for _, item := range opts.Items {
+				<li
+					data-kiban-multiselect-option
+					data-value={ item.Value }
+					data-label={ item.Label }
+					class="px-3 py-1.5 cursor-pointer hover:bg-kiban-primary-soft/60 hover:text-kiban-primary"
+					if multiSelectContains(opts.Selected, item.Value) {
+						hidden
+					}
+				>
+					{ item.Label }
+				</li>
+			}
+			if opts.AllowCreate {
+				<li
+					data-kiban-multiselect-create
+					class="px-3 py-1.5 cursor-pointer border-t border-kiban-border text-kiban-primary hover:bg-kiban-primary-soft/60"
+					hidden
+				>
+					Crear: <span data-kiban-multiselect-create-text></span>
+				</li>
+			}
+			<li data-kiban-multiselect-empty class="px-3 py-1.5 text-kiban-ink3 italic" hidden>
+				Sin coincidencias.
+			</li>
+		</ul>
+		if opts.ErrMsg != "" {
+			<div class="text-xs text-red-600">{ opts.ErrMsg }</div>
+		} else if opts.Hint != "" {
+			<div class="text-xs text-kiban-ink3">{ opts.Hint }</div>
+		}
+	</div>
+}
+
+// multiSelectChip renders one selected chip: the label the user
+// sees + a remove button + the hidden input that actually ships
+// the value on submit. The JS builds an identical node when the
+// user picks a new option, so keep the markup here and in
+// base.templ's `makeChip` in sync.
+templ multiSelectChip(name, value, label string) {
+	<span
+		data-kiban-multiselect-chip
+		data-value={ value }
+		class="inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft/50 text-kiban-primary px-2 py-0.5 text-xs"
+	>
+		<span data-kiban-multiselect-chip-label>{ label }</span>
+		<button
+			type="button"
+			data-kiban-multiselect-remove
+			class="text-kiban-primary/70 hover:text-kiban-primary leading-none"
+			aria-label="Quitar"
+		>&times;</button>
+		<input type="hidden" name={ name } value={ value } data-kiban-multiselect-hidden/>
+	</span>
+}
+
+// multiSelectBoolAttr formats a bool as "true"/"false" for the
+// `data-allow-create` attribute (read verbatim by the JS).
+func multiSelectBoolAttr(v bool) string {
+	if v {
+		return "true"
+	}
+	return "false"
+}
+
+// multiSelectContains reports whether value v is already selected,
+// so the server-side render hides options that are already chips.
+func multiSelectContains(selected []string, v string) bool {
+	for _, s := range selected {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+// multiSelectLabelForValue resolves the human label for a selected
+// key so a pre-selected chip shows its description rather than the
+// raw key. Falls back to the value itself (the free-add / unknown
+// key case).
+func multiSelectLabelForValue(opts MultiSelectOptions, v string) string {
+	for _, item := range opts.Items {
+		if item.Value == v {
+			return item.Label
+		}
+	}
+	return v
+}
