@@ -30,7 +30,7 @@ Sistema de diseño compartido entre los proyectos kiban basados en HTMX + templ 
 view/
   render.go             Render(c, status, component) — emite text/html, idéntico en todos los consumidores
   layout/               shell HTML completa — dos shells: customer-facing Layout (Topbar + IconRail + SubNav) y AdminLayout (topbar + breadcrumbs, sin multi-tool nav)
-    base.templ          <!doctype>, <head> con scripts/CSS, <body>, JS global (sidebar level switching, tooltips, intl-tel-input init, htmx, overlay/menu/nav-loader runtime)
+    base.templ          <!doctype>, <head> con scripts/CSS, <body>, JS global (sidebar level switching, tooltips, intl-tel-input init, htmx, overlay/menu/nav-loader runtime). Carga la extensión htmx response-targets, monta `hx-ext="response-targets"` + `#global-error-banner` en el <body>, y limpia feedback (data-error-type/data-success-type) en htmx:beforeRequest — la infraestructura cliente del patrón htmxerror.
     types.go            Config, AdminConfig, User, Tool, SubItem, NavSection
     nav.templ           Topbar, IconRail (nivel 1), SubNav (nivel 2) — usados por Layout
     admin.templ         AdminLayout — topbar minimal con horizontal nav + user menu, breadcrumbs strip opcional
@@ -46,6 +46,7 @@ view/
   file_chip_input/      File input paired with chips (DataTransfer add/remove, invalid-flag)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
+  errormsg/             fragmentos de error HTMX (Banner/Validation/NotFound/Unauthorized/Forbidden) que respaldan el patrón htmxerror
   table/                Table (chrome) + Row (helper) + BulkActionBar (Tailwind group-has visibility) + Pagination + EmptyState
   drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse button.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
   menu/                 Kebab-style action dropdown — icon trigger + panel of <button role="menuitem"> rows. Single-active behaviour (open one closes others); JS in base.templ.
@@ -62,6 +63,7 @@ binding/                form_binding.FieldErrors() — traduce validator errors 
 middleware/
   authcookie/           cookie auth (kiban_session + kiban_space_id), redirige a /login en caso de fallo, HX-Redirect para HTMX
 htmx/                   helpers Go: IsRequest, Redirect, TriggerName
+htmxerror/              wiring del patrón de errores HTMX: Setup + Respond + WithFormFallback + sentinels canónicos (re-exporta go-kiban-fullstack para que el consumidor no lo importe directo)
 ```
 
 > Subpaquetes en **singular** cuando representan un tipo (`input`, `button`, `card`, `drawer`, `flash`, `spinner`, `tooltip`).
@@ -530,6 +532,41 @@ ds_htmx "github.com/kiban-cloud/go-kiban-design-system/htmx"
 | `htmx.Redirect(c *gin.Context, url string)` | done | Redirect que funciona para ambos casos. HTMX request → `HX-Redirect: url` header + HTTP 200 (HTMX hace la navegación client-side). Browser request → `c.Redirect(302, url)`. **Importante**: llamar `c.Redirect(302, url)` directo en una request HTMX falla silenciosamente — HTMX swap-ea el body del redirect dentro del target div en lugar de navegar. Este helper hace que the right thing sea el default. Se usa 302 (`StatusFound`) en el path de browser, matcheando el patrón dominante en rekon + crm; 303 (StatusSeeOther) sería más correcto semánticamente para POST-then-GET pero la diferencia práctica es nula. |
 | `htmx.TriggerName(c *gin.Context) string` | done | Atajo a `c.GetHeader("HX-Trigger-Name")` — el `name` attribute del element que disparó la request HTMX. Útil cuando un form tiene multiple submit buttons y el handler necesita saber cuál se clickeó. Empty string cuando el header no está. |
 
+### Errores HTMX (`htmxerror/` + `view/errormsg/`)
+
+Patrón compartido para que los errores dejen de quedar encapsulados en respuestas HTTP 200 — el problema es que GCP Cloud Monitoring alerta sobre status codes no-2xx, así que un error renderizado dentro de un 200 es invisible para los monitores. `htmxerror.Respond(c, err)` deriva el status real (4xx/5xx) desde el error, renderiza el fragmento HTMX correspondiente, y stashea el error en el gin context (`ERROR_MESSAGE`) para que el logger middleware de go-kiban-fullstack lo registre. El usuario ve el error en contexto; los monitores ven el non-200.
+
+Motor debajo: `github.com/kiban-cloud/go-kiban-fullstack/pkg/infrastructure/http/htmx` (mapeo genérico + `Config`/`Default`) y `pkg/domain/errors` (sentinels canónicos). `htmxerror` los re-exporta para que los controllers del consumidor **no** importen go-kiban-fullstack directo (mismo criterio que `authcookie` re-exportando `GetAuthorization`).
+
+**Infra cliente (en `view/layout/base.templ`, ya cableada):** extensión `htmx-ext-response-targets` cargada + `hx-ext="response-targets"` en el `<body>` + `<div id="global-error-banner">` + limpieza de `data-error-type`/`data-success-type` en `htmx:beforeRequest`. Contrato de routing de los forms del consumidor: `hx-target-4xx="this"` (el error se rinde en el form) y `hx-target-5xx="#global-error-banner"` (banner global).
+
+Import:
+```go
+htmxerror "github.com/kiban-cloud/go-kiban-design-system/htmxerror"
+```
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `htmxerror.Setup(projectMapper)` | done | Cablea el `Config` package-level de go-kiban-fullstack con los fragmentos del DS + `DefaultRender` + el mapper del proyecto (nil si no hay errores propios). Llamar **una vez al boot**, antes de servir. Idempotente (re-llamable en tests). |
+| `htmxerror.Respond(c, err, opts...)` | done | Escribe la respuesta de error: status derivado de `err` + fragmento mapeado. Sólo en paths de error. Requiere `Setup` previo. |
+| `htmxerror.WithFormFallback(form)` | done | Re-rinde `form` con el status 4xx (para conservar values/field-errors) en lugar del fragmento canónico. Sólo se honra en 4xx (5xx va al banner global, donde un form se vería roto). |
+| `htmxerror.TagError(c, err)` | done | Stashea el error para el logger middleware sin escribir respuesta. Para degradación parcial que devuelve 200 (una sección del dashboard que rinde estado degradado en vez de tumbar la página). No-op si `err` es nil. |
+| `htmxerror.StatusForError(err)` | done | Devuelve el status que usaría `Respond`, sin renderizar. |
+| `htmxerror.ErrInvalidInput`/`ErrValidation` (→422), `ErrNotFound` (→404), `ErrUnauthorized` (→401), `ErrForbidden` (→403), `ErrAlreadyExists`/`ErrConflict` (→409), `ErrExternalServiceUnavailable` (→502) | done | Sentinels canónicos re-exportados. Los sentinels de usecase los envuelven con `fmt.Errorf("%w: …", htmxerror.ErrX)` para que `errors.Is` traverse y `Respond` los mapee. Errores fuera del set canónico → `ProjectMapper` → fallback 500 banner. |
+| `htmxerror.ProjectMapper` / `Renderable` / `Option` (type aliases) | done | Aliases a los tipos de go-kiban-fullstack para declarar el mapper del proyecto contra tipos del DS. |
+| `errormsg.Banner(msg)` | done | Fragmento 5xx/429 + fallback 500. `data-error-type="system"`, dismiss × que limpia `#global-error-banner`. Estilo rojo (matchea `flash.Error`). |
+| `errormsg.Validation(msg)` | done | Fragmento 422/409. `data-error-type="validation"`, sin dismiss (in-place en el form, lo limpia el próximo submit). |
+| `errormsg.NotFound(msg)` | done | Fragmento 404. `data-error-type="not-found"`, estilo muted. |
+| `errormsg.Unauthorized()` | done | Fragmento 401. `data-error-type="unauthorized"`; recarga la página tras 1.5s para que el authcookie middleware capture la sesión inválida y redirija al login del proyecto (no hardcodea `/login`, queda project-agnostic). |
+| `errormsg.Forbidden()` | done | Fragmento 403. `data-error-type="forbidden"`. |
+
+**Cómo lo consume un proyecto (rekon/crm/klin/workfloo/microservices)** — 3 pasos, pendientes de hacer por repo en la siguiente iteración:
+1. **Boot**: `htmxerror.Setup(projectMap)` en `main.go`/DI, donde `projectMap` mapea los errores propios del tool (rate limit, dependencias externas específicas) o `nil`.
+2. **Dominio**: los sentinels de usecase envuelven un canónico (`var ErrX = fmt.Errorf("%w: …", htmxerror.ErrValidation)`).
+3. **Call sites**: reemplazar `view.Render(c, http.StatusOK, comp)` en paths de error por `htmxerror.Respond(c, err, htmxerror.WithFormFallback(form))`; y en los forms, agregar `hx-target-4xx="this"` + `hx-target-5xx="#global-error-banner"`.
+
+**kiban-cloud-backend** es JSON API (sin HTMX): ahí el equivalente es que los errores devuelvan status ≠200 en `c.JSON` — no aplica response-targets ni fragmentos.
+
 ### Middleware (`middleware/authcookie/`)
 
 | Componente | Estado | Notas |
@@ -576,6 +613,7 @@ ds_htmx "github.com/kiban-cloud/go-kiban-design-system/htmx"
 
 - Toda librería JS/CSS externa se carga vía CDN, **pinned a versión exacta** (no `@latest`). Lista actual:
   - HTMX: `https://unpkg.com/htmx.org@2.0.4`
+  - HTMX response-targets ext: `https://unpkg.com/htmx-ext-response-targets@2.0.4` (routing de errores por status class — patrón htmxerror)
   - Tailwind: `https://cdn.tailwindcss.com` (CDN sin pinning — accept upstream)
   - intl-tel-input: `https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/...`
   - Inter font: `https://rsms.me/inter/inter.css`

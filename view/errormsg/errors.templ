@@ -1,0 +1,98 @@
+// Package errormsg holds the HTMX error fragments that back the shared
+// error-response pattern (see the `htmxerror` package at the repo root).
+//
+// The pattern solves a Cloud Monitoring blind spot: when a handler renders an
+// error into a 200 response, GCP's uptime/error monitors — which key off the
+// HTTP status — never see it. `htmxerror.Respond` maps a domain error to the
+// correct 4xx/5xx status AND swaps one of these fragments into the page via
+// the htmx-ext-response-targets extension, so the user still sees the error
+// in context while the monitors see a real non-200.
+//
+// Routing contract (wired in `view/layout/base.templ`):
+//   - 4xx → the form / triggering region via `hx-target-4xx`
+//   - 5xx (and 429) → `#global-error-banner` via `hx-target-5xx`
+//
+// Every fragment carries `data-error-type` so the `htmx:beforeRequest`
+// cleanup in base.templ can clear stale feedback before the next request.
+// Styling mirrors `view/flash` so error states look consistent with the rest
+// of the kiban design system.
+package errormsg
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
+// Banner is the fragment for system / dependency failures (5xx, 429) and the
+// default 500 fallback. It is swapped into `#global-error-banner` via
+// `hx-target-5xx`, so it carries a dismiss button that clears that container.
+templ Banner(message string) {
+	<div
+		class="relative rounded-md border border-red-200 bg-red-50 text-red-700 pl-4 pr-10 py-3 text-sm mb-4 flex items-start gap-3"
+		role="alert"
+		data-error-type="system"
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5 mt-0.5" fill="none" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+		</svg>
+		<span class="flex-1">{ message }</span>
+		<button
+			type="button"
+			class="absolute top-1/2 right-2 -translate-y-1/2 p-1 rounded-md text-current/70 hover:text-current hover:bg-black/5 transition-colors"
+			aria-label="Cerrar"
+			onclick="var b=document.getElementById('global-error-banner'); if(b){b.innerHTML='';}"
+		>
+			@icons.Close()
+		</button>
+	</div>
+}
+
+// Validation is the fragment for input validation failures (422) and
+// conflicts (409). It renders in-place inside the form via `hx-target-4xx`,
+// so it has no dismiss button — the next submit clears it.
+templ Validation(message string) {
+	<div
+		class="rounded-md border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm mb-4"
+		role="alert"
+		data-error-type="validation"
+	>
+		{ message }
+	</div>
+}
+
+// NotFound is the fragment for 404 responses. Muted styling — a missing
+// resource is not an error state as loud as a validation or system failure.
+templ NotFound(message string) {
+	<div
+		class="rounded-md border border-kiban-border bg-kiban-surface text-kiban-ink3 px-4 py-3 text-sm mb-4"
+		role="alert"
+		data-error-type="not-found"
+	>
+		{ message }
+	</div>
+}
+
+// Unauthorized is the fragment for 401 responses. The session is gone or
+// invalid, so it reloads the current page after a short beat: the auth-cookie
+// middleware then catches the missing session and redirects to the project's
+// login URL. Reloading (instead of hardcoding `/login`) keeps this fragment
+// project-agnostic — the login path lives in each consumer's middleware.
+templ Unauthorized() {
+	<div
+		class="rounded-md border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm mb-4"
+		role="alert"
+		data-error-type="unauthorized"
+		hx-on::load="setTimeout(function(){ window.location.reload(); }, 1500)"
+	>
+		Tu sesión expiró. Recargando…
+	</div>
+}
+
+// Forbidden is the fragment for 403 responses — the user is authenticated but
+// lacks permission for the action.
+templ Forbidden() {
+	<div
+		class="rounded-md border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm mb-4"
+		role="alert"
+		data-error-type="forbidden"
+	>
+		No tienes permisos para realizar esta acción.
+	</div>
+}

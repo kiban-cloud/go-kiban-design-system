@@ -44,6 +44,12 @@ templ Base(cfg Config) {
 				};
 			</script>
 			<script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+			<!-- response-targets: lets forms route error responses by status
+			     class (hx-target-4xx / hx-target-5xx). Backs the shared
+			     htmxerror pattern so 4xx errors swap into the form and 5xx
+			     into #global-error-banner, while the server returns a real
+			     non-200 that Cloud Monitoring can see. -->
+			<script src="https://unpkg.com/htmx-ext-response-targets@2.0.4" defer></script>
 			<!-- intl-tel-input: phone-number widget. Init JS at the bottom of
 			     <body>, deferred to DOMContentLoaded so this lib is loaded
 			     by the time it runs. -->
@@ -334,7 +340,12 @@ templ Base(cfg Config) {
 				}
 			</style>
 		</head>
-		<body class="bg-white text-kiban-ink antialiased" hx-disabled-elt="this">
+		<body class="bg-white text-kiban-ink antialiased" hx-disabled-elt="this" hx-ext="response-targets">
+			<!-- Landing zone for 5xx / 429 error fragments routed here by
+			     forms via hx-target-5xx="#global-error-banner". Empty until an
+			     error is swapped in; cleared before every request by the
+			     htmx:beforeRequest cleanup below. -->
+			<div id="global-error-banner"></div>
 			{ children... }
 			@actionOverlay()
 			<script>
@@ -1097,6 +1108,28 @@ templ Base(cfg Config) {
 						if (region) region.classList.remove('kiban-busy');
 					});
 				})();
+
+				// Clear stale error/success feedback before every HTMX request
+				// (backs the shared htmxerror pattern). Without this, when a 4xx
+				// leaves an inline error in a form and the NEXT submit lands a
+				// 5xx (routed to #global-error-banner, not the form), the old
+				// 4xx error stays visible next to the new banner — contradictory
+				// UX. Rule: clear the global banner, plus any node marked
+				// data-error-type / data-success-type inside the request's
+				// source form or swap target, before the new request fires.
+				document.body.addEventListener('htmx:beforeRequest', function (evt) {
+					var banner = document.getElementById('global-error-banner');
+					if (banner) banner.innerHTML = '';
+
+					var detail = evt.detail || {};
+					[detail.elt, detail.target].forEach(function (el) {
+						if (!el || el.nodeType !== 1) return;
+						var scope = el.tagName === 'FORM' ? el : (el.closest('form') || el);
+						scope.querySelectorAll('[data-error-type],[data-success-type]').forEach(function (node) {
+							node.remove();
+						});
+					});
+				});
 
 				// Global action-blocking overlay for non-HTMX navigations
 				// (regla cross-module: link / rekon / crm / klin).

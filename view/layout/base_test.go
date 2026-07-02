@@ -42,6 +42,29 @@ func TestBase_DataHrefRowShowsNavLoader(t *testing.T) {
 	assert.Contains(t, body, "window.location.href = el.getAttribute('data-href')")
 }
 
+// The shared HTMX error-response pattern (see the htmxerror package) needs
+// three things wired into the shell so every module gets non-200 errors that
+// Cloud Monitoring can see: the response-targets extension loaded and enabled
+// on <body>, the #global-error-banner landing zone for 5xx fragments, and the
+// beforeRequest cleanup that clears stale feedback so a new error never shows
+// next to an old one.
+func TestBase_HtmxErrorResponsePattern(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	// Extension script loaded and enabled on the body so hx-target-4xx /
+	// hx-target-5xx resolve.
+	assert.Contains(t, body, "htmx-ext-response-targets@2.0.4")
+	assert.Contains(t, body, `hx-ext="response-targets"`)
+
+	// Landing zone for 5xx fragments routed via hx-target-5xx.
+	assert.Contains(t, body, `id="global-error-banner"`)
+
+	// Cleanup: clear the banner and any data-error-type / data-success-type
+	// feedback before each request.
+	assert.Contains(t, body, "htmx:beforeRequest")
+	assert.Contains(t, body, "[data-error-type],[data-success-type]")
+}
+
 func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 	body := renderBase(t, layout.Config{
 		Title:       "T",

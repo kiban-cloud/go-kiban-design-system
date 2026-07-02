@@ -7,6 +7,7 @@ require (
 	github.com/a-h/templ v0.3.1001
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-playground/validator/v10 v10.27.0
+	github.com/kiban-cloud/go-kiban-fullstack v0.8.0
 	github.com/stretchr/testify v1.11.1
 )
 
