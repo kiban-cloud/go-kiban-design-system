@@ -26,7 +26,8 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 // `type="button"` (or non-button elements) so they don't submit. The
 // PrimaryAction with `Type: "submit"` submits the wrapping form.
 //
-// Open / close: same JS helpers and Escape behaviour as SidePanel.
+// Open / close: same JS helpers and Escape behaviour as SidePanel
+// (Escape does NOT dismiss the modal).
 templ Modal(cfg ModalConfig) {
 	<div data-kiban-overlay id={ cfg.ID } class="hidden fixed inset-0 z-50 flex items-center justify-center">
 		<div { overlayBackdropAttrs(cfg.ID, "bg-black/40")... }></div>

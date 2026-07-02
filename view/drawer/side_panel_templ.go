@@ -31,8 +31,9 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 //   - Caller wires the trigger button with
 //     `onclick="kibanOpenOverlay('the-id')"`.
 //   - Close button + backdrop click both call `kibanCloseOverlay`.
-//   - Escape key closes the topmost visible overlay (handled globally
-//     by the listener in view/layout/base.templ).
+//   - Escape does NOT close the overlay (the global listener in
+//     view/layout/base.templ intentionally leaves drawers open so a
+//     stray Escape can't discard in-progress work).
 //
 // Filter-drawer pattern: pass an external `Form` id on the
 // PrimaryAction so a `<button type="submit" form="filter-form">` inside
@@ -67,7 +68,7 @@ func SidePanel(cfg SidePanelConfig) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/drawer/side_panel.templ`, Line: 35, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/drawer/side_panel.templ`, Line: 36, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -112,7 +113,7 @@ func SidePanel(cfg SidePanelConfig) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/drawer/side_panel.templ`, Line: 44, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/drawer/side_panel.templ`, Line: 45, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {

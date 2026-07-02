@@ -23,8 +23,9 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 //   - Caller wires the trigger button with
 //     `onclick="kibanOpenOverlay('the-id')"`.
 //   - Close button + backdrop click both call `kibanCloseOverlay`.
-//   - Escape key closes the topmost visible overlay (handled globally
-//     by the listener in view/layout/base.templ).
+//   - Escape does NOT close the overlay (the global listener in
+//     view/layout/base.templ intentionally leaves drawers open so a
+//     stray Escape can't discard in-progress work).
 //
 // Filter-drawer pattern: pass an external `Form` id on the
 // PrimaryAction so a `<button type="submit" form="filter-form">` inside

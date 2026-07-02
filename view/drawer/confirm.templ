@@ -27,8 +27,8 @@ import (
 // "Cancelar" when SecondaryActionLabel is empty.
 //
 // Open / close: same JS helpers and Escape behaviour as SidePanel /
-// Modal. Trigger from the call site with
-// `onclick="kibanOpenOverlay('the-id')"`.
+// Modal (Escape does NOT dismiss the overlay). Trigger from the call
+// site with `onclick="kibanOpenOverlay('the-id')"`.
 //
 // Size defaults to "sm" (max-w-sm) — confirmations are tighter than
 // general modals.

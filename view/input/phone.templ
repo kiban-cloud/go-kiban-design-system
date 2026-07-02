@@ -31,6 +31,8 @@ templ Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, requir
 		}
 		<input
 			type="tel"
+			inputmode="numeric"
+			maxlength="12"
 			data-tel-visible
 			data-tel-initial={ initialDial(ccValue, phoneValue) }
 			placeholder="5512345678"
