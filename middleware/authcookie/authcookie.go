@@ -19,10 +19,13 @@ package authcookie
 
 import (
 	"net/http"
+	"os"
+	"strings"
 
 	controller_core_middleware "bitbucket.org/alexandregrin/go-kiban/controller_core/middleware"
 	controller_core_model "bitbucket.org/alexandregrin/go-kiban/controller_core/model"
 	domain_core_authorization_interface "bitbucket.org/alexandregrin/go-kiban/domain/authorization/interface"
+	infrastructure_core_env "bitbucket.org/alexandregrin/go-kiban/infrastructure_core/env"
 	utils_http "bitbucket.org/alexandregrin/go-kiban/utils/http"
 	"github.com/gin-gonic/gin"
 )
@@ -30,6 +33,19 @@ import (
 const (
 	CookieSession = "kiban_session"
 	CookieSpaceID = "kiban_space_id"
+
+	// EnvLocalSession / EnvLocalSpaceID are dev-only env-var fallbacks for the
+	// two auth cookies. When the request has no cookie AND the process is NOT
+	// running on Cloud Run (!IsCloudRun) — i.e. a developer's local machine —
+	// the middleware reads the session token and space id from these env vars
+	// instead. This lets a developer paste a real kiban_session JWT (copied
+	// from the browser after logging in once) into their local env and reach
+	// the htmx UI without a browser cookie. The token still goes to kiban-cloud
+	// through the real AuthorizeWithSessionUseCase, so it must be valid there
+	// (it will expire like any session). On Cloud Run (dev/hotfix/prod) these
+	// vars are ignored entirely.
+	EnvLocalSession = "KIBAN_SESSION"
+	EnvLocalSpaceID = "KIBAN_SPACE_ID"
 )
 
 // Middleware holds the dependencies and configuration the gin handler needs
@@ -52,11 +68,17 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie(CookieSession)
 		if err != nil || token == "" {
+			token = localDevOverride(EnvLocalSession)
+		}
+		if token == "" {
 			m.unauthorized(c)
 			return
 		}
 		spaceID, err := c.Cookie(CookieSpaceID)
 		if err != nil || spaceID == "" {
+			spaceID = localDevOverride(EnvLocalSpaceID)
+		}
+		if spaceID == "" {
 			m.unauthorized(c)
 			return
 		}
@@ -72,6 +94,17 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 		c.Set(controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT, authorization)
 		c.Next()
 	}
+}
+
+// localDevOverride returns the value of a cookie-fallback env var, but ONLY
+// off Cloud Run. On Cloud Run (any deployed env: dev/hotfix/prod) it always
+// returns "" so the env vars can never stand in for a real session cookie on a
+// deployed instance — the guard is independent of whether the vars are set.
+func localDevOverride(envKey string) string {
+	if infrastructure_core_env.IsCloudRun() {
+		return ""
+	}
+	return strings.TrimSpace(os.Getenv(envKey))
 }
 
 // unauthorized redirects to the kiban shell login. HTMX requests get an
