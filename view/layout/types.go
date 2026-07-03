@@ -232,6 +232,15 @@ type Config struct {
 	// — tools that can't compute the count locally (everything except
 	// kiban-cloud, which owns the count usecase) just leave this zero.
 	NotificationsUnread int
+
+	// CustomStylesheetHref, when non-empty, appends a <link rel="stylesheet">
+	// as the LAST entry in <head> so it overrides the design-system tokens
+	// and component styles. Purpose: per-client theming for customer-facing
+	// shells (e.g. workfloo's portal cliente loads the tenant's uploaded
+	// CSS). It's a plain href — the consumer owns serving the stylesheet
+	// (typically a route that streams the stored CSS). Empty = no extra
+	// stylesheet, so tools that don't theme pay nothing.
+	CustomStylesheetHref string
 }
 
 // NavSection is one entry in AdminLayout's horizontal top-level nav.

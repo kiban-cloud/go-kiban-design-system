@@ -339,6 +339,12 @@ templ Base(cfg Config) {
 					right: calc(100% + 10px);
 				}
 			</style>
+			// Per-client theming override. Emitted LAST so it wins over the
+			// design-system tokens + component styles above. Opt-in via
+			// Config.CustomStylesheetHref; empty renders nothing.
+			if cfg.CustomStylesheetHref != "" {
+				<link rel="stylesheet" href={ templ.URL(cfg.CustomStylesheetHref) }/>
+			}
 		</head>
 		<body class="bg-white text-kiban-ink antialiased" hx-disabled-elt="this" hx-ext="response-targets">
 			<!-- Landing zone for 5xx / 429 error fragments routed here by
