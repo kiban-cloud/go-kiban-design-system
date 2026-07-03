@@ -26,6 +26,8 @@ func TestCode_EnforcesFixedLength(t *testing.T) {
 	assert.True(t, strings.Contains(body, `pattern="\d{6}"`))
 	assert.True(t, strings.Contains(body, `inputmode="numeric"`))
 	assert.True(t, strings.Contains(body, `autocomplete="one-time-code"`))
+	// Marker that wires the digits-only sanitize handler in base.templ.
+	assert.True(t, strings.Contains(body, "data-kiban-code"))
 	assert.True(t, strings.Contains(body, "required"))
 	// Placeholder shows one bullet per expected digit.
 	assert.True(t, strings.Contains(body, `placeholder="••••••"`))

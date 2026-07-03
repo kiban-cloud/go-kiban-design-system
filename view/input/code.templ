@@ -3,7 +3,9 @@ package input
 // Code renders a fixed-length one-time-code (NIP/OTP) input: a single centered
 // field that only accepts `length` digits. Native HTML enforces the length —
 // `maxlength` caps typing and `pattern="\d{N}"` blocks the submit until exactly
-// N digits are present — so no client JS is needed. `length <= 0` defaults to 6.
+// N digits are present. The `data-kiban-code` marker wires a delegated handler
+// in view/layout/base.templ that strips non-digits as the user types, so the
+// field only ever holds numbers (not just at submit). `length <= 0` defaults to 6.
 //
 // Layout mirrors Text: optional label (with required asterisk) → input → error
 // message (red) when errMsg is non-empty. The border swaps to red on error.
@@ -22,6 +24,7 @@ templ Code(name, label, value, errMsg string, length int, required bool) {
 			type="text"
 			name={ name }
 			value={ value }
+			data-kiban-code
 			inputmode="numeric"
 			autocomplete="one-time-code"
 			maxlength={ codeMaxLength(length) }

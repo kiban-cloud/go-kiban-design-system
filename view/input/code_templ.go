@@ -11,7 +11,9 @@ import templruntime "github.com/a-h/templ/runtime"
 // Code renders a fixed-length one-time-code (NIP/OTP) input: a single centered
 // field that only accepts `length` digits. Native HTML enforces the length —
 // `maxlength` caps typing and `pattern="\d{N}"` blocks the submit until exactly
-// N digits are present — so no client JS is needed. `length <= 0` defaults to 6.
+// N digits are present. The `data-kiban-code` marker wires a delegated handler
+// in view/layout/base.templ that strips non-digits as the user types, so the
+// field only ever holds numbers (not just at submit). `length <= 0` defaults to 6.
 //
 // Layout mirrors Text: optional label (with required asterisk) → input → error
 // message (red) when errMsg is non-empty. The border swaps to red on error.
@@ -48,7 +50,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("f-" + name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 13, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 15, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -61,7 +63,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 14, Col: 11}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 16, Col: 11}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -97,7 +99,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("f-" + name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 21, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 23, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -110,7 +112,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 23, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 25, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -123,20 +125,20 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 24, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 26, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" inputmode=\"numeric\" autocomplete=\"one-time-code\" maxlength=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" data-kiban-code inputmode=\"numeric\" autocomplete=\"one-time-code\" maxlength=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(codeMaxLength(length))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 27, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 30, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -149,7 +151,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(codePattern(length))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 28, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 31, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -162,7 +164,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(codePlaceholder(length))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 29, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 32, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -203,7 +205,7 @@ func Code(name, label, value, errMsg string, length int, required bool) templ.Co
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 40, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/code.templ`, Line: 43, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {

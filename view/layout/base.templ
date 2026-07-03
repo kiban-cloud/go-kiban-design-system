@@ -497,6 +497,20 @@ templ Base(cfg Config) {
 					});
 				})();
 
+				// One-time-code (NIP/OTP) input. Los campos [data-kiban-code]
+				// (input.Code) sólo aceptan dígitos: se sanea el valor en cada
+				// `input`, borrando todo lo que no sea 0-9 mientras el usuario
+				// teclea o pega. El listener es delegado a nivel document, así
+				// que cubre los inputs inyectados por swaps de htmx sin re-init.
+				(function () {
+					document.addEventListener('input', function (e) {
+						var el = e.target;
+						if (!el || !el.matches || !el.matches('[data-kiban-code]')) return;
+						var digits = (el.value || '').replace(/\D/g, '');
+						if (el.value !== digits) el.value = digits;
+					});
+				})();
+
 				// File chip-input. Each [data-kiban-file-chip-input] holds
 				// an `<input type="file">` and a sibling `<ul data-chip-list>`.
 				// Selected files appear as chips (name + size + remove ×);
