@@ -1,0 +1,43 @@
+package input
+
+// Code renders a fixed-length one-time-code (NIP/OTP) input: a single centered
+// field that only accepts `length` digits. Native HTML enforces the length —
+// `maxlength` caps typing and `pattern="\d{N}"` blocks the submit until exactly
+// N digits are present — so no client JS is needed. `length <= 0` defaults to 6.
+//
+// Layout mirrors Text: optional label (with required asterisk) → input → error
+// message (red) when errMsg is non-empty. The border swaps to red on error.
+templ Code(name, label, value, errMsg string, length int, required bool) {
+	<div class="space-y-1">
+		if label != "" {
+			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+				{ label }
+				if required {
+					<span class="text-red-500 ml-0.5">*</span>
+				}
+			</label>
+		}
+		<input
+			id={ "f-" + name }
+			type="text"
+			name={ name }
+			value={ value }
+			inputmode="numeric"
+			autocomplete="one-time-code"
+			maxlength={ codeMaxLength(length) }
+			pattern={ codePattern(length) }
+			placeholder={ codePlaceholder(length) }
+			if required {
+				required
+			}
+			class={
+				"w-full text-center tracking-[0.5em] text-lg border rounded-md px-3 py-2 focus:outline-none",
+				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
+				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
+			}
+		/>
+		if errMsg != "" {
+			<div class="text-xs text-red-600">{ errMsg }</div>
+		}
+	</div>
+}
