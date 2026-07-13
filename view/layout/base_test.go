@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/a-h/templ"
@@ -113,4 +114,24 @@ func TestBase_GlobalActionOverlay(t *testing.T) {
 	// forms can also opt out with data-no-block-ui.
 	assert.Contains(t, body, "hx-boost")
 	assert.Contains(t, body, "data-no-block-ui")
+}
+
+func TestBase_CustomStylesheetHref(t *testing.T) {
+	body := renderBase(t, layout.Config{
+		Title:                "T",
+		ProjectName:          "kiban",
+		CustomStylesheetHref: "/portal/theme.css",
+	})
+
+	// The per-client stylesheet is emitted as a <link> and must appear after
+	// the design-system <style> block so it wins the cascade.
+	assert.Contains(t, body, `<link rel="stylesheet" href="/portal/theme.css">`)
+	styleEnd := strings.LastIndex(body, "</style>")
+	linkAt := strings.Index(body, `href="/portal/theme.css"`)
+	assert.Greater(t, linkAt, styleEnd, "custom stylesheet must come after the base <style> block")
+}
+
+func TestBase_NoCustomStylesheetByDefault(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.NotContains(t, body, `rel="stylesheet" href="/portal`)
 }
