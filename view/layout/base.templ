@@ -188,6 +188,62 @@ templ Base(cfg Config) {
 					width: 14rem;          /* matches the inner IconRail w-56 */
 				}
 
+				/* Mobile nav drawer (< md). On desktop the .sidebar-nav-group
+				   is in-flow (rail + sub-nav side by side, handled by the
+				   flex classes on the element). Below md it turns into an
+				   off-canvas drawer that slides in over the content from the
+				   left, opened by the topbar hamburger which flips
+				   [data-sidebar-mobile-open] on the layout root. Everything
+				   here is scoped to max-width:767px so the desktop shell is
+				   completely untouched. */
+				.sidebar-backdrop { display: none; }
+				@media (max-width: 767px) {
+					.sidebar-nav-group {
+						position: fixed;
+						top: 3.5rem;            /* below the h-14 topbar */
+						bottom: 0;
+						left: 0;
+						z-index: 40;
+						width: 18rem;
+						max-width: 85vw;
+						flex-direction: column;
+						overflow-y: auto;
+						background: #fff;
+						border-right: 1px solid #E8E8E8;
+						box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+						transform: translateX(-100%);
+						transition: transform 250ms ease;
+					}
+					[data-sidebar-mobile-open] .sidebar-nav-group {
+						transform: translateX(0);
+					}
+					/* In the drawer the tools rail is always expanded (the
+					   desktop width-0 collapse doesn't apply) and both rails
+					   take the full drawer width, stacked vertically. */
+					.sidebar-nav-group .sidebar-rail-slot {
+						width: auto;
+						overflow: visible;
+					}
+					.sidebar-nav-group .sidebar-rail-slot > nav,
+					.sidebar-nav-group [data-sidebar-subnav] {
+						width: 100%;
+						border-right: 0;
+					}
+					.sidebar-nav-group [data-sidebar-subnav] {
+						border-top: 1px solid #E8E8E8;
+					}
+					[data-sidebar-mobile-open] .sidebar-backdrop {
+						display: block;
+						position: fixed;
+						top: 3.5rem;
+						left: 0;
+						right: 0;
+						bottom: 0;
+						z-index: 39;
+						background: rgba(0, 0, 0, 0.4);
+					}
+				}
+
 				/* Navigation loader: overlay shown while a browser
 				   navigation is in flight (e.g. the user clicked a
 				   tools-rail link to a different backend). It's scoped to
@@ -1025,24 +1081,41 @@ templ Base(cfg Config) {
 					}
 				})();
 
-				// Sidebar tools-rail toggle. The sub-nav is always visible;
-				// the hamburger flips a boolean attribute on the layout
-				// root that controls whether the tools rail slides in/out.
-				// State persists in localStorage, namespaced by
-				// data-sidebar-project so multiple kiban apps on the same
-				// origin keep separate state.
+				// Sidebar navigation toggle. Two behaviours share the topbar
+				// hamburger, chosen by viewport:
+				//
+				//   Desktop (>= md): the sub-nav is always visible; the
+				//   hamburger flips [data-sidebar-rail-open] to slide the
+				//   tools rail in/out. State persists in localStorage,
+				//   namespaced by data-sidebar-project so multiple kiban apps
+				//   on the same origin keep separate state.
+				//
+				//   Mobile (< md): rail + sub-nav collapse into an off-canvas
+				//   drawer (CSS in Base). The hamburger flips
+				//   [data-sidebar-mobile-open] to slide it in; a backdrop
+				//   click, a nav-link click, Escape, or resizing up to
+				//   desktop closes it. The mobile state is NOT persisted —
+				//   a drawer left open across navigations would be surprising.
 				(function () {
 					var root = document.querySelector('[data-sidebar-root]');
 					if (!root) return;
 					var project = root.getAttribute('data-sidebar-project') || 'kiban';
 					var KEY = project + '-sidebar-rail-open';
-					function setOpen(open) {
+					var mobileMQ = window.matchMedia('(max-width: 767px)');
+					function setRailOpen(open) {
 						if (open) {
 							root.setAttribute('data-sidebar-rail-open', '');
 						} else {
 							root.removeAttribute('data-sidebar-rail-open');
 						}
 						try { localStorage.setItem(KEY, open ? '1' : '0'); } catch (_) {}
+					}
+					function setMobileOpen(open) {
+						if (open) {
+							root.setAttribute('data-sidebar-mobile-open', '');
+						} else {
+							root.removeAttribute('data-sidebar-mobile-open');
+						}
 					}
 					try {
 						if (localStorage.getItem(KEY) === '1') {
@@ -1054,18 +1127,42 @@ templ Base(cfg Config) {
 						var hamb = e.target.closest('[data-sidebar-show-tools]');
 						if (hamb) {
 							e.preventDefault();
-							setOpen(!root.hasAttribute('data-sidebar-rail-open'));
+							if (mobileMQ.matches) {
+								setMobileOpen(!root.hasAttribute('data-sidebar-mobile-open'));
+							} else {
+								setRailOpen(!root.hasAttribute('data-sidebar-rail-open'));
+							}
 							return;
 						}
-						// Click on any tool inside the rail → collapse it.
-						// Once the user has picked a tool, only the in-tool
-						// sub-nav is relevant; persisting closed state also
-						// means the next page (full browser nav to a
-						// different backend) loads with the rail hidden.
-						if (e.target.closest('.sidebar-rail-slot a')) {
-							setOpen(false);
+						// Backdrop click → close the mobile drawer.
+						if (e.target.closest('[data-sidebar-backdrop]')) {
+							setMobileOpen(false);
+							return;
+						}
+						// Click on a nav link (tools rail or sub-nav).
+						if (e.target.closest('.sidebar-nav-group a')) {
+							if (mobileMQ.matches) {
+								// Navigating from the drawer → close it. The
+								// full page nav will re-render fresh anyway.
+								setMobileOpen(false);
+							} else if (e.target.closest('.sidebar-rail-slot a')) {
+								// Desktop: picking a tool collapses the rail so
+								// the next page loads with only the sub-nav.
+								setRailOpen(false);
+							}
 						}
 					});
+					// Escape closes the mobile drawer.
+					document.addEventListener('keydown', function (e) {
+						if (e.key === 'Escape' && root.hasAttribute('data-sidebar-mobile-open')) {
+							setMobileOpen(false);
+						}
+					});
+					// Leaving mobile width → drop the mobile-open state so the
+					// desktop shell never renders with a stale drawer flag.
+					var onChange = function () { if (!mobileMQ.matches) setMobileOpen(false); };
+					if (mobileMQ.addEventListener) { mobileMQ.addEventListener('change', onChange); }
+					else if (mobileMQ.addListener) { mobileMQ.addListener(onChange); }
 				})();
 
 				// Navigation loader: when the user clicks a link tagged with
@@ -2039,17 +2136,30 @@ templ Layout(cfg Config) {
 		>
 			@Topbar(cfg)
 			<div class="flex flex-1 min-h-0">
-				<!-- Tools rail (level 1). Hidden by default; sliding open
-				     when [data-sidebar-rail-open] is on the root. The
-				     fixed-width inner <nav> keeps content from reflowing
-				     during the width animation. -->
-				<div class="sidebar-rail-slot">
-					@IconRail(cfg)
+				<!-- Nav group (rail + sub-nav). On desktop it's in-flow
+				     (rail + sub-nav side by side). Below md it becomes an
+				     off-canvas drawer that slides in over the content when
+				     [data-sidebar-mobile-open] is set on the root (toggled
+				     by the topbar hamburger). CSS in Base scopes the drawer
+				     behaviour to a max-width media query so desktop is
+				     untouched. -->
+				<div class="sidebar-nav-group flex shrink-0">
+					<!-- Tools rail (level 1). Hidden by default on desktop;
+					     sliding open when [data-sidebar-rail-open] is on the
+					     root. The fixed-width inner <nav> keeps content from
+					     reflowing during the width animation. In the mobile
+					     drawer it's always expanded. -->
+					<div class="sidebar-rail-slot">
+						@IconRail(cfg)
+					</div>
+					<!-- Sub-nav (level 2). Always visible on desktop. -->
+					@SubNav(cfg)
 				</div>
-				<!-- Sub-nav (level 2). Always visible. -->
-				@SubNav(cfg)
+				<!-- Backdrop behind the mobile nav drawer; click closes it.
+				     display:none except on mobile with the drawer open. -->
+				<div class="sidebar-backdrop" data-sidebar-backdrop aria-hidden="true"></div>
 				<main class="relative flex-1 overflow-x-hidden">
-					<div class="p-8 w-full">
+					<div class="p-4 md:p-8 w-full">
 						{ children... }
 					</div>
 					@navLoader()

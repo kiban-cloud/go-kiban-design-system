@@ -66,7 +66,7 @@ func AdminLayout(cfg AdminConfig) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if len(cfg.Breadcrumbs) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"border-b border-kiban-border bg-white px-6 py-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"border-b border-kiban-border bg-white px-4 md:px-6 py-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -79,7 +79,7 @@ func AdminLayout(cfg AdminConfig) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<main class=\"relative flex-1 overflow-x-hidden\"><div class=\"p-8 max-w-[1600px] mx-auto w-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<main class=\"relative flex-1 overflow-x-hidden\"><div class=\"p-4 md:p-8 max-w-[1600px] mx-auto w-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -130,7 +130,7 @@ func adminTopbar(cfg AdminConfig) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<header class=\"border-b border-kiban-border bg-white\"><div class=\"flex items-center justify-between px-6 h-16\"><div class=\"flex items-center gap-8\"><div class=\"flex items-center gap-3\"><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<header class=\"border-b border-kiban-border bg-white\"><div class=\"flex items-center justify-between gap-3 px-4 md:px-6 h-16\"><div class=\"flex items-center gap-3 md:gap-8 min-w-0\"><div class=\"flex items-center gap-2 md:gap-3 shrink-0\"><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -147,7 +147,7 @@ func adminTopbar(cfg AdminConfig) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = logo.KibanCloud("w-32 h-auto").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = logo.KibanCloud("w-24 md:w-32 h-auto").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func adminTopbar(cfg AdminConfig) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors whitespace-nowrap\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -192,7 +192,7 @@ func adminTopbar(cfg AdminConfig) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(cfg.NavSections) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<nav class=\"flex items-center gap-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<nav class=\"flex items-center gap-1 overflow-x-auto whitespace-nowrap\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

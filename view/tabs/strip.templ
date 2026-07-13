@@ -43,12 +43,12 @@ import "strconv"
 // `hx-push-url="true"` so the URL bar follows partial swaps, and Href
 // stays as the no-JS fallback.
 templ Strip(items []TabItem, activeKey string) {
-	<div class="border-b border-kiban-border">
+	<div class="border-b border-kiban-border overflow-x-auto">
 		<nav class="flex gap-3 -mb-px" aria-label="Tabs">
 			for _, t := range items {
 				if t.Disabled {
 					<a
-						class="inline-flex items-center gap-2 pt-2 text-sm text-kiban-ink3 opacity-50 cursor-not-allowed pointer-events-none"
+						class="inline-flex items-center gap-2 pt-2 text-sm text-kiban-ink3 opacity-50 cursor-not-allowed pointer-events-none shrink-0 whitespace-nowrap"
 						aria-disabled="true"
 						if t.Title != "" {
 							title={ t.Title }
@@ -60,7 +60,7 @@ templ Strip(items []TabItem, activeKey string) {
 					<a
 						href={ templ.URL(t.Href) }
 						class={
-							"inline-flex items-center gap-2 pt-2 text-sm transition-colors",
+							"inline-flex items-center gap-2 pt-2 text-sm transition-colors shrink-0 whitespace-nowrap",
 							templ.KV("text-kiban-primary font-medium", t.Key == activeKey),
 							templ.KV("text-kiban-ink3 hover:text-kiban-ink", t.Key != activeKey),
 						}

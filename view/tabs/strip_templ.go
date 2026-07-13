@@ -71,13 +71,13 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"border-b border-kiban-border\"><nav class=\"flex gap-3 -mb-px\" aria-label=\"Tabs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"border-b border-kiban-border overflow-x-auto\"><nav class=\"flex gap-3 -mb-px\" aria-label=\"Tabs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, t := range items {
 			if t.Disabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<a class=\"inline-flex items-center gap-2 pt-2 text-sm text-kiban-ink3 opacity-50 cursor-not-allowed pointer-events-none\" aria-disabled=\"true\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<a class=\"inline-flex items-center gap-2 pt-2 text-sm text-kiban-ink3 opacity-50 cursor-not-allowed pointer-events-none shrink-0 whitespace-nowrap\" aria-disabled=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -113,7 +113,7 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				var templ_7745c5c3_Var3 = []any{"inline-flex items-center gap-2 pt-2 text-sm transition-colors",
+				var templ_7745c5c3_Var3 = []any{"inline-flex items-center gap-2 pt-2 text-sm transition-colors shrink-0 whitespace-nowrap",
 					templ.KV("text-kiban-primary font-medium", t.Key == activeKey),
 					templ.KV("text-kiban-ink3 hover:text-kiban-ink", t.Key != activeKey),
 				}

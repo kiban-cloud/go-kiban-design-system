@@ -85,6 +85,29 @@ type TableConfig struct {
 	// tables where wrapped headers misalign visually with no-wrap
 	// body cells.
 	HeaderNoWrap bool
+
+	// MinWidth controls the responsive-scroll behaviour of the table.
+	// The Table chrome always wraps the `<table>` in an `overflow-x-auto`
+	// container so a wide table can never spill past its box and break the
+	// page layout. MinWidth decides how wide the table is allowed to stay
+	// on NARROW (mobile, < md) viewports:
+	//
+	//   - "" (default) → the table keeps a `min-w-[40rem]` (640px) floor
+	//     below md, so a typical 4-6 column list scrolls horizontally
+	//     inside its container on a phone instead of crushing every column
+	//     into unreadable wrapped stacks. At md and up the floor is
+	//     dropped (`md:min-w-0`), so DESKTOP is completely unaffected —
+	//     including tables inside narrow drawers/cards, which fill their
+	//     container as before.
+	//   - "0" → no floor at all; the table always fills its container
+	//     (`min-w-0`). Use for genuinely narrow tables (2-3 short columns)
+	//     that read fine on a phone and shouldn't force a scroll.
+	//   - any Tailwind width value (e.g. "56rem", "900px") → uses that as
+	//     the below-md floor instead of 640px, for extra-wide tables.
+	//
+	// Because the floor only applies below md, changing this never alters
+	// desktop rendering for any existing caller.
+	MinWidth string
 }
 
 // HeaderAlignClass returns the alignment class for a given header
@@ -106,6 +129,23 @@ func (c TableConfig) HeaderWrapClass() string {
 		return "whitespace-nowrap"
 	}
 	return ""
+}
+
+// TableMinWidthClass returns the `min-w-*` utility applied to the `<table>`
+// element so it scrolls horizontally inside the Table chrome's
+// `overflow-x-auto` wrapper on narrow (mobile) viewports instead of
+// crushing its columns. See [TableConfig.MinWidth] for the full contract.
+// The floor is always paired with `md:min-w-0`, so desktop rendering is
+// never changed for any caller.
+func (c TableConfig) TableMinWidthClass() string {
+	if c.MinWidth == "0" {
+		return "min-w-0"
+	}
+	w := c.MinWidth
+	if w == "" {
+		w = "40rem"
+	}
+	return "min-w-[" + w + "] md:min-w-0"
 }
 
 // BulkActionBarConfig drives the BulkActionBar component — the row of
