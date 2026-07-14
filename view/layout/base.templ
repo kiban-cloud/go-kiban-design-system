@@ -1374,7 +1374,7 @@ templ Base(cfg Config) {
 					// the backdrop click, or kibanCloseOverlay.
 					var openMenus = document.querySelectorAll('[data-kiban-menu] [role="menu"]:not(.hidden)');
 					if (openMenus.length) {
-						openMenus.forEach(function (p) { p.classList.add('hidden'); });
+						openMenus.forEach(function (p) { p.classList.add('hidden'); if (window.kibanClearMenuPosition) window.kibanClearMenuPosition(p); });
 						document.querySelectorAll('[data-kiban-menu] button[aria-expanded="true"]').forEach(function (t) {
 							t.setAttribute('aria-expanded', 'false');
 						});
@@ -1386,13 +1386,61 @@ templ Base(cfg Config) {
 				// + a unique ID; trigger="<id>-trigger", panel="<id>-panel".
 				// Single-active: opening one menu closes any other already
 				// open. Click outside any menu closes all open menus.
+				//
+				// Positioning: the panel is markup-positioned `absolute` under
+				// its trigger, but many call-sites live inside a scroll box
+				// (e.g. table.Table wraps the <table> in `overflow-x-auto`,
+				// which per spec makes overflow-y compute to `auto` too). An
+				// absolute panel would be clipped by that box and turn it into
+				// a scroll area instead of overflowing on top. To escape any
+				// clipping ancestor we re-anchor the OPEN panel with
+				// `position: fixed`, computing viewport coords from the
+				// trigger's rect; fixed is viewport-relative so no ancestor
+				// overflow/scroll can clip it. Coords are recomputed on
+				// scroll/resize while open, and the inline styles are cleared
+				// on close so the panel reverts to its markup positioning.
+				window.kibanPositionMenu = function (panel, trigger) {
+					if (!panel || !trigger || panel.classList.contains('hidden')) return;
+					// Measure the panel at its natural size before pinning.
+					panel.style.position = 'fixed';
+					panel.style.margin = '0';
+					panel.style.right = 'auto';
+					panel.style.bottom = 'auto';
+					var t = trigger.getBoundingClientRect();
+					var p = panel.getBoundingClientRect();
+					var gap = 4; // matches the markup mt-1
+					var margin = 8; // viewport breathing room
+					// Align the panel's right edge with the trigger's (the
+					// markup default is right-0), clamped into the viewport.
+					var left = t.right - p.width;
+					var maxLeft = window.innerWidth - p.width - margin;
+					if (left > maxLeft) left = maxLeft;
+					if (left < margin) left = margin;
+					// Prefer opening below; flip above when it would overflow
+					// the viewport bottom and there's more room above.
+					var top = t.bottom + gap;
+					if (top + p.height > window.innerHeight - margin && t.top - gap - p.height >= margin) {
+						top = t.top - gap - p.height;
+					}
+					panel.style.left = left + 'px';
+					panel.style.top = top + 'px';
+				};
+				window.kibanClearMenuPosition = function (panel) {
+					if (!panel) return;
+					panel.style.position = '';
+					panel.style.left = '';
+					panel.style.top = '';
+					panel.style.right = '';
+					panel.style.bottom = '';
+					panel.style.margin = '';
+				};
 				window.kibanToggleMenu = function (id) {
 					var panel = document.getElementById(id + '-panel');
 					var trigger = document.getElementById(id + '-trigger');
 					if (!panel || !trigger) return;
 					var willOpen = panel.classList.contains('hidden');
 					document.querySelectorAll('[data-kiban-menu] [role="menu"]').forEach(function (p) {
-						if (p !== panel) p.classList.add('hidden');
+						if (p !== panel) { p.classList.add('hidden'); window.kibanClearMenuPosition(p); }
 					});
 					document.querySelectorAll('[data-kiban-menu] button[aria-haspopup="true"]').forEach(function (t) {
 						if (t !== trigger) t.setAttribute('aria-expanded', 'false');
@@ -1400,21 +1448,36 @@ templ Base(cfg Config) {
 					if (willOpen) {
 						panel.classList.remove('hidden');
 						trigger.setAttribute('aria-expanded', 'true');
+						window.kibanPositionMenu(panel, trigger);
 					} else {
 						panel.classList.add('hidden');
 						trigger.setAttribute('aria-expanded', 'false');
+						window.kibanClearMenuPosition(panel);
 					}
 				};
 				window.kibanCloseMenu = function (id) {
 					var panel = document.getElementById(id + '-panel');
 					var trigger = document.getElementById(id + '-trigger');
-					if (panel) panel.classList.add('hidden');
+					if (panel) { panel.classList.add('hidden'); window.kibanClearMenuPosition(panel); }
 					if (trigger) trigger.setAttribute('aria-expanded', 'false');
 				};
+				// Keep any open menu glued to its trigger as the page (or an
+				// inner scroll box) scrolls or the viewport resizes. Capture
+				// phase catches scroll on nested containers, not just window.
+				window.kibanRepositionOpenMenus = function () {
+					document.querySelectorAll('[data-kiban-menu] [role="menu"]:not(.hidden)').forEach(function (panel) {
+						var wrap = panel.closest('[data-kiban-menu]');
+						var trigger = wrap && wrap.querySelector('button[aria-haspopup="true"]');
+						if (trigger) window.kibanPositionMenu(panel, trigger);
+					});
+				};
+				window.addEventListener('scroll', window.kibanRepositionOpenMenus, true);
+				window.addEventListener('resize', window.kibanRepositionOpenMenus);
 				document.addEventListener('click', function (e) {
 					if (e.target.closest && e.target.closest('[data-kiban-menu]')) return;
 					document.querySelectorAll('[data-kiban-menu] [role="menu"]:not(.hidden)').forEach(function (p) {
 						p.classList.add('hidden');
+						window.kibanClearMenuPosition(p);
 					});
 					document.querySelectorAll('[data-kiban-menu] button[aria-expanded="true"]').forEach(function (t) {
 						t.setAttribute('aria-expanded', 'false');
