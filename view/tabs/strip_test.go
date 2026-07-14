@@ -31,8 +31,11 @@ func TestStrip_ContainerBaselineMatchesActiveBorderWidth(t *testing.T) {
 		{Key: "b", Label: "Orange", Href: "/b"},
 	}, "a")
 
-	// Container baseline.
-	assert.True(t, strings.Contains(body, `class="border-b border-kiban-border"`))
+	// Container baseline: 1-pixel `border-b` (same width as the active
+	// underline below). The container may carry extra utilities (e.g.
+	// `overflow-x-auto` so a long tab row scrolls on narrow viewports),
+	// so match the border classes without pinning the exact class string.
+	assert.True(t, strings.Contains(body, `class="border-b border-kiban-border`))
 	// Active inner span: 1-pixel `border-b` (NOT border-b-2 — same width
 	// as the container above) coloured `border-kiban-primary`. Asserted
 	// as separate class-presence checks because the inner span also

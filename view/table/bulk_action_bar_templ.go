@@ -54,7 +54,7 @@ func BulkActionBar(cfg BulkActionBarConfig) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"hidden group-has-[input[name=ids]:checked]/bulk:flex items-center gap-3 bg-kiban-primary-soft border border-kiban-primary/20 rounded-md px-4 py-3 mb-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"hidden group-has-[input[name=ids]:checked]/bulk:flex flex-wrap items-center gap-3 bg-kiban-primary-soft border border-kiban-primary/20 rounded-md px-4 py-3 mb-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

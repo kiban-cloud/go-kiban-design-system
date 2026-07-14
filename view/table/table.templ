@@ -16,8 +16,8 @@ package table
 // chevron-down indicator next to the label) will reuse the existing
 // `view/icons.ChevronDown` icon when added in a future iteration.
 templ Table(cfg TableConfig) {
-	<div class="border-t border-kiban-border">
-		<table class="w-full text-sm">
+	<div class="border-t border-kiban-border overflow-x-auto">
+		<table class={ "w-full text-sm " + cfg.TableMinWidthClass() }>
 			<thead>
 				<tr class="border-b border-kiban-border">
 					if cfg.BulkSelect {

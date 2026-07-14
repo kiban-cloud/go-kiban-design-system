@@ -26,7 +26,7 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/button"
 // the shared `button.Group`. The bar gets `mb-4` so it sits cleanly
 // above the table without the consumer adding extra spacing.
 templ BulkActionBar(cfg BulkActionBarConfig) {
-	<div class="hidden group-has-[input[name=ids]:checked]/bulk:flex items-center gap-3 bg-kiban-primary-soft border border-kiban-primary/20 rounded-md px-4 py-3 mb-4">
+	<div class="hidden group-has-[input[name=ids]:checked]/bulk:flex flex-wrap items-center gap-3 bg-kiban-primary-soft border border-kiban-primary/20 rounded-md px-4 py-3 mb-4">
 		if cfg.Message != "" {
 			<div class="flex-1 text-sm text-kiban-ink">{ cfg.Message }</div>
 		} else {

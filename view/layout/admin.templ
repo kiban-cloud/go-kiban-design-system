@@ -21,12 +21,12 @@ templ AdminLayout(cfg AdminConfig) {
 		<div class="min-h-screen flex flex-col bg-kiban-surface/40">
 			@adminTopbar(cfg)
 			if len(cfg.Breadcrumbs) > 0 {
-				<div class="border-b border-kiban-border bg-white px-6 py-3">
+				<div class="border-b border-kiban-border bg-white px-4 md:px-6 py-3">
 					@breadcrumbs.Breadcrumbs(cfg.Breadcrumbs)
 				</div>
 			}
 			<main class="relative flex-1 overflow-x-hidden">
-				<div class="p-8 max-w-[1600px] mx-auto w-full">
+				<div class="p-4 md:p-8 max-w-[1600px] mx-auto w-full">
 					{ children... }
 				</div>
 				@navLoader()
@@ -37,21 +37,21 @@ templ AdminLayout(cfg AdminConfig) {
 
 templ adminTopbar(cfg AdminConfig) {
 	<header class="border-b border-kiban-border bg-white">
-		<div class="flex items-center justify-between px-6 h-16">
-			<div class="flex items-center gap-8">
-				<div class="flex items-center gap-3">
+		<div class="flex items-center justify-between gap-3 px-4 md:px-6 h-16">
+			<div class="flex items-center gap-3 md:gap-8 min-w-0">
+				<div class="flex items-center gap-2 md:gap-3 shrink-0">
 					<a href={ templ.URL(DefaultLogoHref) } aria-label="kiban cloud" class="flex items-center">
-						@logo.KibanCloud("w-32 h-auto")
+						@logo.KibanCloud("w-24 md:w-32 h-auto")
 					</a>
 					if cfg.ProjectName != "" {
 						<span class="h-6 w-px bg-kiban-border"></span>
-						<a href={ templ.URL(logoHref(cfg.HomeHref)) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors">
+						<a href={ templ.URL(logoHref(cfg.HomeHref)) } class="font-heading font-medium text-base text-kiban-ink hover:text-kiban-primary transition-colors whitespace-nowrap">
 							{ cfg.ProjectName }
 						</a>
 					}
 				</div>
 				if len(cfg.NavSections) > 0 {
-					<nav class="flex items-center gap-1">
+					<nav class="flex items-center gap-1 overflow-x-auto whitespace-nowrap">
 						for _, section := range cfg.NavSections {
 							<a href={ templ.URL(section.Href) } class={ adminNavSectionClass(section.Key, cfg.ActiveSection) }>
 								{ section.Label }
