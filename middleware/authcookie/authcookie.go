@@ -28,6 +28,7 @@ import (
 	infrastructure_core_env "bitbucket.org/alexandregrin/go-kiban/infrastructure_core/env"
 	utils_http "bitbucket.org/alexandregrin/go-kiban/utils/http"
 	"github.com/gin-gonic/gin"
+	"github.com/kiban-cloud/go-kiban-fullstack/logger"
 )
 
 const (
@@ -83,7 +84,7 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		authorization, err := m.authorize.AuthorizeWithSessionUseCase(spaceID, token, false)
+		authorization, err := m.authorize.AuthorizeWithSessionUseCase(logger.TraceIDFromContext(c.Request.Context()), spaceID, token, false)
 		if err != nil {
 			m.unauthorized(c)
 			return

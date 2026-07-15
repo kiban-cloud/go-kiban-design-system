@@ -2,6 +2,10 @@
 
 Sistema de diseño compartido entre los proyectos kiban basados en HTMX + templ (rekon, crm, futuros). Provee componentes templ reusables, helpers de form binding, middlewares HTMX, y la shell de layout (sidebar, topbar, slide animation entre niveles 1/2 estilo GCP).
 
+Este paquete **hereda** las reglas core compartidas con todos los proyectos Kiban (logging centralizado, manejo de errores, convenciones de tests) + agrega las específicas de abajo.
+
+@../go-kiban-fullstack/CLAUDE.md
+
 ## Cuándo usar este paquete
 
 **SIEMPRE** que vayas a crear un componente UI (templ, HTML, HTMX, CSS) en rekon o crm:
