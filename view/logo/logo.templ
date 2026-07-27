@@ -12,13 +12,17 @@ package logo
 // the "kiban" wordmark (black) and "cloud" (black at 60% opacity). Ported 1:1
 // from kds (src/components/Logo/Logos/KibanCloud/KibanCloud.tsx); the path data
 // and brand fills are the source of truth — do not recolor.
+// El isotipo va en azul kiban SÓLIDO (#0047FF). La versión anterior lo pintaba
+// con dos tonos (#0047FF + #0000CC) heredados del export viejo de kds; el set
+// definitivo corregido del brand book (2026-07-22) es de un solo tono, y
+// #0000CC ni siquiera está en la paleta de marca.
 templ KibanCloud(class string) {
 	<svg class={ class } viewBox="0 0 384 48" fill="none" role="img" aria-label="kiban cloud" xmlns="http://www.w3.org/2000/svg">
 		<g clip-path="url(#kiban-cloud-clip0)">
 			<g clip-path="url(#kiban-cloud-clip1)">
 				<path d="M48 48.3363V0.337029L47.6361 0.358307C41.5229 0.715759 35.7795 3.40131 31.5881 7.86215C27.3971 12.3226 25.0768 18.2186 25.1046 24.3367C25.0768 30.4548 27.3971 36.3508 31.5881 40.8112C35.7795 45.272 41.5229 47.9576 47.6361 48.315L48 48.3363Z" fill="#0047FF"></path>
-				<path d="M0 23.2516V0.337029H29.4276L29.4221 0.423215C29.0332 6.47079 26.4067 12.1575 22.0534 16.377C17.7002 20.5965 11.9316 23.0469 5.87019 23.2514L5.85842 23.2516H0Z" fill="#0000CC"></path>
-				<path d="M29.4201 48.3374C29.0246 42.301 26.3995 36.626 22.0534 32.4135C17.7002 28.194 11.9316 25.7436 5.87019 25.5391L5.85842 25.5389H0V48.3374H29.4201Z" fill="#0000CC"></path>
+				<path d="M0 23.2516V0.337029H29.4276L29.4221 0.423215C29.0332 6.47079 26.4067 12.1575 22.0534 16.377C17.7002 20.5965 11.9316 23.0469 5.87019 23.2514L5.85842 23.2516H0Z" fill="#0047FF"></path>
+				<path d="M29.4201 48.3374C29.0246 42.301 26.3995 36.626 22.0534 32.4135C17.7002 28.194 11.9316 25.7436 5.87019 25.5391L5.85842 25.5389H0V48.3374H29.4201Z" fill="#0047FF"></path>
 			</g>
 			<g clip-path="url(#kiban-cloud-clip2)">
 				<path d="M68.1528 0H59.52V47.4651H68.1528V0Z" fill="black"></path>
