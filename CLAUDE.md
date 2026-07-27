@@ -175,13 +175,13 @@ Convención: 20×20 viewBox=24, `stroke="currentColor"`, sin fill — colorables
 
 ### Logo (`view/logo/`)
 
-Marcas de marca kiban. **Distinto de `view/icons`**: los logos son SVGs multi-color con la paleta de marca baked-in (iso `#0047FF`/`#0000CC`, wordmark negro) — **NO** son colorables vía `text-*`. Cada mark toma un argumento `class` que se aplica al `<svg>` raíz para que el caller controle el tamaño (el `viewBox` preserva el aspect ratio); pasá un height + width-auto, ej. `logo.KibanCloud("h-7 w-auto")`. Las path data y los fills se portaron 1:1 desde kds (`src/components/Logo/Logos/`) y son la fuente de verdad — no recolorear.
+Marcas de marca kiban. **Distinto de `view/icons`**: los logos son SVGs multi-color con la paleta de marca baked-in (iso azul kiban `#0047FF` sólido, wordmark negro) — **NO** son colorables vía `text-*`. Cada mark toma un argumento `class` que se aplica al `<svg>` raíz para que el caller controle el tamaño (el `viewBox` preserva el aspect ratio); pasá un height + width-auto, ej. `logo.KibanCloud("h-7 w-auto")`. Las path data se portaron 1:1 desde kds (`src/components/Logo/Logos/`). **Los fills ya NO siguen a kds**: el isotipo se pintaba con dos tonos (`#0047FF` + `#0000CC`) heredados de un export viejo, y el set definitivo corregido del brand book (2026-07-22) es de un solo tono — además `#0000CC` no está en la paleta. La fuente de verdad de color es el brand book (skill `kiban-brand`), no kds.
 
 **El componente del logo es SVG puro, sin anchor.** El click/link lo aporta la shell de layout (`Topbar`, `AdminLayout`) envolviendo el logo en un `<a>`. El destino es **siempre** `layout.DefaultLogoHref` (`/kiban-cloud`, host-relativo → mismo link en local/dev/qa/prod sin config por entorno), global e idéntico en todos los tools — el logo NO usa `Config.ShellURL` / `AdminConfig.HomeHref`, así ningún proyecto cablea la URL del logo. (`ShellURL` sigue usándose para el prefijo de los links del icon rail; `HomeHref` para el link del label `ProjectName` en `AdminLayout`.)
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `logo.KibanCloud(class string)` | done | Lockup completo "kiban cloud": iso azul + wordmark "kiban" (negro) + "cloud" (negro 60% opacity). viewBox `0 0 384 48` (ratio 8:1). `role="img"` + `aria-label="kiban cloud"`. Usado por `layout.Topbar` y `layout.AdminLayout` con `w-32` (128px → ~16px alto). Portado de kds `Logo/Logos/KibanCloud/KibanCloud.tsx`. |
+| `logo.KibanCloud(class string)` | done | Lockup completo "kiban cloud": iso azul kiban sólido + wordmark "kiban" (negro) + "cloud" (negro 60% opacity). viewBox `0 0 384 48` (ratio 8:1). `role="img"` + `aria-label="kiban cloud"`. Usado por `layout.Topbar` y `layout.AdminLayout` con `w-32` (128px → ~16px alto). Portado de kds `Logo/Logos/KibanCloud/KibanCloud.tsx`. |
 
 Para agregar otra mark (ej. `Kiban` sin "cloud", o variantes white/de producto como `Klin`/`Rekon`), portá el SVG de kds 1:1 a un nuevo `templ` en este package con la misma firma `(class string)` y agregá la fila acá.
 
@@ -593,8 +593,8 @@ htmxerror "github.com/kiban-cloud/go-kiban-design-system/htmxerror"
 
 ### Tailwind & tokens
 
-- Tokens del design system kiban (colores `kiban.primary`, `kiban.ink/ink2/ink3/ink4`, `kiban.surface`, `kiban.border`, fonts Inter/Manrope) configurados inline en `view/layout/base.templ` vía `tailwind.config = {…}`.
-- No editar los tokens a menos que cambien en el design system fuente.
+- Tokens del design system kiban (colores `kiban.primary`, `kiban.ink/ink2/ink3/ink4`, `kiban.surface`, `kiban.border`, font Be Vietnam Pro) configurados inline en `view/layout/base.templ` vía `tailwind.config = {…}`.
+- **La fuente de verdad de marca es el brand book** (skill `kiban-brand`: paleta, tipografía, nomenclatura, logos). No editar los tokens salvo que cambien ahí. `kiban.primary` = azul kiban `#0047FF`; los grises `ink*`/`border`/`surface` son neutros de UI, no colores de marca.
 - Mobile-first, breakpoints estándar de Tailwind (`md:`, `lg:`).
 
 ### HTMX patterns
@@ -622,8 +622,7 @@ htmxerror "github.com/kiban-cloud/go-kiban-design-system/htmxerror"
   - HTMX response-targets ext: `https://unpkg.com/htmx-ext-response-targets@2.0.4` (routing de errores por status class — patrón htmxerror)
   - Tailwind: `https://cdn.tailwindcss.com` (CDN sin pinning — accept upstream)
   - intl-tel-input: `https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/...`
-  - Inter font: `https://rsms.me/inter/inter.css`
-  - Manrope font: Google Fonts `https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700`
+  - Be Vietnam Pro font: Google Fonts `https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700` — **la única tipografía del sistema** (brand book). Reemplazó a Inter + Manrope, que no eran de marca.
 - Al añadir una nueva externa, agregarla al `<head>` de `view/layout/base.templ` y documentarla aquí.
 
 ## Cómo agregar un componente

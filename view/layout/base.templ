@@ -28,8 +28,8 @@ templ Base(cfg Config) {
 								},
 							},
 							fontFamily: {
-								sans: ["Inter", "system-ui", "sans-serif"],
-								heading: ["Manrope", "Inter", "sans-serif"],
+								sans: ["Be Vietnam Pro", "system-ui", "sans-serif"],
+								heading: ["Be Vietnam Pro", "system-ui", "sans-serif"],
 							},
 							fontSize: {
 								base: ["14px", "20px"],
@@ -55,11 +55,12 @@ templ Base(cfg Config) {
 			     by the time it runs. -->
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.min.css"/>
 			<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js" defer></script>
-			<link rel="preconnect" href="https://rsms.me/"/>
-			<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+			<!-- Be Vietnam Pro es la ÚNICA tipografía del sistema de marca kiban
+			     (brand book). Reemplazó a Inter + Manrope, que no eran de marca.
+			     Pesos: 400/500 para copy y UI; 700 reservado a display y wordmark. -->
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-			<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&display=swap" rel="stylesheet"/>
+			<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet"/>
 			if cfg.LoadChartJS {
 				<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 			}
@@ -94,8 +95,8 @@ templ Base(cfg Config) {
 				<script src="https://cdn.jsdelivr.net/npm/marked@14.1.4/marked.min.js" defer></script>
 			}
 			<style>
-				body { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; color: #1A2035; }
-				h1, h2, h3, .font-heading { font-family: 'Manrope', 'Inter', sans-serif; }
+				body { font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 14px; color: #1A2035; }
+				h1, h2, h3, .font-heading { font-family: 'Be Vietnam Pro', system-ui, sans-serif; }
 
 				/* htmx loading indicator — opacity-driven so it fades in/out while a
 				   request is in flight on an element with hx-indicator pointing here.
@@ -316,7 +317,7 @@ templ Base(cfg Config) {
 				.kiban-prose h1,
 				.kiban-prose h2,
 				.kiban-prose h3 {
-					font-family: 'Manrope', 'Inter', sans-serif;
+					font-family: 'Be Vietnam Pro', system-ui, sans-serif;
 					font-weight: 600;
 					color: #1A2035;
 					line-height: 1.25;
