@@ -135,3 +135,24 @@ func TestBase_NoCustomStylesheetByDefault(t *testing.T) {
 	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
 	assert.NotContains(t, body, `rel="stylesheet" href="/portal`)
 }
+
+// The code editor must hide its source <textarea> from CSS, never from the
+// inline style CodeMirror.fromTextArea() writes.
+//
+// htmx's settle phase calls cloneAttributes() on every element it matches by
+// id across a swap, dropping any attribute the server did not send. `style`
+// is never sent, so the display:none CodeMirror sets right after
+// htmx:afterSwap is stripped ~20ms later and the raw textarea reappears next
+// to its own widget — two editors stacked on the same field. The wrapper
+// carries no id, so a rule keyed on its ready flag survives the settle.
+func TestBase_CodeEditorHidesTextareaViaCSS(t *testing.T) {
+	body := renderBase(t, layout.Config{
+		Title:          "T",
+		ProjectName:    "kiban",
+		LoadCodeMirror: true,
+	})
+
+	assert.Contains(t, body, `[data-kiban-code-editor-ready="1"] > textarea`)
+	// The flag the rule hangs off must actually be set once a widget mounts.
+	assert.Contains(t, body, `setAttribute('data-kiban-code-editor-ready', '1')`)
+}

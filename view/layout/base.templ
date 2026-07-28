@@ -395,6 +395,24 @@ templ Base(cfg Config) {
 					left: auto;
 					right: calc(100% + 10px);
 				}
+				/* code_editor — hide the source <textarea> from CSS, not from
+				   an inline style.
+
+				   CodeMirror.fromTextArea() hides the textarea by setting
+				   style="display:none" on it. That inline style does not
+				   survive an htmx swap: htmx's settle phase calls
+				   cloneAttributes() on every element it can match by id
+				   between the old and the new content, and that drops any
+				   attribute the server did not send. The server never sends
+				   `style`, so ~20ms after the swap htmx strips the
+				   display:none and the raw textarea reappears stacked on top
+				   of its own widget — which reads as a duplicated editor.
+
+				   The wrapper carries no id, so htmx never rewrites its
+				   attributes and this rule keeps holding after a settle. */
+				[data-kiban-code-editor-ready="1"] > textarea {
+					display: none;
+				}
 			</style>
 			// Per-client theming override. Emitted LAST so it wins over the
 			// design-system tokens + component styles above. Opt-in via
