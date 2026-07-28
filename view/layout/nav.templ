@@ -73,8 +73,14 @@ templ notificationsBell(cfg Config) {
 			aria-labelledby="topbar-notifications-trigger"
 			class="hidden absolute right-0 top-full mt-1 z-50 w-[380px] max-w-[90vw] bg-white border border-kiban-border rounded-md shadow-lg overflow-hidden"
 		>
-			<div class="px-4 py-3 border-b border-kiban-border">
+			<div class="px-4 py-3 border-b border-kiban-border flex items-center justify-between gap-3">
 				<div class="text-sm font-semibold text-kiban-ink">Notificaciones</div>
+				<a
+					href={ templ.URL(base) }
+					target="_blank"
+					rel="noopener"
+					class="text-xs font-medium text-kiban-primary hover:underline shrink-0"
+				>Ver todas</a>
 			</div>
 			<div id="topbar-notifications-list" class="max-h-[420px] overflow-y-auto">
 				<div class="px-4 py-6 text-sm text-kiban-ink4 text-center">Cargando…</div>
