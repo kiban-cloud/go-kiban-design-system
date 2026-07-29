@@ -3,7 +3,7 @@ module github.com/kiban-cloud/go-kiban-design-system
 go 1.25.0
 
 require (
-	bitbucket.org/alexandregrin/go-kiban v0.0.314
+	bitbucket.org/alexandregrin/go-kiban v0.0.316
 	github.com/a-h/templ v0.3.1001
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-playground/validator/v10 v10.27.0
