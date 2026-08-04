@@ -85,7 +85,7 @@ templ MultiSelect(opts MultiSelectOptions) {
 					data-kiban-multiselect-option
 					data-value={ item.Value }
 					data-label={ item.Label }
-					class="px-3 py-1.5 cursor-pointer hover:bg-kiban-primary-soft/60 hover:text-kiban-primary"
+					class="px-3 py-1.5 cursor-pointer hover:bg-kiban-primary-soft hover:text-kiban-primary"
 					if multiSelectContains(opts.Selected, item.Value) {
 						hidden
 					}
@@ -96,7 +96,7 @@ templ MultiSelect(opts MultiSelectOptions) {
 			if opts.AllowCreate {
 				<li
 					data-kiban-multiselect-create
-					class="px-3 py-1.5 cursor-pointer border-t border-kiban-border text-kiban-primary hover:bg-kiban-primary-soft/60"
+					class="px-3 py-1.5 cursor-pointer border-t border-kiban-border text-kiban-primary hover:bg-kiban-primary-soft"
 					hidden
 				>
 					Crear: <span data-kiban-multiselect-create-text></span>
@@ -123,7 +123,7 @@ templ multiSelectChip(name, value, label string) {
 	<span
 		data-kiban-multiselect-chip
 		data-value={ value }
-		class="inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft/50 text-kiban-primary px-2 py-0.5 text-xs"
+		class="inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft text-kiban-primary px-2 py-0.5 text-xs"
 	>
 		<span data-kiban-multiselect-chip-label>{ label }</span>
 		<button

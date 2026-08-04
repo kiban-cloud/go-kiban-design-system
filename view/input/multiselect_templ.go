@@ -204,7 +204,7 @@ func MultiSelect(opts MultiSelectOptions) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"px-3 py-1.5 cursor-pointer hover:bg-kiban-primary-soft/60 hover:text-kiban-primary\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"px-3 py-1.5 cursor-pointer hover:bg-kiban-primary-soft hover:text-kiban-primary\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -233,7 +233,7 @@ func MultiSelect(opts MultiSelectOptions) templ.Component {
 			}
 		}
 		if opts.AllowCreate {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<li data-kiban-multiselect-create class=\"px-3 py-1.5 cursor-pointer border-t border-kiban-border text-kiban-primary hover:bg-kiban-primary-soft/60\" hidden>Crear: <span data-kiban-multiselect-create-text></span></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<li data-kiban-multiselect-create class=\"px-3 py-1.5 cursor-pointer border-t border-kiban-border text-kiban-primary hover:bg-kiban-primary-soft\" hidden>Crear: <span data-kiban-multiselect-create-text></span></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -326,7 +326,7 @@ func multiSelectChip(name, value, label string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft/50 text-kiban-primary px-2 py-0.5 text-xs\"><span data-kiban-multiselect-chip-label>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft text-kiban-primary px-2 py-0.5 text-xs\"><span data-kiban-multiselect-chip-label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

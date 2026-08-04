@@ -778,10 +778,10 @@ templ Base(cfg Config) {
 							var vis = visibleOptions();
 							activeIndex = Math.max(-1, Math.min(i, vis.length - 1));
 							options.forEach(function (o) {
-								o.classList.remove('bg-kiban-primary-soft/60', 'text-kiban-primary');
+								o.classList.remove('bg-kiban-primary-soft', 'text-kiban-primary');
 							});
 							if (activeIndex >= 0 && vis[activeIndex]) {
-								vis[activeIndex].classList.add('bg-kiban-primary-soft/60', 'text-kiban-primary');
+								vis[activeIndex].classList.add('bg-kiban-primary-soft', 'text-kiban-primary');
 							}
 						}
 						function open() { list.hidden = false; }
@@ -930,7 +930,7 @@ templ Base(cfg Config) {
 							var chip = document.createElement('span');
 							chip.setAttribute('data-kiban-multiselect-chip', '');
 							chip.setAttribute('data-value', value);
-							chip.className = 'inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft/50 text-kiban-primary px-2 py-0.5 text-xs';
+							chip.className = 'inline-flex items-center gap-1 rounded-full border border-kiban-primary/40 bg-kiban-primary-soft text-kiban-primary px-2 py-0.5 text-xs';
 							var lbl = document.createElement('span');
 							lbl.setAttribute('data-kiban-multiselect-chip-label', '');
 							lbl.textContent = label;
@@ -977,10 +977,10 @@ templ Base(cfg Config) {
 							var vis = visibleOptions();
 							activeIndex = Math.max(-1, Math.min(i, vis.length - 1));
 							options.forEach(function (o) {
-								o.classList.remove('bg-kiban-primary-soft/60', 'text-kiban-primary');
+								o.classList.remove('bg-kiban-primary-soft', 'text-kiban-primary');
 							});
 							if (activeIndex >= 0 && vis[activeIndex]) {
-								vis[activeIndex].classList.add('bg-kiban-primary-soft/60', 'text-kiban-primary');
+								vis[activeIndex].classList.add('bg-kiban-primary-soft', 'text-kiban-primary');
 							}
 						}
 						function open() { list.hidden = false; }
