@@ -910,9 +910,16 @@ templ Base(cfg Config) {
 						var createRow = list.querySelector('[data-kiban-multiselect-create]');
 						var createText = createRow ? createRow.querySelector('[data-kiban-multiselect-create-text]') : null;
 						var emptyRow = list.querySelector('[data-kiban-multiselect-empty]');
-						var options = Array.prototype.slice.call(
-							list.querySelectorAll('[data-kiban-multiselect-option]')
-						);
+						// Se consultan en cada uso en vez de cachearse: el consumidor
+						// puede reemplazar los <li> cuando cambia el origen de las
+						// opciones (el "Mostrar si" del editor de campos las toma del
+						// campo controlador elegido). Con un snapshot, las opciones
+						// nuevas quedaban invisibles para el filtro y el teclado.
+						function options() {
+							return Array.prototype.slice.call(
+								list.querySelectorAll('[data-kiban-multiselect-option]')
+							);
+						}
 						var activeIndex = -1;
 
 						function selectedValues() {
@@ -921,8 +928,9 @@ templ Base(cfg Config) {
 								.map(function (c) { return c.getAttribute('data-value') || ''; });
 						}
 						function optionFor(value) {
-							for (var i = 0; i < options.length; i++) {
-								if ((options[i].getAttribute('data-value') || '') === value) return options[i];
+							var opts = options();
+							for (var i = 0; i < opts.length; i++) {
+								if ((opts[i].getAttribute('data-value') || '') === value) return opts[i];
 							}
 							return null;
 						}
@@ -971,12 +979,12 @@ templ Base(cfg Config) {
 						}
 
 						function visibleOptions() {
-							return options.filter(function (o) { return !o.hidden; });
+							return options().filter(function (o) { return !o.hidden; });
 						}
 						function setActive(i) {
 							var vis = visibleOptions();
 							activeIndex = Math.max(-1, Math.min(i, vis.length - 1));
-							options.forEach(function (o) {
+							options().forEach(function (o) {
 								o.classList.remove('bg-kiban-primary-soft', 'text-kiban-primary');
 							});
 							if (activeIndex >= 0 && vis[activeIndex]) {
@@ -990,7 +998,7 @@ templ Base(cfg Config) {
 							var selected = selectedValues();
 							var anyVisible = false;
 							var exactMatch = false;
-							options.forEach(function (opt) {
+							options().forEach(function (opt) {
 								var val = opt.getAttribute('data-value') || '';
 								var lbl = (opt.getAttribute('data-label') || opt.textContent || '').trim();
 								var isSelected = selected.indexOf(val) !== -1;
@@ -1064,11 +1072,13 @@ templ Base(cfg Config) {
 								if (chips.length) removeChip(chips[chips.length - 1]);
 							}
 						});
-						options.forEach(function (opt) {
-							opt.addEventListener('mousedown', function (e) {
-								e.preventDefault();
-								addValue(opt.getAttribute('data-value') || '', opt.getAttribute('data-label') || '');
-							});
+						// Delegado en la lista, no por opción: así también funcionan
+						// las opciones que el consumidor inyecta después del wiring.
+						list.addEventListener('mousedown', function (e) {
+							var opt = e.target.closest && e.target.closest('[data-kiban-multiselect-option]');
+							if (!opt || !list.contains(opt)) return;
+							e.preventDefault();
+							addValue(opt.getAttribute('data-value') || '', opt.getAttribute('data-label') || '');
 						});
 						if (createRow) {
 							createRow.addEventListener('mousedown', function (e) {
