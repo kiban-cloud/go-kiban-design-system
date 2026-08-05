@@ -1,0 +1,63 @@
+package button
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
+
+// Split renders a split button: a primary action plus a caret that opens
+// variants of that same action ("Save" / "Save and close" / "Save and
+// new"). Use it when one action has several sensible landing points —
+// not as a generic command menu, which is what menu.Menu is for.
+//
+// The items submit the form natively via name/value, so the server tells
+// the variants apart by reading the posted field; no JS beyond the
+// dropdown toggle. That toggle is the SAME shared handler the kebab menu
+// uses (window.kibanToggleMenu / kibanCloseMenu in view/layout/base.templ),
+// keyed by cfg.ID — including outside-click, Escape, single-active, and
+// the fixed re-anchoring that escapes clipping scroll containers.
+//
+// With no items it degrades to a plain Button, so callers can gate the
+// variants on permissions without branching at the call site.
+templ Split(cfg SplitOptions) {
+	if cfg.hasItems() {
+		<div class="relative inline-flex" data-kiban-menu={ cfg.ID }>
+			@Button(cfg.primaryOptions())
+			<button
+				type="button"
+				class={ cfg.triggerClass() }
+				aria-label={ cfg.triggerAriaLabel() }
+				{ splitTriggerAttrs(cfg.ID)... }
+			>
+				<span class="inline-flex items-center justify-center w-4 h-4 shrink-0">
+					@icons.ChevronDown()
+				</span>
+			</button>
+			<div
+				id={ cfg.ID + "-panel" }
+				role="menu"
+				aria-labelledby={ cfg.ID + "-trigger" }
+				class="hidden absolute right-0 top-full mt-1 z-30 min-w-[200px] bg-white border border-kiban-border rounded-md shadow-md py-1"
+			>
+				for _, it := range cfg.Items {
+					@splitItemRender(cfg.ID, it)
+				}
+			</div>
+		</div>
+	} else {
+		@Button(cfg.Primary)
+	}
+}
+
+templ splitItemRender(splitID string, item SplitItem) {
+	<button
+		type="submit"
+		role="menuitem"
+		class={ item.class() }
+		{ item.resolvedAttrs(splitID)... }
+	>
+		if item.Icon != nil {
+			<span class="inline-flex items-center justify-center w-4 h-4 shrink-0">
+				@item.Icon
+			</span>
+		}
+		<span>{ item.Label }</span>
+	</button>
+}
