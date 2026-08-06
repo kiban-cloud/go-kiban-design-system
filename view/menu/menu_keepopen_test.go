@@ -91,3 +91,17 @@ func TestMenuItem_KeepOpenIsPerItem(t *testing.T) {
 		t.Errorf("the sibling item must still auto-close: %s", body)
 	}
 }
+
+// La etiqueta lleva un marcador estable: un item que muta su propio texto
+// (el "copiado" de un copy-to-clipboard) no debería depender de que el
+// label sea el último span del botón.
+func TestMenuItem_LabelCarriesStableMarker(t *testing.T) {
+	body := renderMenu(t, menu.Config{
+		ID:    "row-menu",
+		Items: []menu.MenuItem{{Label: "Copiar ID"}},
+	})
+
+	if !strings.Contains(body, `<span data-kiban-menu-label>Copiar ID</span>`) {
+		t.Errorf("expected the label marker: %s", body)
+	}
+}
