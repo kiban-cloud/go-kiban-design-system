@@ -30,6 +30,16 @@ type MenuItem struct {
 	// Attrs is the escape hatch for HTMX, data-*, custom event
 	// handlers, etc. Same pattern as button.Options.Attrs.
 	Attrs templ.Attributes
+	// KeepOpen suppresses the automatic close-on-click. Use it for an
+	// item whose feedback lives INSIDE the panel — a "copy" row that
+	// flips to a check for a moment, say: with the default close the
+	// panel is gone before the user can see it.
+	//
+	// The item then owns the dismissal. Close it yourself
+	// (window.kibanCloseMenu('<id>')) once the feedback has been seen,
+	// or the panel stays until the user clicks elsewhere / hits Escape
+	// — both still work, they're global handlers.
+	KeepOpen bool
 }
 
 // Config drives the Menu component. ID is required and must be unique
@@ -48,8 +58,15 @@ func (it MenuItem) resolvedAttrs(menuID string) templ.Attributes {
 	for k, v := range it.Attrs {
 		out[k] = v
 	}
-	closeCall := "window.kibanCloseMenu('" + menuID + "')"
 	user := strings.TrimSpace(it.OnClick)
+	if it.KeepOpen {
+		// El item se encarga de cerrar cuando corresponda.
+		if user != "" {
+			out["onclick"] = user
+		}
+		return out
+	}
+	closeCall := "window.kibanCloseMenu('" + menuID + "')"
 	if user != "" {
 		out["onclick"] = user + ";" + closeCall
 	} else {
