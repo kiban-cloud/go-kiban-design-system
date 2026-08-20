@@ -15,6 +15,14 @@ import "strconv"
 //   - The outer `<div>` carries `border-b border-kiban-border`: a thin
 //     gray rule across the full strip width. This is the rail visible
 //     under inactive tabs.
+//   - The rail lives on the OUTER div and the scroll lives on an inner
+//     one, and they cannot be merged. A box with `overflow` clips its
+//     content to the PADDING box, which excludes its own border — so an
+//     active underline pulled down by `-mb-px` lands exactly on the
+//     clipped row and vanishes. The inner scroller gets `pb-px -mb-px`
+//     so that row belongs to its padding (never clipped) while
+//     overlapping the rail, which is what lets a 1-pixel underline paint
+//     ON TOP of the 1-pixel rail instead of being eaten by it.
 //   - The inner `<nav>` is `flex gap-3 -mb-px` for a tight (12px)
 //     interval between tabs. The negative margin-bottom pulls the row
 //     down by exactly the border width so the active tab's underline
@@ -43,8 +51,9 @@ import "strconv"
 // `hx-push-url="true"` so the URL bar follows partial swaps, and Href
 // stays as the no-JS fallback.
 templ Strip(items []TabItem, activeKey string) {
-	<div class="border-b border-kiban-border overflow-x-auto">
-		<nav class="flex gap-3 -mb-px" aria-label="Tabs">
+	<div class="border-b border-kiban-border">
+		<div class="overflow-x-auto pb-px -mb-px">
+			<nav class="flex gap-3 -mb-px" aria-label="Tabs">
 			for _, t := range items {
 				if t.Disabled {
 					<a
@@ -73,7 +82,8 @@ templ Strip(items []TabItem, activeKey string) {
 					</a>
 				}
 			}
-		</nav>
+			</nav>
+		</div>
 	</div>
 }
 

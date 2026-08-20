@@ -23,6 +23,14 @@ import "strconv"
 //   - The outer `<div>` carries `border-b border-kiban-border`: a thin
 //     gray rule across the full strip width. This is the rail visible
 //     under inactive tabs.
+//   - The rail lives on the OUTER div and the scroll lives on an inner
+//     one, and they cannot be merged. A box with `overflow` clips its
+//     content to the PADDING box, which excludes its own border — so an
+//     active underline pulled down by `-mb-px` lands exactly on the
+//     clipped row and vanishes. The inner scroller gets `pb-px -mb-px`
+//     so that row belongs to its padding (never clipped) while
+//     overlapping the rail, which is what lets a 1-pixel underline paint
+//     ON TOP of the 1-pixel rail instead of being eaten by it.
 //   - The inner `<nav>` is `flex gap-3 -mb-px` for a tight (12px)
 //     interval between tabs. The negative margin-bottom pulls the row
 //     down by exactly the border width so the active tab's underline
@@ -71,7 +79,7 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"border-b border-kiban-border overflow-x-auto\"><nav class=\"flex gap-3 -mb-px\" aria-label=\"Tabs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"border-b border-kiban-border\"><div class=\"overflow-x-auto pb-px -mb-px\"><nav class=\"flex gap-3 -mb-px\" aria-label=\"Tabs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -89,7 +97,7 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 					var templ_7745c5c3_Var2 string
 					templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 54, Col: 22}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 63, Col: 22}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 					if templ_7745c5c3_Err != nil {
@@ -128,7 +136,7 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 				var templ_7745c5c3_Var4 templ.SafeURL
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(t.Href))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 61, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 70, Col: 30}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -159,7 +167,7 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 68, Col: 22}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 77, Col: 22}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -188,7 +196,7 @@ func Strip(items []TabItem, activeKey string) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</nav></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</nav></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -262,7 +270,7 @@ func tabContent(t TabItem, active bool) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(t.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 96, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 106, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -301,7 +309,7 @@ func tabContent(t TabItem, active bool) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(t.Count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 106, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/strip.templ`, Line: 116, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

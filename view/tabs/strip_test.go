@@ -183,3 +183,19 @@ func TestStrip_NoActiveKeyHighlightsNothing(t *testing.T) {
 	assert.True(t, strings.Contains(body, "Apple"))
 	assert.True(t, strings.Contains(body, "Orange"))
 }
+
+// El riel gris y el scroll NO pueden vivir en la misma caja: un elemento con
+// overflow recorta su contenido al padding box, que excluye su propio borde, y
+// ahí es exactamente donde cae el subrayado del tab activo — con lo que
+// desaparece. El scroller se solapa con el riel por su padding para que el
+// subrayado de 1px se pinte encima del riel de 1px.
+func TestStrip_RailAndScrollerAreSeparateBoxes(t *testing.T) {
+	body := render(t, []tabs.TabItem{{Key: "a", Label: "Uno", Href: "/a"}}, "a")
+
+	assert.Contains(t, body, `<div class="border-b border-kiban-border">`,
+		"el riel va en una caja que no recorta")
+	assert.Contains(t, body, `<div class="overflow-x-auto pb-px -mb-px">`,
+		"el scroller aloja el subrayado en su padding y se solapa con el riel")
+	assert.NotContains(t, body, `border-b border-kiban-border overflow-x-auto`,
+		"juntarlos recorta el subrayado del tab activo")
+}
