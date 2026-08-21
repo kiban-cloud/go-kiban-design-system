@@ -1575,6 +1575,63 @@ templ Base(cfg Config) {
 					root.querySelectorAll('[data-kiban-flash-autodismiss-ms]').forEach(kibanArmFlashAutodismiss);
 				});
 
+				// Formularios "sólo guardar si cambió algo". Un form con
+				// [data-kiban-dirty-form] arranca con su submit
+				// deshabilitado y sólo se habilita cuando los valores
+				// actuales difieren de los que llegaron del servidor.
+				//
+				// El estado inicial lo pone el JS y no el servidor a
+				// propósito: si este script no corriera, el botón queda
+				// habilitado y el form se puede guardar igual. Al revés
+				// —render deshabilitado— un fallo de JS dejaría al
+				// usuario sin poder guardar nada.
+				//
+				// La comparación es contra una foto de los valores, no un
+				// flag de "tocó algo": volver un campo a su valor original
+				// tiene que volver a deshabilitar el botón, que es lo que
+				// alguien espera después de deshacer lo que escribió.
+				function kibanFormSnapshot(form) {
+					var parts = [];
+					form.querySelectorAll('input, select, textarea').forEach(function (el) {
+						if (!el.name || el.disabled) return;
+						if (el.type === 'checkbox' || el.type === 'radio') {
+							parts.push(el.name + '=' + (el.checked ? '1' : '0'));
+							return;
+						}
+						if (el.type === 'file') return;
+						parts.push(el.name + '=' + el.value);
+					});
+					return parts.join('&');
+				}
+				function kibanSyncDirtyForm(form) {
+					var buttons = form.querySelectorAll('[data-kiban-dirty-submit], button[type="submit"]');
+					if (!buttons.length) return;
+					var dirty = kibanFormSnapshot(form) !== (form.getAttribute('data-kiban-dirty-snapshot') || '');
+					buttons.forEach(function (btn) { btn.disabled = !dirty; });
+				}
+				function kibanArmDirtyForm(form) {
+					if (form.hasAttribute('data-kiban-dirty-armed')) return;
+					form.setAttribute('data-kiban-dirty-armed', '1');
+					form.setAttribute('data-kiban-dirty-snapshot', kibanFormSnapshot(form));
+					var sync = function () { kibanSyncDirtyForm(form); };
+					form.addEventListener('input', sync);
+					form.addEventListener('change', sync);
+					sync();
+				}
+				document.addEventListener('DOMContentLoaded', function () {
+					document.querySelectorAll('[data-kiban-dirty-form]').forEach(kibanArmDirtyForm);
+				});
+				// Tras un swap el form es OTRO nodo, con los valores ya
+				// guardados: hay que sacarle una foto nueva, si no el
+				// botón quedaría habilitado comparando contra la foto
+				// vieja.
+				document.addEventListener('htmx:afterSwap', function (e) {
+					var root = e.target || document;
+					if (!root.querySelectorAll) return;
+					if (root.matches && root.matches('[data-kiban-dirty-form]')) kibanArmDirtyForm(root);
+					root.querySelectorAll('[data-kiban-dirty-form]').forEach(kibanArmDirtyForm);
+				});
+
 				// tabs.Panel — CSS-only in-page tab switching. Each Panel
 				// instance carries [data-kiban-tabs-panel] +
 				// [data-kiban-tabs-active-key="<currentKey>"]; clicking a

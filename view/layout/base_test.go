@@ -156,3 +156,29 @@ func TestBase_CodeEditorHidesTextareaViaCSS(t *testing.T) {
 	// The flag the rule hangs off must actually be set once a widget mounts.
 	assert.Contains(t, body, `setAttribute('data-kiban-code-editor-ready', '1')`)
 }
+
+// El guard de "sólo guardar si cambió algo" vive en el shell, así que cada
+// módulo lo hereda marcando el form con data-kiban-dirty-form. Este test
+// protege las tres piezas: la foto de los valores, el re-armado tras un swap
+// de htmx, y que el estado inicial lo ponga el JS.
+func TestBase_DirtyFormGuard(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "data-kiban-dirty-form")
+	assert.Contains(t, body, "kibanFormSnapshot")
+	assert.Contains(t, body, "data-kiban-dirty-snapshot")
+	// Un form intercambiado por htmx es otro nodo y con los valores ya
+	// guardados: sin re-armarlo, el botón quedaría habilitado comparando
+	// contra la foto vieja.
+	assert.Contains(t, body, "kibanArmDirtyForm")
+	assert.True(t, strings.Contains(body, "htmx:afterSwap"))
+}
+
+// El botón se deshabilita por JS y no desde el servidor: si el script no
+// corriera, el form tiene que seguir siendo usable en vez de quedar bloqueado.
+func TestBase_DirtyFormEnablesByDefault(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "btn.disabled = !dirty")
+	assert.NotContains(t, body, `<button type="submit" disabled`)
+}

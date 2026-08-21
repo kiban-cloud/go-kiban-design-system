@@ -29,29 +29,86 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 // can still bring the banner back from server state if the
 // underlying flash cookie / form error is still set.
 templ Banner(variant, msg string) {
+	@Alert(Options{Variant: variant, Message: msg, Dismissible: true})
+}
+
+// Alert is the full contract behind Banner: same chrome, plus an action the
+// user can take from inside the banner and control over whether it can be
+// closed at all.
+//
+// Two things it does differently from Banner, both deliberate:
+//
+//   - Dismissible is OFF by default. A banner that explains why the screen
+//     can't do something is not a notification: letting the user close it
+//     hides the only explanation on the page, and nothing brings it back
+//     until the next render. Opt in for confirmations and transient notices,
+//     which is exactly what Banner (and the typed wrappers) do.
+//   - The action lives INSIDE the box. Putting it underneath reads as a
+//     separate paragraph and loses the connection to what the banner says.
+//     Href renders an <a>; Attrs alone renders a <button>, so an HTMX action
+//     (hx-post + hx-target) works without a link that goes nowhere.
+//
+// The auto-dismiss timer follows Dismissible: a banner that can't be closed
+// by hand shouldn't disappear on its own either.
+templ Alert(o Options) {
 	<div
 		data-kiban-flash
-		if autoDismissMs(variant) > 0 {
-			data-kiban-flash-autodismiss-ms={ autoDismissMsAttr(variant) }
+		if o.autoDismissMs() > 0 {
+			data-kiban-flash-autodismiss-ms={ o.autoDismissMsAttr() }
 		}
 		class={
-			"relative rounded-md border pl-4 pr-10 py-3 text-sm transition-opacity duration-200",
-			templ.KV("border-emerald-200 bg-emerald-50 text-emerald-700", variant == "success"),
-			templ.KV("border-red-200 bg-red-50 text-red-700", variant == "error"),
-			templ.KV("border-amber-200 bg-amber-50 text-amber-700", variant == "warning"),
-			templ.KV("border-kiban-primary/30 bg-kiban-primary-soft text-kiban-primary", variant == "info" || variant == ""),
+			"relative rounded-md border pl-4 py-3 text-sm transition-opacity duration-200",
+			templ.KV("pr-10", o.Dismissible),
+			templ.KV("pr-4", !o.Dismissible),
+			templ.KV("border-emerald-200 bg-emerald-50 text-emerald-700", o.Variant == "success"),
+			templ.KV("border-red-200 bg-red-50 text-red-700", o.Variant == "error"),
+			templ.KV("border-amber-200 bg-amber-50 text-amber-700", o.Variant == "warning"),
+			templ.KV("border-kiban-primary/30 bg-kiban-primary-soft text-kiban-primary", o.Variant == "info" || o.Variant == ""),
 		}
 	>
-		{ msg }
+		<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+			<span>{ o.Message }</span>
+			if o.hasAction() {
+				@alertAction(o)
+			}
+		</div>
+		if o.Dismissible {
+			<button
+				type="button"
+				data-kiban-flash-dismiss
+				class="absolute top-1/2 right-2 -translate-y-1/2 p-1 rounded-md text-current/70 hover:text-current hover:bg-black/5 transition-colors"
+				aria-label="Cerrar"
+			>
+				@icons.Close()
+			</button>
+		}
+	</div>
+}
+
+// alertAction hereda el color del banner con text-current: la acción es del
+// mismo mensaje, no un elemento aparte que compita por atención.
+templ alertAction(o Options) {
+	if o.ActionHref != "" {
+		<a
+			href={ templ.SafeURL(o.ActionHref) }
+			class="shrink-0 font-medium text-current underline underline-offset-2 hover:no-underline"
+			if NonEmptyAttrs(o.ActionAttrs) {
+				{ o.ActionAttrs... }
+			}
+		>
+			{ o.ActionLabel }
+		</a>
+	} else {
 		<button
 			type="button"
-			data-kiban-flash-dismiss
-			class="absolute top-1/2 right-2 -translate-y-1/2 p-1 rounded-md text-current/70 hover:text-current hover:bg-black/5 transition-colors"
-			aria-label="Cerrar"
+			class="shrink-0 font-medium text-current underline underline-offset-2 hover:no-underline"
+			if NonEmptyAttrs(o.ActionAttrs) {
+				{ o.ActionAttrs... }
+			}
 		>
-			@icons.Close()
+			{ o.ActionLabel }
 		</button>
-	</div>
+	}
 }
 
 // Success is the typed wrapper for confirmations after a successful

@@ -27,7 +27,11 @@
 //     compile time. They delegate to Banner.
 package flash
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/a-h/templ"
+)
 
 // Auto-dismiss timings per variant (in milliseconds). Success and
 // info are positive / neutral notices the user shouldn't have to
@@ -66,4 +70,47 @@ func autoDismissMs(variant string) int {
 // zero-timer variants.
 func autoDismissMsAttr(variant string) string {
 	return strconv.Itoa(autoDismissMs(variant))
+}
+
+// Options is the full contract for a banner. Banner and the typed wrappers
+// build one of these; call Alert directly when you need an action inside the
+// box or a banner that can't be closed.
+type Options struct {
+	Variant string
+	Message string
+
+	// Dismissible turns on the × and the auto-dismiss timer. It defaults to
+	// false because the banners that need this struct are the ones explaining
+	// why something can't happen: closing one hides the only explanation on
+	// the page, and nothing brings it back until the next render.
+	Dismissible bool
+
+	// ActionLabel + ActionHref render a link inside the banner. With Attrs but
+	// no Href it renders a <button> instead, so an HTMX action doesn't need a
+	// link that goes nowhere.
+	ActionLabel string
+	ActionHref  string
+	ActionAttrs templ.Attributes
+}
+
+func (o Options) hasAction() bool {
+	return o.ActionLabel != "" && (o.ActionHref != "" || len(o.ActionAttrs) > 0)
+}
+
+// autoDismissMs follows Dismissible: a banner the user can't close by hand
+// shouldn't vanish on its own either.
+func (o Options) autoDismissMs() int {
+	if !o.Dismissible {
+		return 0
+	}
+	return autoDismissMs(o.Variant)
+}
+
+func (o Options) autoDismissMsAttr() string {
+	return strconv.Itoa(o.autoDismissMs())
+}
+
+// NonEmptyAttrs reports whether attrs should be spread onto the element.
+func NonEmptyAttrs(attrs templ.Attributes) bool {
+	return len(attrs) > 0
 }
