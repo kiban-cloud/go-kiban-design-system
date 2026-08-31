@@ -87,6 +87,15 @@ func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 	assert.Contains(t, body, "htmx:afterRequest")
 	assert.Contains(t, body, "classList.add('kiban-busy')")
 	assert.Contains(t, body, "classList.remove('kiban-busy')")
+
+	// History cleanup: pagination/filter controls use hx-push-url, so htmx
+	// snapshots the page into its history cache — with .kiban-busy still on
+	// the swap target. Pressing Back restores that snapshot from cache with no
+	// request, so afterRequest never fires and the spinner stays frozen. Strip
+	// .kiban-busy before htmx serializes the snapshot (beforeHistorySave) and
+	// defensively after any restore (historyRestore).
+	assert.Contains(t, body, "htmx:beforeHistorySave")
+	assert.Contains(t, body, "htmx:historyRestore")
 }
 
 // Non-HTMX navigations (a form submit that posts then redirects, or a

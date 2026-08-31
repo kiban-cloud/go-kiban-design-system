@@ -1253,6 +1253,26 @@ templ Base(cfg Config) {
 						var region = regionFor(evt);
 						if (region) region.classList.remove('kiban-busy');
 					});
+
+					// Fix "paginar/filtrar + Back deja la lista cargando para
+					// siempre". El bloque de arriba pone .kiban-busy en el swap
+					// target en beforeRequest y lo quita en afterRequest. Pero los
+					// controles de paginación/filtros usan hx-push-url, así que htmx
+					// guarda un snapshot de la página en su history-cache — y captura
+					// ese snapshot con .kiban-busy AÚN puesto. Al presionar Back, htmx
+					// restaura ese snapshot desde caché sin pegarle al servidor: como
+					// no corre ningún request, el afterRequest que limpiaría la clase
+					// nunca dispara y la región queda con el spinner congelado.
+					// Limpiamos .kiban-busy antes de que htmx serialice el snapshot
+					// (beforeHistorySave) y, defensivamente, tras cualquier restore
+					// (historyRestore) por si ya había un snapshot viejo cacheado.
+					function clearBusyRegions() {
+						document.querySelectorAll('.kiban-busy').forEach(function (el) {
+							el.classList.remove('kiban-busy');
+						});
+					}
+					document.body.addEventListener('htmx:beforeHistorySave', clearBusyRegions);
+					document.body.addEventListener('htmx:historyRestore', clearBusyRegions);
 				})();
 
 				// Clear stale error/success feedback before every HTMX request
