@@ -2,9 +2,9 @@
 // of cookies the kiban shell sets at login:
 //
 //   - kiban_session : the JWT (same token the React shell keeps in
-//                     localStorage under "@kiban/user")
+//     localStorage under "@kiban/user")
 //   - kiban_space_id: the active space id (same value the React shell keeps
-//                     under "@kiban/spaceId")
+//     under "@kiban/spaceId")
 //
 // Validation is delegated to go-kiban's IAuthorizationAuthorizeWithSessionUseCase
 // — the same use case the header-based SessionAuth middleware already uses
@@ -22,13 +22,13 @@ import (
 	"os"
 	"strings"
 
-	controller_core_middleware "bitbucket.org/alexandregrin/go-kiban/controller_core/middleware"
-	controller_core_model "bitbucket.org/alexandregrin/go-kiban/controller_core/model"
-	domain_core_authorization_interface "bitbucket.org/alexandregrin/go-kiban/domain/authorization/interface"
-	infrastructure_core_env "bitbucket.org/alexandregrin/go-kiban/infrastructure_core/env"
-	utils_http "bitbucket.org/alexandregrin/go-kiban/utils/http"
 	"github.com/gin-gonic/gin"
 	"github.com/kiban-cloud/go-kiban-fullstack/logger"
+	controller_core_middleware "github.com/kiban-cloud/go-kiban/controller_core/middleware"
+	controller_core_model "github.com/kiban-cloud/go-kiban/controller_core/model"
+	domain_core_authorization_interface "github.com/kiban-cloud/go-kiban/domain/authorization/interface"
+	infrastructure_core_env "github.com/kiban-cloud/go-kiban/infrastructure_core/env"
+	utils_http "github.com/kiban-cloud/go-kiban/utils/http"
 )
 
 const (
