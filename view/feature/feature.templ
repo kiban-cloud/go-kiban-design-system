@@ -1,0 +1,65 @@
+package feature
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/badge"
+
+// Block renderiza sus hijos sólo si la bandera está prendida. En modo Comparar
+// los renderiza igual, envueltos en un marco punteado con la etiqueta de la
+// bandera, para que en una revisión se vea qué pertenece a qué fase. Apagada y
+// sin Comparar, no emite nada: ni el marco.
+//
+//	@feature.Block("cuotas") {
+//		<section>…</section>
+//	}
+templ Block(name string) {
+	if Comparing(ctx) {
+		@marco(name, false) {
+			{ children... }
+		}
+	} else if Enabled(ctx, name) {
+		{ children... }
+	}
+}
+
+// Replace es Block para lo que cambia en vez de agregarse: `before` es lo que
+// hay hoy, `after` lo que lo reemplaza cuando la bandera está prendida. En modo
+// Comparar muestra los dos, uno debajo del otro, el actual atenuado y marcado
+// «antes».
+//
+//	@feature.Replace("cuotas", tablaActual(view), tablaConCuotas(view))
+templ Replace(name string, before, after templ.Component) {
+	if Comparing(ctx) {
+		@marco(name, true) {
+			@before
+		}
+		@marco(name, false) {
+			@after
+		}
+	} else if Enabled(ctx, name) {
+		@after
+	} else {
+		@before
+	}
+}
+
+// marco es el resaltado del modo Comparar. `antes` atenúa el contenido y cambia
+// la etiqueta: es lo que se va, no lo que llega. El atributo data-feature deja
+// que el proto (o un test) encuentre los bloques de una bandera.
+templ marco(name string, antes bool) {
+	<div
+		data-feature={ name }
+		class={
+			"relative mt-4 rounded-md p-3 outline-dashed outline-2 outline-offset-2",
+			templ.KV("outline-kiban-primary", !antes),
+			templ.KV("outline-kiban-ink4 opacity-60", antes),
+		}
+	>
+		<span class="absolute -top-3 left-3">
+			if antes {
+				@badge.Variant("antes · "+Label(ctx, name), "neutral", "sm")
+			} else {
+				@badge.Variant(Label(ctx, name), "info", "sm")
+			}
+		</span>
+		{ children... }
+	</div>
+}

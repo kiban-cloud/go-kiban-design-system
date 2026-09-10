@@ -61,6 +61,7 @@ view/
   stepper/              horizontal multi-stage progress (numbered dots + connectors; statuses: complete/active/incomplete)
   timeline/             vertical event timeline (status-coloured dot + label + optional date)
   comment_input/        textarea + chip-style file uploader + submit, all in one composition (used by klin's delivery comments; designed to be reused by future comment flows)
+  feature/              Block(name) / Replace(name, before, after) — lo que depende de una funcionalidad todavía apagada (feature flag en producción, selector de fase + modo Comparar en kiban-proto); banderas en el contexto del request vía feature.With
   jsonviewer/           nested-accordion JSON viewer (object/array tree with per-node expand + master "Expandir todo"); native `<details>` for individual toggles, tiny JS only for the master button
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
@@ -515,6 +516,17 @@ Vertical tree of HTML node cards connected by SVG edges. Used by the workfloo ed
 | `canvas.Canvas(cfg)` | done | Outer wrapper + SVG edge overlay + flex column for children. Children are typically a mix of `Node` and `EdgeButton`. Empty-state slot renders when the caller passes no node children but did supply `EmptyMessage`. |
 | `canvas.Node(opts)` | done | One card: icon + title + optional subtitle + optional action menu + status pill (rendered only for non-ok statuses). Becomes an `<a>` when `Href` is set. |
 | `canvas.EdgeButton(opts)` | done | The "+" affordance rendered between two nodes (or before the first node). Caller wires HTMX in `Attrs`. |
+
+### Feature (`view/feature/`)
+
+Marca en un templ lo que depende de una funcionalidad que todavía no está (o no siempre está) prendida. La vista no decide: lee las banderas del contexto del request, que llena quien renderiza. En producción, un middleware del módulo desde su configuración (feature flag: se despliega apagado, se prende sin tocar el templ). En kiban-proto, el selector de fase de la topbar, con el modo «Comparar» que muestra todo y resalta cada bloque con su etiqueta («Fase 2»). Las banderas se nombran por funcionalidad (`cuotas`), nunca por fase.
+
+| Componente | Estado | Notas |
+|---|---|---|
+| `feature.With(ctx, Flags{Enabled, Compare, Labels})` | done | Deja las banderas en el contexto. Va en el contexto del **request** (`c.Request = c.Request.WithContext(…)`), porque `view.Render` renderiza con `c.Request.Context()`. Sin banderas todo está apagado. |
+| `feature.Enabled(ctx, name)` / `Comparing(ctx)` / `Label(ctx, name)` | done | Lectura. `Enabled` sirve para un `if` en el templ cuando Block/Replace no alcanzan. `Label` cae al nombre de la bandera. |
+| `feature.Block(name) { children }` | done | Hijos sólo si la bandera está prendida; en Comparar siempre, dentro de un marco punteado con `badge.Variant(label, "info")` y `data-feature="<name>"`. Apagada y sin Comparar no emite nada. Prendida no deja rastro en el HTML. |
+| `feature.Replace(name, before, after)` | done | Para lo que cambia en vez de agregarse. Prendida `after`, apagada `before`; en Comparar los dos, `before` primero, atenuado (`opacity-60`) y etiquetado «antes · label». |
 
 ### Form binding (`binding/`)
 
