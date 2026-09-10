@@ -26,6 +26,9 @@ templ Topbar(cfg Config) {
 		if cfg.SandboxToggle != nil {
 			@sandboxSwitch(*cfg.SandboxToggle)
 		}
+		if cfg.TopbarExtra != nil {
+			@cfg.TopbarExtra
+		}
 		if cfg.DevelopersURL != "" {
 			<a href={ templ.URL(cfg.DevelopersURL) } class="hidden md:inline-block bg-kiban-primary text-white font-medium text-sm px-4 py-2 rounded-md hover:opacity-90">
 				Developers

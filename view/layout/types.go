@@ -69,17 +69,17 @@ type User struct {
 // out to the kiban shell; External=false → links to a route inside the
 // hosted project (the project's own self-tool).
 type Tool struct {
-	Key      string             // matches Config.ToolKey to highlight the active tool
+	Key      string // matches Config.ToolKey to highlight the active tool
 	Icon     func() templ.Component
 	Href     string
 	External bool
-	Label    string             // tooltip text
+	Label    string // tooltip text
 }
 
 // SubItem is one entry in the sub-nav (sidebar level 2) — items live inside
 // the currently-hosted project's tool.
 type SubItem struct {
-	Key   string                // matches Config.ActiveKey to highlight the active item
+	Key   string // matches Config.ActiveKey to highlight the active item
 	Label string
 	Href  string
 }
@@ -202,6 +202,13 @@ type Config struct {
 	// don't have a sandbox dimension.
 	SandboxToggle *SandboxToggle
 
+	// TopbarExtra, when non-nil, is rendered in the topbar between the
+	// sandbox toggle and the Developers button. The DS only places it: the
+	// hosting project owns the markup and its routes (kiban-proto puts its
+	// phase selector here). Nil = nothing rendered, so tools that don't
+	// need it pay nothing.
+	TopbarExtra templ.Component
+
 	// Optional CDN-pinned client libraries. Each flag emits the matching
 	// <script> / <link> in base.templ's <head>. Consumers opt in per page
 	// (or per layout helper) so projects that don't need a library don't
@@ -319,4 +326,3 @@ func adminUserMenuLabel(u User) string {
 	}
 	return u.Email
 }
-
