@@ -1,0 +1,33 @@
+#!/bin/sh
+# Hook pre-commit: regenera los *_templ.go de los .templ que entran en este
+# commit y los agrega al índice, así el .templ y su generado viajan juntos y
+# nadie tiene que acordarse de correr `go tool templ generate`.
+#
+# Instalación, una vez por clon: git config core.hooksPath .githooks
+# (Claude lo hace al empezar a trabajar en el repo; regla en
+# go-kiban-fullstack/CLAUDE.md, "Hooks de git".)
+#
+# Saltarlo: git commit --no-verify. El CI igual falla si un *_templ.go
+# commiteado no coincide con su .templ.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.templ')
+deleted=$(git diff --cached --name-only --diff-filter=D -- '*.templ')
+[ -n "$staged$deleted" ] || exit 0
+
+if ! command -v go >/dev/null 2>&1; then
+	echo "pre-commit: no encuentro 'go' en el PATH; no puedo regenerar los *_templ.go" >&2
+	exit 1
+fi
+
+go tool templ generate -log-level error
+
+for f in $staged; do
+	git add -- "${f%.templ}_templ.go"
+done
+for f in $deleted; do
+	g="${f%.templ}_templ.go"
+	rm -f -- "$g"
+	git rm -q --cached --ignore-unmatch -- "$g"
+done

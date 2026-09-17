@@ -1,0 +1,52 @@
+# Guardarraíl: los *_templ.go commiteados tienen que ser exactamente lo que
+# `go tool templ generate` produce a partir de sus .templ. Si alguien commitea
+# un .templ sin regenerar, o regenera con otra versión de templ, este job falla.
+# En local lo evita .githooks/pre-commit (git config core.hooksPath .githooks).
+#
+# Hace falta porque los consumidores (kiban-proto vendoriza estas vistas) reciben
+# el módulo tal como está en git: un *_templ.go viejo o ausente es una vista rota.
+name: templ
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: templ-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  templ-al-dia:
+    name: "*_templ.go al día con sus .templ"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Mismo acceso que gha-workflows/go-ci.yml: `go tool` resuelve el grafo de
+      # módulos entero y go-kiban es privado.
+      - name: Acceso a módulos privados de la org
+        env:
+          TOKEN: ${{ secrets.GO_MODULES_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${TOKEN}@github.com/kiban-cloud/".insteadOf "https://github.com/kiban-cloud/"
+          echo "GOPRIVATE=github.com/kiban-cloud/*" >> "$GITHUB_ENV"
+          echo "GOFLAGS=-mod=mod" >> "$GITHUB_ENV"
+
+      - name: go tool templ generate
+        run: go tool templ generate -log-level error
+
+      - name: Ningún *_templ.go cambió
+        run: |
+          if [ -n "$(git status --porcelain -- '*_templ.go')" ]; then
+            echo "::error::Hay *_templ.go desactualizados. Corré 'go tool templ generate' y commiteá lo que cambie. Para que no vuelva a pasar: git config core.hooksPath .githooks"
+            git status --porcelain -- '*_templ.go'
+            git diff -- '*_templ.go' | head -80
+            exit 1
+          fi
+          echo "todos los *_templ.go coinciden con sus .templ"
