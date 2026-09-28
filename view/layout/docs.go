@@ -44,6 +44,17 @@ const (
 // doesn't have to repeat the string.
 const DevelopersToolKey = "developers"
 
+// DefaultDevelopersHref is where the developers section is served. Like
+// DefaultLogoHref and DefaultNotificationsBaseURL it is a global,
+// host-relative kiban path: one backend (kiban-cloud) serves it and every
+// shell on the origin links to it, so no project has to know the route.
+//
+// It is NOT the default of DocsOptions.DevelopersHref — an empty href has to
+// keep meaning "leave the entry out", which is what a deploy needs while the
+// section is not serving yet. A shell that wants the entry passes this
+// constant.
+const DefaultDevelopersHref = "/kiban-cloud/developers"
+
 // DocsOptions carries the parts of the bottom menu that are not the same
 // everywhere.
 type DocsOptions struct {
