@@ -260,7 +260,11 @@ func topbarUserMenuLabel(u User) string {
 }
 
 templ IconRail(cfg Config) {
-	<nav class="w-56 shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
+	<!-- h-full: el slot que envuelve al rail es display:block, así que sin
+	     esto el <nav> queda en altura automática y el flex-1 de abajo no
+	     tiene nada que repartir — el grupo inferior terminaba pegado a los
+	     tools en vez de al pie del rail. -->
+	<nav class="w-56 h-full shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
 		for _, t := range cfg.Tools {
 			@toolIcon(cfg, t)
 		}

@@ -111,6 +111,20 @@ func TestIconRail_SecondaryEntriesAreQuieterAndOnlyNewTabOnesOpenOut(t *testing.
 	assert.NotContains(t, developers, `target="_blank"`)
 }
 
+// The rail's slot is display:block, so without h-full the <nav> takes its
+// content height and the flex-1 spacer has nothing to distribute — the
+// bottom group then sits against the tools instead of at the foot of the
+// rail, which is the whole point of the group.
+func TestIconRail_StretchesSoTheBottomGroupReachesTheBottom(t *testing.T) {
+	html := renderIconRail(t, layout.Config{
+		Tools: []layout.Tool{{Key: "home", Icon: icons.Home, Href: "/", Label: "Home"}},
+		Docs:  layout.DocsMenu(context.Background(), layout.DocsOptions{}),
+	})
+
+	assert.Contains(t, html, "h-full")
+	assert.Contains(t, html, `<div class="flex-1"></div>`)
+}
+
 func renderIconRail(t *testing.T, cfg layout.Config) string {
 	t.Helper()
 	var buf bytes.Buffer
