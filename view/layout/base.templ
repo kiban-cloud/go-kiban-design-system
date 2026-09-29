@@ -197,6 +197,43 @@ templ Base(cfg Config) {
 				   [data-sidebar-mobile-open] on the layout root. Everything
 				   here is scoped to max-width:767px so the desktop shell is
 				   completely untouched. */
+				/* Shell anclada (>= md). El grupo rail + sub-nav es un hijo
+				   flex en flujo normal, así que subía con el scroll del
+				   documento y los menús desaparecían al bajar. Se ancla con
+				   position:sticky bajo el topbar (h-14 = 3.5rem), que a
+				   diferencia de fixed conserva el elemento en el flujo: el
+				   ancho del rail se sigue repartiendo y el contenido no
+				   necesita compensación lateral.
+
+				   align-self es lo que hace que funcione: por el stretch por
+				   defecto del flex el grupo mide lo mismo que toda el área
+				   scrolleable, y un sticky tan alto como su contenedor no
+				   tiene recorrido donde pegarse. Con flex-start + altura
+				   explícita sí lo tiene.
+
+				   Cada rail scrollea por su cuenta: el de herramientas lleva
+				   un grupo al pie (Knowledge Center, Documentación API,
+				   Desarrolladores, Consultoría) que en pantallas bajas no
+				   entra, y sin esto quedaría cortado sin forma de alcanzarlo.
+
+				   Todo va en su propia media query de min-width para que no
+				   compita con el bloque del drawer móvil de abajo, que pone
+				   position:fixed sobre el mismo selector. */
+				@media (min-width: 768px) {
+					.sidebar-nav-group {
+						position: sticky;
+						top: 3.5rem;
+						align-self: flex-start;
+						height: calc(100vh - 3.5rem);
+						height: calc(100dvh - 3.5rem);
+					}
+					.sidebar-nav-group > .sidebar-rail-slot,
+					.sidebar-nav-group > [data-sidebar-subnav] {
+						height: 100%;
+						overflow-y: auto;
+					}
+				}
+
 				.sidebar-backdrop { display: none; }
 				@media (max-width: 767px) {
 					.sidebar-nav-group {
