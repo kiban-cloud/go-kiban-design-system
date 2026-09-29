@@ -1,0 +1,8 @@
+# Etiquetas del menú inferior del rail (DocsMenu). Viven acá y no en el
+# bundle de cada backend porque la lista es la misma en los seis shells:
+# antes estaba copiada seis veces, con tres esquemas de clave distintos y
+# dos repos con el literal en español sin traducir.
+"nav.docs.knowledge" = "Knowledge Center"
+"nav.docs.api" = "Documentación API"
+"nav.docs.developers" = "Desarrolladores"
+"nav.docs.consultancy" = "Consultoría"

@@ -68,12 +68,31 @@ type User struct {
 // Tool is one entry in the icon rail (sidebar level 1). External=true → links
 // out to the kiban shell; External=false → links to a route inside the
 // hosted project (the project's own self-tool).
+//
+// NewTab and Secondary are independent of External, and deliberately so.
+// Every rail tool is External (the sibling backends live on the same origin
+// behind the ingress) yet none of them opens a new tab: External says "another
+// backend serves this", not "leave the app". The two flags below say how the
+// entry is presented.
 type Tool struct {
 	Key      string // matches Config.ToolKey to highlight the active tool
 	Icon     func() templ.Component
 	Href     string
 	External bool
 	Label    string // tooltip text
+	// NewTab opens the entry in a new tab (target=_blank + rel=noopener).
+	// True for reference material that takes the user off the product
+	// (docs.kiban.com, the booking calendar); false for anything that is a
+	// section of kiban itself, which must keep the user in the same tab so
+	// the shell's active state and back button still mean something.
+	NewTab bool
+	// Secondary renders the entry at the quieter weight used by the bottom
+	// of the rail: 13px and ink3 instead of the 14px/ink the tools get, with
+	// a 16px glyph. The tools are what gets used daily and the bottom group
+	// is reference, so the contrast comes from toning the accessory group
+	// down rather than inflating the primary one — the 14px base is the
+	// platform-wide font size set in base.templ.
+	Secondary bool
 }
 
 // SubItem is one entry in the sub-nav (sidebar level 2) — items live inside
@@ -182,19 +201,13 @@ type Config struct {
 	// filtering before building the slice; the DS itself just
 	// renders.
 	UserMenuItems []UserMenuItem
-	// DevelopersURL is the topbar "Developers" link target. The button is
-	// opt-in: leave this empty to hide it entirely. Set it (typically to an
-	// in-project route or to the kiban shell's developers hub) to render the
-	// button pointing there.
-	DevelopersURL string
-
 	// Active state
 	ToolKey   string // matches one of Tools[i].Key — highlights the active tool icon
 	ActiveKey string // matches one of SubItems[i].Key — highlights the active sub-nav item
 
 	// Nav data
 	Tools    []Tool // top of the icon rail — kiban tools
-	Docs     []Tool // bottom of the icon rail — docs links
+	Docs     []Tool // bottom of the icon rail — see DocsMenu
 	SubItems []SubItem
 
 	// SandboxToggle, when non-nil, renders a switch in the topbar (next to

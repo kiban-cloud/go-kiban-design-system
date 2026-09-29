@@ -1,0 +1,6 @@
+# Bottom-of-rail menu labels (DocsMenu). See locales/es.toml for why they
+# live in the design system rather than in each backend's bundle.
+"nav.docs.knowledge" = "Knowledge Center"
+"nav.docs.api" = "API Documentation"
+"nav.docs.developers" = "Developers"
+"nav.docs.consultancy" = "Consulting"

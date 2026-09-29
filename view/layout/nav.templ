@@ -29,11 +29,6 @@ templ Topbar(cfg Config) {
 		if cfg.TopbarExtra != nil {
 			@cfg.TopbarExtra
 		}
-		if cfg.DevelopersURL != "" {
-			<a href={ templ.URL(cfg.DevelopersURL) } class="hidden md:inline-block bg-kiban-primary text-white font-medium text-sm px-4 py-2 rounded-md hover:opacity-90">
-				Developers
-			</a>
-		}
 		@notificationsBell(cfg)
 		<div class="hidden md:block h-8 w-px bg-kiban-border"></div>
 		@topbarUserMenu(cfg)
@@ -265,37 +260,50 @@ func topbarUserMenuLabel(u User) string {
 }
 
 templ IconRail(cfg Config) {
-	<nav class="w-56 shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
+	<!-- h-full: el slot que envuelve al rail es display:block, así que sin
+	     esto el <nav> queda en altura automática y el flex-1 de abajo no
+	     tiene nada que repartir — el grupo inferior terminaba pegado a los
+	     tools en vez de al pie del rail. -->
+	<nav class="w-56 h-full shrink-0 bg-white border-r border-kiban-border flex flex-col py-3 px-2 gap-1">
 		for _, t := range cfg.Tools {
-			@toolIcon(cfg, t, false)
+			@toolIcon(cfg, t)
 		}
 		<div class="flex-1"></div>
 		for _, t := range cfg.Docs {
-			@toolIcon(cfg, t, true)
+			@toolIcon(cfg, t)
 		}
 	</nav>
 }
 
-// toolIcon renders one rail entry. newTab is true only for the Docs links
-// at the bottom of the rail (knowledge center, API documentation) — those
-// are reference material that opens in a separate tab. Tool links navigate
-// in the current tab, even when External=true points at the kiban shell.
-templ toolIcon(cfg Config, t Tool, newTab bool) {
+// toolIcon renders one rail entry. How it is presented comes from the Tool
+// itself — NewTab for the reference links that take the user off the
+// product, Secondary for the quieter weight of the bottom group. See the
+// Tool doc in types.go for why neither can be derived from External.
+templ toolIcon(cfg Config, t Tool) {
 	<a
 		href={ templ.URL(t.Href) }
 		data-nav-loader
-		if newTab {
+		if t.NewTab {
 			target="_blank"
 			rel="noopener noreferrer"
 		}
 		aria-label={ t.Label }
 		class={
-			"flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm",
+			"flex items-center gap-3 px-3 rounded-md transition-colors",
+			templ.KV("py-2 text-sm", !t.Secondary),
+			templ.KV("py-1.5 text-[13px] leading-[18px]", t.Secondary),
 			templ.KV("bg-kiban-primary-soft text-kiban-primary font-medium", cfg.ToolKey == t.Key),
-			templ.KV("text-kiban-ink hover:bg-kiban-surface", cfg.ToolKey != t.Key),
+			templ.KV("text-kiban-ink hover:bg-kiban-surface", cfg.ToolKey != t.Key && !t.Secondary),
+			templ.KV("text-kiban-ink3 hover:bg-kiban-surface hover:text-kiban-ink", cfg.ToolKey != t.Key && t.Secondary),
 		}
 	>
-		<span class="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+		<span
+			class={
+				"flex-shrink-0 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full",
+				templ.KV("w-5 h-5", !t.Secondary),
+				templ.KV("w-4 h-4", t.Secondary),
+			}
+		>
 			@t.Icon()
 		</span>
 		<span class="truncate">{ t.Label }</span>
