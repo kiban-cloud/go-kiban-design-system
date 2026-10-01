@@ -1282,13 +1282,28 @@ templ Base(cfg Config) {
 						if (t === document.body || t === document.documentElement) return null;
 						return t;
 					}
+					// La zona se APUNTA al marcarla y se limpia esa misma, en vez
+					// de volver a leer evt.detail.target en afterRequest.
+					//
+					// Es la diferencia entre limpiar y no limpiar: si el servidor
+					// responde con HX-Retarget —lo que hace una validación que
+					// devuelve el formulario con sus errores— htmx ya cambió
+					// evt.detail.target para cuando llega afterRequest. Leyéndolo
+					// de nuevo se le quitaba la clase al destino NUEVO y la zona
+					// original se quedaba con el spinner girando para siempre.
+					var marcadas = new WeakMap();
 					document.body.addEventListener('htmx:beforeRequest', function (evt) {
 						var region = regionFor(evt);
-						if (region) region.classList.add('kiban-busy');
+						if (!region) return;
+						region.classList.add('kiban-busy');
+						var elt = evt.detail && evt.detail.elt;
+						if (elt) marcadas.set(elt, region);
 					});
 					document.body.addEventListener('htmx:afterRequest', function (evt) {
-						var region = regionFor(evt);
+						var elt = evt.detail && evt.detail.elt;
+						var region = (elt && marcadas.get(elt)) || regionFor(evt);
 						if (region) region.classList.remove('kiban-busy');
+						if (elt) marcadas.delete(elt);
 					});
 
 					// Fix "paginar/filtrar + Back deja la lista cargando para
@@ -1310,6 +1325,56 @@ templ Base(cfg Config) {
 					}
 					document.body.addEventListener('htmx:beforeHistorySave', clearBusyRegions);
 					document.body.addEventListener('htmx:historyRestore', clearBusyRegions);
+				})();
+
+				// Guardar deshabilitado mientras falte un campo obligatorio.
+				//
+				// Opt-in por formulario con data-kiban-submit-requiere-completo:
+				// no es automático sobre todo [required] porque un formulario con
+				// un campo obligatorio que aparece y desaparece dejaría el botón
+				// trabado sin que se vea por qué.
+				//
+				// El atributo required de los campos sigue haciendo su parte —el
+				// navegador no deja mandar el formulario— pero eso llega tarde:
+				// el usuario ya hizo clic en un botón que parecía disponible.
+				(function () {
+					function incompleto(form) {
+						var campos = form.querySelectorAll('[required]');
+						for (var i = 0; i < campos.length; i++) {
+							var c = campos[i];
+							if (c.disabled) continue;
+							if (c.type === 'checkbox' || c.type === 'radio') {
+								if (!form.querySelector('[name="' + c.name + '"]:checked')) return true;
+								continue;
+							}
+							if (!String(c.value || '').trim()) return true;
+						}
+						return false;
+					}
+					function sincroniza(form) {
+						if (!form || !form.hasAttribute('data-kiban-submit-requiere-completo')) return;
+						var falta = incompleto(form);
+						var botones = form.querySelectorAll('button[type=submit], input[type=submit]');
+						for (var i = 0; i < botones.length; i++) botones[i].disabled = falta;
+					}
+					function sincronizaTodos(raiz) {
+						var forms = (raiz || document).querySelectorAll('form[data-kiban-submit-requiere-completo]');
+						for (var i = 0; i < forms.length; i++) sincroniza(forms[i]);
+					}
+					['input', 'change'].forEach(function (ev) {
+						document.body.addEventListener(ev, function (evt) {
+							var form = evt.target && evt.target.form;
+							if (form) sincroniza(form);
+						});
+					});
+					// Al cargar y tras cada swap de htmx: el formulario puede llegar
+					// del servidor ya pintado, con o sin valores.
+					document.addEventListener('DOMContentLoaded', function () { sincronizaTodos(); });
+					document.body.addEventListener('htmx:afterSettle', function (evt) {
+						sincronizaTodos(evt && evt.detail && evt.detail.elt);
+						sincronizaTodos();
+					});
+					sincronizaTodos();
 				})();
 
 				// Clear stale error/success feedback before every HTMX request

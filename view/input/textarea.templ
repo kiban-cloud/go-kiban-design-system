@@ -25,6 +25,7 @@ templ Textarea(name, label, value, errMsg, hint string, required bool, rows int,
 		<textarea
 			id={ "f-" + name }
 			name={ name }
+			required?={ required }
 			rows={ rowsAttr(rows) }
 			placeholder={ placeholder }
 			class={

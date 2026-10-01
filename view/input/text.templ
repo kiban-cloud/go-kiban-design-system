@@ -22,6 +22,7 @@ templ Text(name, label, value, errMsg, hint string, required bool) {
 			type="text"
 			name={ name }
 			value={ value }
+			required?={ required }
 			class={
 				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
 				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
