@@ -50,6 +50,7 @@ view/
   file_chip_input/      File input paired with chips (DataTransfer add/remove, invalid-flag)
   badge/                Variant (generic) + Status (shared code lookup) + VariantForCode helper
   flash/                Banner (generic) + Success / Error / Warning / Info wrappers
+  accountblocked/       pantalla completa de cuenta de facturación suspendida/inactiva (Page + KindFor + bundle es/en propio); la sirve middleware/authcookie
   errormsg/             fragmentos de error HTMX (Banner/Validation/NotFound/Unauthorized/Forbidden) que respaldan el patrón htmxerror
   table/                Table (chrome) + Row (helper) + BulkActionBar (Tailwind group-has visibility) + Pagination + EmptyState
   drawer/               SidePanel (slide-in) + Modal (centered) + Confirm (preset). FooterActions reuse button.Group; open/close via window.kibanOpenOverlay / kibanCloseOverlay; Escape closes topmost visible.
@@ -66,7 +67,7 @@ view/
 
 binding/                form_binding.FieldErrors() — traduce validator errors → map[formField]mensaje en español
 middleware/
-  authcookie/           cookie auth (kiban_session + kiban_space_id), redirige a /login en caso de fallo, HX-Redirect para HTMX
+  authcookie/           cookie auth (kiban_session + kiban_space_id), redirige a /login en caso de fallo, HX-Redirect para HTMX; con la cuenta suspendida/inactiva corta con 403 y la pantalla de view/accountblocked (HX-Refresh para HTMX)
 htmx/                   helpers Go: IsRequest, Redirect, TriggerName
 htmxerror/              wiring del patrón de errores HTMX: Setup + Respond + WithFormFallback + sentinels canónicos (re-exporta go-kiban-fullstack para que el consumidor no lo importe directo)
 ```

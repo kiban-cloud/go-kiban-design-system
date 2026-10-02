@@ -1,0 +1,16 @@
+# Blocked-account screen (view/accountblocked). See locales/es.toml for why
+# the bundle lives in the design system.
+"account_blocked.suspended.page_title" = "Account suspended"
+"account_blocked.suspended.title" = "Your account is suspended"
+"account_blocked.suspended.body" = "We suspended the service because of an overdue balance. As soon as the outstanding balance on your invoices is paid, the kiban cloud tools become available again."
+"account_blocked.suspended.hint" = "If you don't manage billing, ask the person who does to make the payment."
+"account_blocked.suspended.primary" = "Go to billing"
+
+"account_blocked.inactive.page_title" = "Account inactive"
+"account_blocked.inactive.title" = "Your account is inactive"
+"account_blocked.inactive.body" = "This account was closed and no longer has access to the kiban cloud tools."
+"account_blocked.inactive.hint" = "If you think this is a mistake or want to reactivate it, write to us."
+"account_blocked.inactive.primary" = "Contact support"
+
+"account_blocked.spaces" = "See my spaces"
+"account_blocked.support" = "Questions? Write to us at"

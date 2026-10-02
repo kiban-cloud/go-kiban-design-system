@@ -1,0 +1,17 @@
+# Pantalla de cuenta cortada (view/accountblocked). La sirve el middleware
+# authcookie compartido, antes del middleware de idioma de algunos backends,
+# así que el bundle vive en el DS y no en cada herramienta.
+"account_blocked.suspended.page_title" = "Cuenta suspendida"
+"account_blocked.suspended.title" = "Tu cuenta está suspendida"
+"account_blocked.suspended.body" = "Suspendimos el servicio por un adeudo vencido. En cuanto se liquide el saldo pendiente de tus facturas, las herramientas de kiban cloud vuelven a estar disponibles."
+"account_blocked.suspended.hint" = "Si no administras la facturación, pide a la persona que la administra que realice el pago."
+"account_blocked.suspended.primary" = "Ir a facturación"
+
+"account_blocked.inactive.page_title" = "Cuenta inactiva"
+"account_blocked.inactive.title" = "Tu cuenta está inactiva"
+"account_blocked.inactive.body" = "Esta cuenta fue dada de baja y ya no tiene acceso a las herramientas de kiban cloud."
+"account_blocked.inactive.hint" = "Si crees que es un error o quieres reactivarla, escríbenos."
+"account_blocked.inactive.primary" = "Escribir a soporte"
+
+"account_blocked.spaces" = "Ver mis espacios"
+"account_blocked.support" = "¿Dudas? Escríbenos a"
