@@ -1,0 +1,54 @@
+package accountblocked
+
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
+	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
+	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
+	"github.com/kiban-cloud/go-kiban-design-system/view/logo"
+)
+
+// Page is the whole document for a blocked account. data-account-blocked
+// carries the kind so tests (and anyone reading the DOM) can tell the screen
+// apart from a regular error without matching copy.
+templ Page(kind Kind) {
+	@layout.Base(layout.Config{Title: t(ctx, key(kind, "page_title")), ProjectName: "kiban cloud"}) {
+		<main class="min-h-screen flex items-center justify-center bg-kiban-surface px-4 py-12" data-account-blocked={ string(kind) }>
+			<div class="w-full max-w-lg rounded-md border border-kiban-border bg-white p-8 md:p-10 text-center">
+				<div class="flex justify-center mb-8">
+					@logo.KibanCloud("h-7 w-auto")
+				</div>
+				<div class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+					@icons.CreditCard()
+				</div>
+				<h1 class="text-xl font-heading font-bold text-kiban-ink">{ t(ctx, key(kind, "title")) }</h1>
+				<p class="mt-3 text-sm text-kiban-ink2">{ t(ctx, key(kind, "body")) }</p>
+				<p class="mt-2 text-sm text-kiban-ink3">{ t(ctx, key(kind, "hint")) }</p>
+				<div class="mt-8 flex flex-col-reverse sm:flex-row gap-3 justify-center">
+					@button.Button(button.Options{
+						Label:   t(ctx, "account_blocked.spaces"),
+						Variant: "secondary",
+						Href:    SpacesHref,
+					})
+					@button.Button(button.Options{
+						Label:   t(ctx, key(kind, "primary")),
+						Variant: "primary",
+						Href:    primaryHref(kind),
+					})
+				</div>
+				if kind == Suspended {
+					<p class="mt-8 text-xs text-kiban-ink4">
+						{ t(ctx, "account_blocked.support") }
+						<a class="text-kiban-primary hover:underline" href={ templ.URL("mailto:" + SupportEmail) }>{ SupportEmail }</a>
+					</p>
+				}
+			</div>
+		</main>
+	}
+}
+
+func primaryHref(kind Kind) string {
+	if kind == Inactive {
+		return "mailto:" + SupportEmail
+	}
+	return BillingHref
+}

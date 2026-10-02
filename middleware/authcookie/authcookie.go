@@ -24,6 +24,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kiban-cloud/go-kiban-fullstack/logger"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view"
+	"github.com/kiban-cloud/go-kiban-design-system/view/accountblocked"
 	controller_core_middleware "github.com/kiban-cloud/go-kiban/controller_core/middleware"
 	controller_core_model "github.com/kiban-cloud/go-kiban/controller_core/model"
 	domain_core_authorization_interface "github.com/kiban-cloud/go-kiban/domain/authorization/interface"
@@ -92,6 +95,16 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 		authorization.Ip = utils_http.GetClientIpv4(c)
 		authorization = authorization.WithCorrelation(c.Request.Context())
 
+		// Cuenta de facturación suspendida o inactiva: bloqueo total de la
+		// herramienta, sandbox incluido. A diferencia del gate de API de
+		// go-kiban (AbortIfBillingAccountBlocked), acá sandbox no se exime:
+		// es la misma consola con un toggle, y dejarla abierta en sandbox
+		// sería mostrar la herramienta a medias a una cuenta cortada.
+		if kind, blocked := accountblocked.KindFor(authorization.BillingAccountStatus); blocked {
+			accountBlocked(c, kind)
+			return
+		}
+
 		c.Set(controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT, authorization)
 		c.Next()
 	}
@@ -119,6 +132,24 @@ func (m *Middleware) unauthorized(c *gin.Context) {
 	}
 	c.Redirect(http.StatusFound, m.loginURL)
 	c.Abort()
+}
+
+// accountBlocked answers a request from a cut account with the shared
+// full-page screen, always as 403 so monitors see it for what it is.
+//
+// An htmx request can't take the page as a swap — it would land inside
+// whatever region asked (a lazy box, a table) — so it gets HX-Refresh
+// instead: htmx reads that header before deciding whether to swap a 4xx, the
+// browser reloads, and the full-page request renders the screen.
+func accountBlocked(c *gin.Context, kind accountblocked.Kind) {
+	c.Abort()
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusForbidden)
+		return
+	}
+	c.Request = c.Request.WithContext(accountblocked.WithRequestLanguage(c))
+	view.Render(c, http.StatusForbidden, accountblocked.Page(kind))
 }
 
 // GetAuthorization is a thin re-export so htmx controllers don't have to
