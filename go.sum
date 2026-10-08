@@ -143,6 +143,8 @@ github.com/kiban-cloud/go-kiban v0.0.322 h1:UEI7hxV2iDoUmhbx2uCkOskvpdhfF1Cmu4Y0
 github.com/kiban-cloud/go-kiban v0.0.322/go.mod h1:0vlYPH+1rn+h1imIVzt7wOKcJwavp2n+nOwvp5gfe9U=
 github.com/kiban-cloud/go-kiban v0.0.324 h1:0AjuW/46jXWpyELObmDxi26EgO1Jea4TKCB37l0dEMQ=
 github.com/kiban-cloud/go-kiban v0.0.324/go.mod h1:0vlYPH+1rn+h1imIVzt7wOKcJwavp2n+nOwvp5gfe9U=
+github.com/kiban-cloud/go-kiban v0.0.325 h1:cedyCSqpt8az5gF0wG6+w9X2rcaY8eRo5wiSmw1/I1k=
+github.com/kiban-cloud/go-kiban v0.0.325/go.mod h1:0vlYPH+1rn+h1imIVzt7wOKcJwavp2n+nOwvp5gfe9U=
 github.com/kiban-cloud/go-kiban-fullstack v0.12.0 h1:di0QoKdDsCjOlGProD6e/5nQf11g+hAnx4btoQMshp0=
 github.com/kiban-cloud/go-kiban-fullstack v0.12.0/go.mod h1:cvdKgTjl/ajC0OO0tkh8292wWVY0LbFp5oLsGYxgujI=
 github.com/kiban-cloud/go-kiban-fullstack/logger v0.4.4 h1:Oe8K31/fL3kIGyirmxA1g83KhRjoIdO3RrVvoJqKlMg=
