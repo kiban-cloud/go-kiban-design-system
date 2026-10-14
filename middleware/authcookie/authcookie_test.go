@@ -19,7 +19,7 @@ type fakeAuthorize struct {
 	status string
 }
 
-func (f fakeAuthorize) AuthorizeWithSessionUseCase(_, spaceID, token string, sandbox bool) (domain_core_authorization_model.Authorization, error) {
+func (f fakeAuthorize) AuthorizeWithSessionUseCase(_, spaceID, token string, sandbox bool, _ string) (domain_core_authorization_model.Authorization, error) {
 	return domain_core_authorization_model.Authorization{
 		SpaceId:              spaceID,
 		Token:                token,

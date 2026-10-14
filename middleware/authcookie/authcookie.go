@@ -18,6 +18,7 @@
 package authcookie
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -27,9 +28,11 @@ import (
 
 	"github.com/kiban-cloud/go-kiban-design-system/view"
 	"github.com/kiban-cloud/go-kiban-design-system/view/accountblocked"
+	"github.com/kiban-cloud/go-kiban-design-system/view/ipblocked"
 	controller_core_middleware "github.com/kiban-cloud/go-kiban/controller_core/middleware"
 	controller_core_model "github.com/kiban-cloud/go-kiban/controller_core/model"
 	domain_core_authorization_interface "github.com/kiban-cloud/go-kiban/domain/authorization/interface"
+	domain_core_authorization_model "github.com/kiban-cloud/go-kiban/domain/authorization/model"
 	infrastructure_core_env "github.com/kiban-cloud/go-kiban/infrastructure_core/env"
 	utils_http "github.com/kiban-cloud/go-kiban/utils/http"
 )
@@ -87,12 +90,24 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		authorization, err := m.authorize.AuthorizeWithSessionUseCase(logger.TraceIDFromContext(c.Request.Context()), spaceID, token, false)
+		ip := utils_http.ClientIP(c.Request)
+		authorization, err := m.authorize.AuthorizeWithSessionUseCase(logger.TraceIDFromContext(c.Request.Context()), spaceID, token, false, ip)
+
+		// Acceso por IP, lista Consola: es el firewall, lo primero. Lo decide
+		// go-kiban con la misma regla que la API key; aquí solo se responde.
+		// La sesión se cachea pero la IP se evalúa en cada request. Cambiar de
+		// espacio y salir quedan fuera: son la salida de la pantalla de bloqueo.
+		if errors.Is(err, domain_core_authorization_model.ErrorIpNotAllowed) {
+			if !ipAccessExempt(c) {
+				ipBlocked(c, infrastructure_core_env.Get(infrastructure_core_env.TOOL), ip)
+				return
+			}
+			err = nil
+		}
 		if err != nil {
 			m.unauthorized(c)
 			return
 		}
-		authorization.Ip = utils_http.GetClientIpv4(c)
 		authorization = authorization.WithCorrelation(c.Request.Context())
 
 		// Cuenta de facturación suspendida o inactiva: bloqueo total de la
@@ -150,6 +165,27 @@ func accountBlocked(c *gin.Context, kind accountblocked.Kind) {
 	}
 	c.Request = c.Request.WithContext(accountblocked.WithRequestLanguage(c))
 	view.Render(c, http.StatusForbidden, accountblocked.Page(kind))
+}
+
+// ipAccessExempt are the routes the IP gate never blocks: switching space (the
+// user may be allowed in another one) and logging out.
+func ipAccessExempt(c *gin.Context) bool {
+	path := c.Request.URL.Path
+	return strings.HasSuffix(path, "/spaces/switch") || strings.HasSuffix(path, "/logout")
+}
+
+// ipBlocked answers a request from an IP the Console list doesn't allow, with
+// the shared full-page screen as 403 — same htmx handling as accountBlocked:
+// HX-Refresh so the browser reloads and the full page shows the screen.
+func ipBlocked(c *gin.Context, tool, ip string) {
+	c.Abort()
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusForbidden)
+		return
+	}
+	c.Request = c.Request.WithContext(ipblocked.WithRequestLanguage(c))
+	view.Render(c, http.StatusForbidden, ipblocked.Page(tool, ip))
 }
 
 // GetAuthorization is a thin re-export so htmx controllers don't have to

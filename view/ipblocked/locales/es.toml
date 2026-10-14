@@ -1,0 +1,15 @@
+# Pantalla de acceso no permitido por IP (view/ipblocked). La sirve el
+# middleware authcookie compartido, antes del middleware de idioma de algunos
+# backends, así que el bundle vive en el DS y no en cada herramienta.
+"ip_blocked.page_title" = "Acceso no permitido"
+"ip_blocked.title" = "Acceso no permitido desde esta IP"
+"ip_blocked.body_before_ip" = "Tu IP"
+"ip_blocked.body_after_ip" = "no está autorizada para usar {{.Tool}} en este espacio."
+"ip_blocked.hint" = "Pide a un administrador del espacio que la agregue en kiban cloud → Developers → Acceso por IP → Consola. Desde kiban cloud también puedes cambiar a otro espacio."
+"ip_blocked.spaces" = "Ir a kiban cloud"
+"ip_blocked.review" = "Revisar acceso por IP"
+"ip_blocked.tool.workfloo" = "workfloo"
+"ip_blocked.tool.link" = "link"
+"ip_blocked.tool.klin" = "klin"
+"ip_blocked.tool.rekon" = "rekon"
+"ip_blocked.tool.crm" = "clientes"
