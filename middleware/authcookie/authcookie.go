@@ -94,9 +94,10 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 		authorization, err := m.authorize.AuthorizeWithSessionUseCase(logger.TraceIDFromContext(c.Request.Context()), spaceID, token, false, ip)
 
 		// Acceso por IP, lista Consola: es el firewall, lo primero. Lo decide
-		// go-kiban con la misma regla que la API key; aquí solo se responde.
-		// La sesión se cachea pero la IP se evalúa en cada request. Cambiar de
-		// espacio y salir quedan fuera: son la salida de la pantalla de bloqueo.
+		// kiban-cloud al validar la sesión (con la IP del navegador y esta
+		// herramienta), con la misma regla que la API key; aquí solo se
+		// responde. Cambiar de espacio y salir quedan fuera: son la salida de
+		// la pantalla de bloqueo.
 		if errors.Is(err, domain_core_authorization_model.ErrorIpNotAllowed) {
 			if !ipAccessExempt(c) {
 				ipBlocked(c, infrastructure_core_env.Get(infrastructure_core_env.TOOL), ip)
