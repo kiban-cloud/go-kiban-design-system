@@ -13,5 +13,11 @@
 "account_blocked.inactive.hint" = "Si crees que es un error o quieres reactivarla, escríbenos."
 "account_blocked.inactive.primary" = "Escribir a soporte"
 
+"account_blocked.contract_expired.page_title" = "Contrato terminado"
+"account_blocked.contract_expired.title" = "Tu contrato anual terminó"
+"account_blocked.contract_expired.body" = "El periodo de tu plan anual concluyó, así que las herramientas de kiban cloud ya no están disponibles para esta cuenta."
+"account_blocked.contract_expired.hint" = "Para renovarlo, escríbenos y lo dejamos activo de nuevo."
+"account_blocked.contract_expired.primary" = "Escribir para renovar"
+
 "account_blocked.spaces" = "Ver mis espacios"
 "account_blocked.support" = "¿Dudas? Escríbenos a"

@@ -203,7 +203,7 @@ func Page(kind Kind) templ.Component {
 }
 
 func primaryHref(kind Kind) string {
-	if kind == Inactive {
+	if kind == Inactive || kind == ContractExpired {
 		return "mailto:" + SupportEmail
 	}
 	return BillingHref

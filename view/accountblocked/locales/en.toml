@@ -12,5 +12,11 @@
 "account_blocked.inactive.hint" = "If you think this is a mistake or want to reactivate it, write to us."
 "account_blocked.inactive.primary" = "Contact support"
 
+"account_blocked.contract_expired.page_title" = "Contract ended"
+"account_blocked.contract_expired.title" = "Your annual contract has ended"
+"account_blocked.contract_expired.body" = "Your annual plan period is over, so the kiban cloud tools are no longer available for this account."
+"account_blocked.contract_expired.hint" = "To renew it, write to us and we'll get it active again."
+"account_blocked.contract_expired.primary" = "Write to renew"
+
 "account_blocked.spaces" = "See my spaces"
 "account_blocked.support" = "Questions? Write to us at"

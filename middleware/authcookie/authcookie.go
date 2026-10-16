@@ -105,6 +105,13 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 			}
 			err = nil
 		}
+		// Contrato Plan2025Anual vencido: lo decide kiban-cloud al validar la
+		// sesión y llega como error. Misma pantalla que una cuenta cortada,
+		// no la redirección al login de una sesión inválida.
+		if kind, blocked := accountblocked.KindForError(err); blocked {
+			accountBlocked(c, kind)
+			return
+		}
 		if err != nil {
 			m.unauthorized(c)
 			return
