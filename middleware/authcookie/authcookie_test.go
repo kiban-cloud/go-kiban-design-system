@@ -17,9 +17,13 @@ import (
 
 type fakeAuthorize struct {
 	status string
+	err    error
 }
 
 func (f fakeAuthorize) AuthorizeWithSessionUseCase(_, spaceID, token string, sandbox bool, _ string) (domain_core_authorization_model.Authorization, error) {
+	if f.err != nil {
+		return domain_core_authorization_model.Authorization{}, f.err
+	}
 	return domain_core_authorization_model.Authorization{
 		SpaceId:              spaceID,
 		Token:                token,
@@ -118,4 +122,32 @@ func TestMiddleware_BlockedPageFallsBackToAcceptLanguage(t *testing.T) {
 	})
 
 	assert.Contains(t, res.rec.Body.String(), "Your account is suspended")
+}
+
+// El contrato Plan2025Anual vencido lo decide kiban-cloud y llega como error de
+// la sesión: la herramienta pinta la pantalla de cuenta cortada, no manda al
+// login como haría con una sesión inválida.
+func TestMiddleware_ContractExpiredGetsTheFullPage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	reached := false
+	engine := gin.New()
+	m := authcookie.New(fakeAuthorize{err: domain_core_authorization_model.ContractExpiredError()}, "/login")
+	engine.GET("/tool", m.Middleware(), func(c *gin.Context) {
+		reached = true
+		c.Status(http.StatusOK)
+	})
+	req := httptest.NewRequest(http.MethodGet, "/tool", nil)
+	req.AddCookie(&http.Cookie{Name: authcookie.CookieSession, Value: "jwt"})
+	req.AddCookie(&http.Cookie{Name: authcookie.CookieSpaceID, Value: "space"})
+	engine.ServeHTTP(rec, req)
+
+	require.False(t, reached)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	body := rec.Body.String()
+	assert.Contains(t, body, `data-account-blocked="contract_expired"`)
+	assert.Contains(t, body, "Tu contrato anual terminó")
+	assert.Contains(t, body, `href="mailto:help@kiban.com"`)
+	assert.NotContains(t, body, `href="/kiban-cloud/billing"`)
+	assert.Empty(t, rec.Header().Get("Location"), "no redirige al login")
 }

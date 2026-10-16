@@ -1,5 +1,6 @@
 // Package accountblocked is the full-page screen a kiban tool shows when the
-// space's billing account is suspended or inactive.
+// space's billing account is suspended or inactive, or its Plan2025Anual
+// contract has ended.
 //
 // Before this screen each tool reacted to a cut account on its own, and each
 // one got it differently wrong: crm said "No pudimos cargar los clientes",
@@ -28,12 +29,14 @@ import (
 
 // Kind is which cut the account is under. It picks the copy and the primary
 // action: a suspended account can pay its way back, an inactive one (client
-// dado de baja) can only talk to support.
+// dado de baja) can only talk to support, and an ended contract is renewed by
+// talking to kiban.
 type Kind string
 
 const (
-	Suspended Kind = "suspended"
-	Inactive  Kind = "inactive"
+	Suspended       Kind = "suspended"
+	Inactive        Kind = "inactive"
+	ContractExpired Kind = "contract_expired"
 )
 
 // Global kiban destinations, host-relative like layout.DefaultDevelopersHref:
@@ -56,6 +59,22 @@ func KindFor(billingAccountStatus string) (kind Kind, ok bool) {
 		return Inactive, true
 	}
 	return Suspended, true
+}
+
+// KindForError maps the error the session check returned to a Kind, for the
+// cuts kiban-cloud decides itself and answers with a 403 (an ended Plan2025Anual
+// contract). ok is false for any other error. The typeErrors are go-kiban's, so
+// this screen and the API (403 with the same typeError) can't disagree.
+func KindForError(err error) (kind Kind, ok bool) {
+	switch domain_core_authorization_model.AccessBlockedType(err) {
+	case domain_core_authorization_model.ERROR_CONTRACT_EXPIRED:
+		return ContractExpired, true
+	case domain_core_authorization_model.ERROR_ACCOUNT_SUSPENDED:
+		return Suspended, true
+	case domain_core_authorization_model.ERROR_ACCOUNT_INACTIVE:
+		return Inactive, true
+	}
+	return "", false
 }
 
 //go:embed locales/*.toml
