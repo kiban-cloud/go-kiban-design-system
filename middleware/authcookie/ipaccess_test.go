@@ -125,3 +125,46 @@ func TestIpAccess_ElFirewallVaAntesQueLaCuenta(t *testing.T) {
 	assert.Contains(t, res.rec.Body.String(), `data-ip-blocked="WORKFLOO"`)
 	assert.NotContains(t, res.rec.Body.String(), "data-account-blocked")
 }
+
+// fakeIpVista registra con qué IP se pidió la autorización.
+type fakeIpVista struct{ ip *string }
+
+func (f fakeIpVista) AuthorizeWithSessionUseCase(_, spaceID, token string, sandbox bool, ip string) (domain_core_authorization_model.Authorization, error) {
+	*f.ip = ip
+	return domain_core_authorization_model.Authorization{SpaceId: spaceID, Token: token, Ip: ip, BillingAccountStatus: "Cuenta Activa"}, nil
+}
+
+// Otra herramienta que llama con la sesión del usuario sale por la IP de su
+// servidor: la lista Consola se evalúa con la IP que reenvía, y solo si trae la
+// api key interna de esta herramienta.
+func TestIpAccess_IpReenviadaPorOtraHerramienta(t *testing.T) {
+	casos := []struct {
+		nombre   string
+		apiKey   string
+		esperada string
+	}{
+		{"con la api key interna se evalúa la IP del usuario", "llave-interna", "189.245.28.84"},
+		{"sin la api key interna se evalúa la IP de origen", "otra", "34.96.55.51"},
+	}
+	for _, caso := range casos {
+		t.Run(caso.nombre, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
+			t.Setenv(infrastructure_core_env.INTERNAL_API_KEY, "llave-interna")
+			var vista string
+			engine := gin.New()
+			engine.Any("/*any", authcookie.New(fakeIpVista{ip: &vista}, "/login").Middleware(), func(c *gin.Context) { c.Status(http.StatusOK) })
+
+			req := httptest.NewRequest(http.MethodGet, "/workfloo", nil)
+			req.AddCookie(&http.Cookie{Name: authcookie.CookieSession, Value: "jwt"})
+			req.AddCookie(&http.Cookie{Name: authcookie.CookieSpaceID, Value: "space"})
+			req.Header.Set("X-Forwarded-For", "34.96.55.51, 8.233.84.187")
+			req.Header.Set("X-Kiban-Client-Ip", "189.245.28.84")
+			req.Header.Set("x-api-key", caso.apiKey)
+			rec := httptest.NewRecorder()
+			engine.ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+			assert.Equal(t, caso.esperada, vista)
+		})
+	}
+}
