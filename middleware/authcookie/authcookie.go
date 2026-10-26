@@ -90,7 +90,9 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		ip := utils_http.ClientIP(c.Request)
+		// Una llamada de otra herramienta con la sesión del usuario trae su IP
+		// (ver utils_http.SessionClientIP).
+		ip := utils_http.SessionClientIP(c.Request, infrastructure_core_env.Get(infrastructure_core_env.INTERNAL_API_KEY))
 		authorization, err := m.authorize.AuthorizeWithSessionUseCase(logger.TraceIDFromContext(c.Request.Context()), spaceID, token, false, ip)
 
 		// Acceso por IP, lista Consola: es el firewall, lo primero. Lo decide
