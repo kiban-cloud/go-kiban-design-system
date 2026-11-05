@@ -343,9 +343,9 @@ templ ModuleTile(key string, size int, dim bool) {
 	</span>
 }
 
-// ModuleIcon es sólo el ícono del módulo en su color, para una pestaña.
+// ModuleIcon es sólo el ícono del módulo, del color del texto: en una
+// pestaña toma el del módulo al activarse (tabs.TabHeader.IconColor con
+// FlamboyantModuloColor).
 templ ModuleIcon(key string) {
-	<span class="inline-flex [&>svg]:h-[15px] [&>svg]:w-[15px]" style={ "color:" + FlamboyantModuloColor(key) }>
-		@FlamboyantIcon(moduleIcon(key))
-	</span>
+	@FlamboyantIcon(moduleIcon(key))
 }

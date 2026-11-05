@@ -167,7 +167,9 @@ func TestModuleTile_ColorDelModuloOGris(t *testing.T) {
 
 	buf.Reset()
 	require.NoError(t, layout.ModuleIcon("klin").Render(context.Background(), &buf))
-	assert.Contains(t, buf.String(), "color:#00A884")
+	assert.Contains(t, buf.String(), "<svg")
+	assert.NotContains(t, buf.String(), "#00A884", "el color lo pone la pestaña")
+	assert.Equal(t, "#00A884", layout.FlamboyantModuloColor("klin"))
 }
 
 func TestBase_ConfirmacionYDropzone(t *testing.T) {

@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 	"github.com/kiban-cloud/go-kiban-design-system/view/tabs"
 )
 
@@ -142,4 +144,24 @@ func TestPanel_IconoAntesDelLabel(t *testing.T) {
 	body := renderPanel(t, tabs.PanelConfig{ID: "p", ActiveKey: "a", Tabs: []tabs.TabHeader{{Key: "a", Label: "Pagos", Icon: templ.Raw(`<i>rekon</i>`)}}}, nil)
 
 	assert.Contains(t, body, "<i>rekon</i><span>Pagos</span>")
+}
+
+func TestPanel_FlamboyantComoElProto(t *testing.T) {
+	var buf bytes.Buffer
+	ctx := feature.Enable(context.Background(), flamboyant.Flag)
+	cfg := tabs.PanelConfig{ID: "p", ActiveKey: "resumen", Tabs: []tabs.TabHeader{
+		{Key: "resumen", Label: "Resumen"},
+		{Key: "rekon", Label: "Pagos", Icon: templ.Raw(`<svg></svg>`), IconColor: "#8000FF", Count: 0, HasCount: true},
+		{Key: "link", Label: "Fuentes"},
+	}}
+	require.NoError(t, tabs.Panel(cfg).Render(templ.WithChildren(ctx, templ.Raw(`<p>cuerpo</p>`)), &buf))
+	body := buf.String()
+
+	assert.Contains(t, body, "group/tab")
+	assert.Contains(t, body, "group-data-[kiban-tabs-active]/tab:border-kiban-primary\">Resumen</span>")
+	assert.Contains(t, body, "group-data-[kiban-tabs-active]/tab:text-[#8000FF]", "el ícono toma el color del módulo al activarse")
+	assert.Contains(t, body, ">0</span>", "un 0 real se muestra")
+	assert.Equal(t, 1, strings.Count(body, "rounded-full bg-kiban-surface"), "sólo la pestaña con contador")
+	assert.Contains(t, body, `<div class="pt-5"><p>cuerpo</p></div>`)
+	assert.NotContains(t, body, "px-3 py-2 text-sm transition-colors border-b", "no es la tira de siempre")
 }
