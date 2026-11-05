@@ -81,7 +81,9 @@ templ strip(tabs []TabHeader) {
 // flamboyantStrip es la tira de kiban-proto: subrayado bajo el label, ícono
 // en el color del módulo y contador en píldora, ambos sólo en la pestaña
 // activa. El estado activo lo da [data-kiban-tabs-active] en el botón
-// (base.templ), que las clases leen con group-data.
+// (base.templ), que las clases leen con group-data. El ícono lleva abajo el
+// mismo espacio que el subrayado del label (pb-2 + 1 px de borde) para
+// quedar centrado con el texto y no con la etiqueta entera.
 templ flamboyantStrip(tabs []TabHeader) {
 	<div class="border-b border-kiban-border">
 		<nav class="-mb-px flex gap-5 overflow-x-auto" role="tablist">
@@ -94,7 +96,7 @@ templ flamboyantStrip(tabs []TabHeader) {
 					class="group/tab inline-flex shrink-0 items-center gap-2 whitespace-nowrap pt-2 text-sm transition-colors"
 				>
 					if t.Icon != nil {
-						<span class={ "inline-flex [&>svg]:h-[15px] [&>svg]:w-[15px]", tabIconActiveClass(t.IconColor) }>
+						<span class={ "mb-[9px] inline-flex [&>svg]:h-[15px] [&>svg]:w-[15px]", tabIconActiveClass(t.IconColor) }>
 							@t.Icon
 						</span>
 					}

@@ -160,6 +160,7 @@ func TestPanel_FlamboyantComoElProto(t *testing.T) {
 	assert.Contains(t, body, "group/tab")
 	assert.Contains(t, body, "group-data-[kiban-tabs-active]/tab:border-kiban-primary\">Resumen</span>")
 	assert.Contains(t, body, "group-data-[kiban-tabs-active]/tab:text-[#8000FF]", "el ícono toma el color del módulo al activarse")
+	assert.Contains(t, body, `class="mb-[9px] inline-flex`, "el ícono se centra con el texto, no con el subrayado")
 	assert.Contains(t, body, ">0</span>", "un 0 real se muestra")
 	assert.Equal(t, 1, strings.Count(body, "rounded-full bg-kiban-surface"), "sólo la pestaña con contador")
 	assert.Contains(t, body, `<div class="pt-5"><p>cuerpo</p></div>`)
