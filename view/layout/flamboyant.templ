@@ -1,0 +1,336 @@
+package layout
+
+import (
+	"strconv"
+	"strings"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
+)
+
+// flamboyantLayout es el Layout con el shell «kiban cloud flamboyant»
+// (flamboyant.go). Mismo contrato que Layout: el Config de siempre y el
+// contenido de la pantalla como children.
+templ flamboyantLayout(cfg Config) {
+	@Base(cfg) {
+		@templ.Raw("<style>" + flamboyantCSS + "</style>")
+		<div
+			class="fs-root"
+			data-fs-root
+			data-sidebar-project={ cfg.ProjectName }
+			data-fs-i18n-expand={ docsCatalog.T(ctx, "shell.menu.expand") }
+			data-fs-i18n-collapse={ docsCatalog.T(ctx, "shell.menu.collapse") }
+			data-fs-i18n-all={ docsCatalog.T(ctx, "shell.inbox.chip_all") }
+			data-fs-i18n-unread={ docsCatalog.T(ctx, "shell.inbox.chip_unread") }
+			data-fs-i18n-unread-count={ docsCatalog.T(ctx, "shell.inbox.unread_count") }
+			data-fs-i18n-up-to-date={ docsCatalog.T(ctx, "shell.inbox.up_to_date") }
+			data-fs-months={ fsMeses(ctx) }
+		>
+			@fsTopbar(cfg)
+			<div class="fs-body">
+				<div class="fs-nav">
+					@fsRail(cfg)
+					if len(cfg.SubItems) > 0 {
+						@fsSubnav(cfg)
+					}
+				</div>
+				<div class="fs-backdrop" data-fs-close-mobile aria-hidden="true"></div>
+				<main class="fs-main">
+					<div class="p-4 md:p-8 w-full">
+						{ children... }
+					</div>
+					@navLoader()
+				</main>
+			</div>
+			@fsInbox(cfg)
+			if cfg.TopbarExtra != nil {
+				<div class="fs-extra">
+					@cfg.TopbarExtra
+				</div>
+			}
+		</div>
+		@templ.Raw("<script>" + flamboyantJS + "</script>")
+		@templ.Raw("<script>" + flamboyantFechasJS + "</script>")
+	}
+}
+
+// fsTopbar: botón de panel, lockup de kiban, espacio como migaja; a la derecha
+// el modo y el avatar. La campana se va: sus avisos están en Pendientes.
+templ fsTopbar(cfg Config) {
+	<header class="fs-top">
+		<button type="button" class="fs-panel-btn" data-fs-toggle aria-expanded="false" aria-label={ docsCatalog.T(ctx, "shell.menu.expand") } data-tooltip={ docsCatalog.T(ctx, "shell.menu.expand") }>
+			<span class="fs-ic-open">
+				@FlamboyantIcon("panel-open")
+			</span>
+			<span class="fs-ic-close">
+				@FlamboyantIcon("panel-close")
+			</span>
+		</button>
+		<a href={ templ.URL(DefaultLogoHref) } aria-label="kiban" class="fs-lockup">
+			<span class="fs-iso" aria-hidden="true">
+				for _, src := range isotipoURIs {
+					<img src={ src } alt=""/>
+				}
+			</span>
+			<img class="fs-word" src={ wordmarkURI } alt=""/>
+		</a>
+		@fsSpaceCrumb(cfg)
+		<div class="flex-1"></div>
+		if cfg.SandboxToggle != nil {
+			@fsModeSeg(*cfg.SandboxToggle)
+		}
+		@fsUserMenu(cfg)
+	</header>
+}
+
+// fsSpaceCrumb: «kiban / [avatar] Espacio ⇅». El menú tiene buscador y, si la
+// herramienta manda SwitchSpaceAction, cada espacio es un form POST como en el
+// selector de hoy; si no, la lista sólo informa.
+templ fsSpaceCrumb(cfg Config) {
+	<span class="sp-sep" aria-hidden="true">/</span>
+	<div class="relative min-w-0" data-fs-menu>
+		<button type="button" class="sp-btn" data-fs-menu-trigger aria-haspopup="true" aria-expanded="false" aria-label={ docsCatalog.Tf(ctx, "shell.space.change_current", map[string]any{"Space": spaceChipLabel(cfg)}) } data-tooltip={ docsCatalog.T(ctx, "shell.space.change") }>
+			<span class="sp-av" style={ fsSpaceStyle(cfg, cfg.SpaceID, 22) }>{ fsSpaceInitials(spaceChipLabel(cfg)) }</span>
+			<span class="sp-name">{ spaceChipLabel(cfg) }</span>
+			<span class="sp-ud">
+				@FlamboyantIcon("chevrons-up-down")
+			</span>
+		</button>
+		<div class="sp-pop hidden" data-fs-menu-panel role="menu">
+			<div class="sp-pop-h">{ docsCatalog.T(ctx, "shell.space.title") }</div>
+			<label class="sp-q">
+				@FlamboyantIcon("search")
+				<input type="search" placeholder={ docsCatalog.T(ctx, "shell.space.search") } aria-label={ docsCatalog.T(ctx, "shell.space.search") } data-fs-space-q autocomplete="off"/>
+			</label>
+			<div class="sp-list">
+				for _, s := range fsSpaces(cfg) {
+					if cfg.SwitchSpaceAction != "" && s.Id != cfg.SpaceID {
+						<form method="POST" action={ templ.URL(cfg.SwitchSpaceAction) } data-fs-space={ strings.ToLower(s.Name) }>
+							<input type="hidden" name="spaceId" value={ s.Id }/>
+							<button type="submit" role="menuitemradio" aria-checked="false" class="sp-item">
+								@fsSpaceRow(cfg, s)
+							</button>
+						</form>
+					} else {
+						<button type="button" role="menuitemradio" aria-checked={ strconv.FormatBool(s.Id == cfg.SpaceID) } class={ "sp-item", templ.KV("is-on", s.Id == cfg.SpaceID) } data-fs-space={ strings.ToLower(s.Name) }>
+							@fsSpaceRow(cfg, s)
+						</button>
+					}
+				}
+			</div>
+			<p class="sp-none" hidden data-fs-space-none>{ docsCatalog.T(ctx, "shell.space.none") }</p>
+			<div class="sp-foot">
+				<a href={ templ.URL(DefaultLogoHref) } class="sp-manage">{ docsCatalog.T(ctx, "shell.space.manage") }</a>
+			</div>
+		</div>
+	</div>
+}
+
+templ fsSpaceRow(cfg Config, s SpaceOption) {
+	<span class="sp-av" style={ fsSpaceStyle(cfg, s.Id, 28) }>{ fsSpaceInitials(s.Name) }</span>
+	<span class="sp-txt">
+		<b>{ s.Name }</b>
+		<small>{ fsSpaceSuffix(s.Id) }</small>
+	</span>
+	if s.Id == cfg.SpaceID {
+		<span class="sp-check">
+			@FlamboyantIcon("check")
+		</span>
+	}
+}
+
+// fsModeSeg es el selector Producción | Sandbox. Como el switch de hoy, cambiar
+// de modo es navegar a ToggleHref: el lado activo no es enlace.
+templ fsModeSeg(t SandboxToggle) {
+	<div class={ "mode-seg", templ.KV("is-sbx", t.Enabled) } role="radiogroup" aria-label={ docsCatalog.T(ctx, "shell.mode.label") }>
+		if t.Enabled {
+			<a href={ templ.URL(t.ToggleHref) } data-nav-loader role="radio" aria-checked="false"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.production") }</a>
+			<span role="radio" aria-checked="true"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.sandbox") }</span>
+		} else {
+			<span role="radio" aria-checked="true"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.production") }</span>
+			<a href={ templ.URL(t.ToggleHref) } data-nav-loader role="radio" aria-checked="false"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.sandbox") }</a>
+		}
+	</div>
+}
+
+templ fsUserMenu(cfg Config) {
+	<div class="relative" data-fs-menu>
+		<button type="button" class="hdr-av" data-fs-menu-trigger aria-haspopup="true" aria-expanded="false" aria-label={ docsCatalog.Tf(ctx, "shell.user.menu", map[string]any{"User": topbarUserMenuLabel(cfg.User)}) } data-tooltip={ topbarUserMenuLabel(cfg.User) }>
+			{ userInitials(cfg.User) }
+		</button>
+		<div class="hdr-pop usr-pop hidden" data-fs-menu-panel role="menu">
+			<div class="usr-h">
+				<span class="hdr-av is-lg" aria-hidden="true">{ userInitials(cfg.User) }</span>
+				<div class="min-w-0">
+					if cfg.User.Name != "" {
+						<b>{ cfg.User.Name }</b>
+					}
+					<small>{ cfg.User.Email }</small>
+				</div>
+			</div>
+			<div class="usr-list">
+				for _, item := range fsUserItems(ctx, cfg) {
+					<a href={ templ.URL(item.Href) } role="menuitem" class="usr-it">
+						@FlamboyantIcon("user")
+						{ item.Label }
+					</a>
+				}
+				if feature.Enabled(ctx, FlagShellFlamboyantSwitch) {
+					<button type="button" role="menuitem" class="usr-it" data-kiban-ui={ UIClasico }>
+						@FlamboyantIcon("undo-2")
+						{ docsCatalog.T(ctx, "shell.switch.back") }
+					</button>
+				}
+			</div>
+			<div class="usr-list usr-foot">
+				<form method="POST" action={ templ.URL(cfg.LogoutAction) }>
+					<button type="submit" role="menuitem" class="usr-it">
+						@FlamboyantIcon("log-out")
+						{ docsCatalog.T(ctx, "shell.user.logout") }
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+// fsRail: Pendientes arriba, separado por una línea azul; los ocho módulos;
+// abajo Configuración, otra línea azul y la documentación. Contraído muestra sólo íconos con tooltip.
+templ fsRail(cfg Config) {
+	{{ mods, extra := fsTools(ctx, cfg) }}
+	{{ base := notificationsBaseURL(cfg.NotificationsBaseURL) }}
+	<div class="fs-rail-slot">
+		<nav class="fs-rail" aria-label={ docsCatalog.T(ctx, "shell.rail.label") }>
+			<button
+				type="button"
+				class="fs-row"
+				data-fs-inbox-toggle
+				aria-expanded="false"
+				aria-controls="fs-inbox"
+				data-tooltip={ docsCatalog.T(ctx, "shell.inbox.title") }
+				hx-get={ base + "/dropdown" }
+				hx-target="#fs-inbox-list"
+				hx-swap="innerHTML"
+				hx-trigger="click"
+			>
+				<span class="fs-row-ic">
+					@FlamboyantIcon("bell")
+					@notificationBadgeEl(cfg.NotificationsUnread, false)
+				</span>
+				<span class="fs-row-label">{ docsCatalog.T(ctx, "shell.inbox.title") }</span>
+			</button>
+			<div hx-get={ base + "/badge" } hx-trigger="load, every 30s" hx-swap="none" class="hidden" aria-hidden="true"></div>
+			<div class="fs-rail-sep" aria-hidden="true"></div>
+			for _, m := range mods {
+				@fsRow(m, cfg.ToolKey == m.Key)
+			}
+			for _, t := range extra {
+				<a href={ templ.URL(t.Href) } data-nav-loader data-tooltip={ t.Label } class={ "fs-row", templ.KV("is-on", cfg.ToolKey == t.Key) }>
+					<span class="fs-row-ic">
+						@t.Icon()
+					</span>
+					<span class="fs-row-label">{ t.Label }</span>
+				</a>
+			}
+			<div class="fs-rail-gap"></div>
+			@fsRow(fsConfig(ctx), false)
+			<div class="fs-rail-sep" aria-hidden="true"></div>
+			for _, d := range fsDocs(ctx, cfg) {
+				@fsRow(d, false)
+			}
+		</nav>
+	</div>
+}
+
+// fsRow es un renglón del menú. Sin Href (un enlace que la herramienta no
+// declara) se ve igual que los demás, como en link, pero no navega.
+templ fsRow(m fsModulo, on bool) {
+	if m.Href == "" {
+		<span class="fs-row is-off" aria-disabled="true" data-tooltip={ m.Label }>
+			<span class="fs-row-ic">
+				@FlamboyantIcon(m.Icon)
+			</span>
+			<span class="fs-row-label">{ m.Label }</span>
+		</span>
+	} else if m.Ext {
+		<a href={ templ.URL(m.Href) } target="_blank" rel="noopener noreferrer" data-tooltip={ m.Label } class="fs-row">
+			<span class="fs-row-ic">
+				@FlamboyantIcon(m.Icon)
+			</span>
+			<span class="fs-row-label">{ m.Label }</span>
+		</a>
+	} else {
+		<a href={ templ.URL(m.Href) } data-nav-loader data-tooltip={ m.Label } class={ "fs-row", templ.KV("is-on", on) }>
+			<span class="fs-row-ic">
+				@FlamboyantIcon(m.Icon)
+			</span>
+			<span class="fs-row-label">{ m.Label }</span>
+		</a>
+	}
+}
+
+// fsSubnav es el pilar del módulo: su nombre y su ícono arriba, y los SubItems
+// de la herramienta con sus grupos (Group / Gap), igual que el SubNav de hoy.
+templ fsSubnav(cfg Config) {
+	{{ label, icon := fsModuloActivo(ctx, cfg) }}
+	<nav class="fs-subnav" aria-label={ label }>
+		<div class="subnav-h">
+			<span class="subnav-ic">
+				@FlamboyantIcon(icon)
+			</span>
+			{ label }
+		</div>
+		for i, item := range cfg.SubItems {
+			if item.Group != "" && (i == 0 || cfg.SubItems[i-1].Group != item.Group) {
+				<div class="fs-sub-group">{ item.Group }</div>
+			} else if item.Gap {
+				<div class="fs-sub-gap"></div>
+			}
+			<a href={ templ.URL(item.Href) } data-nav-loader class={ fsSubItemClass(cfg, item) }>{ item.Label }</a>
+		}
+	</nav>
+}
+
+// fsInbox es el panel de Pendientes: 50 % de la pantalla, pegado al menú, con
+// el resto desenfocado. La lista la sirve el backend de notificaciones
+// (<base>/dropdown, el mismo fragmento de la campana); el buscador y los
+// filtros (Todas, Sin leer y por módulo) se arman en el cliente con lo que
+// llegue.
+templ fsInbox(cfg Config) {
+	{{ base := notificationsBaseURL(cfg.NotificationsBaseURL) }}
+	<div class="ib-back" hidden data-fs-inbox-back data-fs-inbox-close></div>
+	<aside id="fs-inbox" class="ib-panel" hidden role="dialog" aria-modal="false" aria-label={ docsCatalog.T(ctx, "shell.inbox.title") } data-fs-inbox>
+		<header class="ib-h">
+			<div>
+				<h2>{ docsCatalog.T(ctx, "shell.inbox.title") }</h2>
+				<small data-ib-sub>{ docsCatalog.T(ctx, "shell.inbox.loading") }</small>
+			</div>
+			<button type="button" class="ib-x" data-fs-inbox-close aria-label={ docsCatalog.T(ctx, "shell.inbox.close") }>
+				@FlamboyantIcon("x")
+			</button>
+		</header>
+		<div class="ib-tools">
+			<label class="ib-search">
+				@FlamboyantIcon("search")
+				<input type="search" placeholder={ docsCatalog.T(ctx, "shell.inbox.search") } aria-label={ docsCatalog.T(ctx, "shell.inbox.search") } data-ib-q autocomplete="off"/>
+			</label>
+			<div class="ib-chips" role="group" aria-label={ docsCatalog.T(ctx, "shell.inbox.filter") } data-ib-chips></div>
+		</div>
+		<div class="ib-list">
+			<div id="fs-inbox-list">
+				<div class="ib-empty"><span>{ docsCatalog.T(ctx, "shell.inbox.loading") }</span></div>
+			</div>
+			<div class="ib-empty" hidden data-ib-noq>
+				@FlamboyantIcon("search")
+				<b>{ docsCatalog.T(ctx, "shell.inbox.none_title") }</b>
+				<span>{ docsCatalog.T(ctx, "shell.inbox.none_hint") }</span>
+			</div>
+		</div>
+		<footer class="ib-f">
+			<a href={ templ.URL(base) } target="_blank" rel="noopener" class="ib-all">
+				@FlamboyantIcon("check-check")
+				{ docsCatalog.T(ctx, "shell.inbox.all") }
+			</a>
+			<a href="/kiban-cloud/profile" class="ib-pref">{ docsCatalog.T(ctx, "shell.inbox.prefs") }</a>
+		</footer>
+	</aside>
+}

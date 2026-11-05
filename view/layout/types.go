@@ -101,6 +101,35 @@ type SubItem struct {
 	Key   string // matches Config.ActiveKey to highlight the active item
 	Label string
 	Href  string
+	// Group, when set, puts the item under a small uppercase heading with
+	// that text. Consecutive items with the same Group share the heading;
+	// the heading is emitted when Group changes. Empty = no heading.
+	Group string
+	// Gap adds vertical space before the item, for an item that stands
+	// alone between groups (no heading of its own).
+	Gap bool
+}
+
+// Grouped reports whether any sub-nav item carries a Group: the sub-nav
+// then renders the tool header (icon + name) instead of the plain
+// SectionLabel, and the group headings.
+func (c Config) Grouped() bool {
+	for _, it := range c.SubItems {
+		if it.Group != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// ActiveTool returns the rail entry whose Key matches ToolKey, if any.
+func (c Config) ActiveTool() (Tool, bool) {
+	for _, t := range c.Tools {
+		if t.Key == c.ToolKey {
+			return t, true
+		}
+	}
+	return Tool{}, false
 }
 
 // SandboxToggle drives an optional switch in the topbar — every kiban tool

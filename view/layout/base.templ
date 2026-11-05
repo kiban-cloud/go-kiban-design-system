@@ -1635,6 +1635,21 @@ templ Base(cfg Config) {
 					});
 				});
 
+				// Switch de diseño (flamboyant.go): [data-kiban-ui] trae
+				// el diseño elegido. Se guarda en la cookie kiban_ui
+				// (layout.UICookie), path / para que valga en todas las
+				// herramientas, y se recarga la página completa: el shell
+				// envuelve todo, no hay swap parcial que alcance. Antes se
+				// vacía el cache de historial de htmx, que si no restaura
+				// al volver atrás páginas pintadas con el otro diseño.
+				document.addEventListener('click', function (e) {
+					var btn = e.target.closest && e.target.closest('[data-kiban-ui]');
+					if (!btn) return;
+					document.cookie = 'kiban_ui=' + encodeURIComponent(btn.getAttribute('data-kiban-ui')) + '; path=/; max-age=31536000; SameSite=Lax';
+					try { localStorage.removeItem('htmx-history-cache'); } catch (_) {}
+					window.location.reload();
+				});
+
 				// flash.Banner — click-to-dismiss. Each banner carries
 				// [data-kiban-flash] and its × button carries
 				// [data-kiban-flash-dismiss]; the delegated click
@@ -2398,7 +2413,21 @@ templ actionOverlay() {
 	</div>
 }
 
+// Layout con la bandera FlagShellFlamboyant prendida (o en modo Comparar)
+// pinta el shell flamboyant (flamboyant.templ); apagada, el de siempre.
 templ Layout(cfg Config) {
+	if ShellFlamboyant(ctx) {
+		@flamboyantLayout(cfg) {
+			{ children... }
+		}
+	} else {
+		@layoutClasico(cfg) {
+			{ children... }
+		}
+	}
+}
+
+templ layoutClasico(cfg Config) {
 	@Base(cfg) {
 		<div
 			class="min-h-screen flex flex-col"
