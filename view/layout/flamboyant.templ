@@ -334,3 +334,18 @@ templ fsInbox(cfg Config) {
 		</footer>
 	</aside>
 }
+
+// ModuleTile es el ícono de un módulo en su cuadro de color (la ficha del
+// cliente, sus pestañas y estados vacíos). dim lo pinta en gris.
+templ ModuleTile(key string, size int, dim bool) {
+	<span class="grid shrink-0 place-items-center rounded-[10px]" style={ moduleTileStyle(key, size, dim) }>
+		@FlamboyantIcon(moduleIcon(key))
+	</span>
+}
+
+// ModuleIcon es sólo el ícono del módulo en su color, para una pestaña.
+templ ModuleIcon(key string) {
+	<span class="inline-flex [&>svg]:h-[15px] [&>svg]:w-[15px]" style={ "color:" + FlamboyantModuloColor(key) }>
+		@FlamboyantIcon(moduleIcon(key))
+	</span>
+}

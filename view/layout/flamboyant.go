@@ -172,6 +172,45 @@ var modulosFlamboyant = []fsModulo{
 	{Key: "link", Icon: "blocks"},
 }
 
+// fsColores son el color de cada módulo (el del ciclo del menú de Base en
+// kiban-proto): el ícono y su cuadro en la ficha del cliente.
+var fsColores = map[string]string{
+	"customers": "#5B82F5", "workfloo": "#0047FF", "link": "#0E9FC2",
+	"rekon": "#8000FF", "klin": "#00A884", "core": "#8000FF", "folo": "#5B82F5", "home": "#0047FF",
+}
+
+// FlamboyantModuloColor es el color del módulo (misma clave que
+// FlamboyantModulo); gris si no es ninguno.
+func FlamboyantModuloColor(key string) string {
+	switch key {
+	case "kiban-cloud", "kibancloud":
+		key = "home"
+	case "crm":
+		key = "customers"
+	}
+	if c, ok := fsColores[key]; ok {
+		return c
+	}
+	return "#606875"
+}
+
+// moduleTileStyle pinta el cuadro: color del módulo al 12 % de fondo, o gris
+// cuando el módulo todavía no tiene nada que mostrar (dim).
+func moduleTileStyle(key string, size int, dim bool) string {
+	px := strconv.Itoa(size) + "px"
+	bg, fg := "#F5F6F9", "#9096A3"
+	if !dim {
+		fg = FlamboyantModuloColor(key)
+		bg = fg + "1F"
+	}
+	return "width:" + px + ";height:" + px + ";background:" + bg + ";color:" + fg
+}
+
+func moduleIcon(key string) string {
+	_, icon, _ := FlamboyantModulo(context.Background(), key)
+	return icon
+}
+
 // FlamboyantModulo traduce la clave de una herramienta (la del rail, o la del
 // módulo emisor de una notificación: "kiban-cloud", "crm"…) a su nombre y su
 // ícono en el menú flamboyant. ok es false si no es ninguno de los ocho.

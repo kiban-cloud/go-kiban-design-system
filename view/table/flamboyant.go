@@ -2,6 +2,8 @@ package table
 
 import (
 	"embed"
+
+	"github.com/a-h/templ"
 	"strconv"
 
 	"golang.org/x/text/language"
@@ -61,3 +63,12 @@ type MainCellOptions struct {
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
+
+// RowOptions configura RowWith.
+type RowOptions struct {
+	Href      string
+	BulkValue string
+	// BulkLabel es el nombre de la fila en la confirmación de borrado.
+	BulkLabel string
+	Attrs     templ.Attributes
+}

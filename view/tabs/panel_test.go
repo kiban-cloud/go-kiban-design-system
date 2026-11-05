@@ -137,3 +137,9 @@ func TestPanel_RootCarriesCallerID(t *testing.T) {
 	}, nil)
 	assert.True(t, strings.Contains(body, `id="step-tabs-n-1"`))
 }
+
+func TestPanel_IconoAntesDelLabel(t *testing.T) {
+	body := renderPanel(t, tabs.PanelConfig{ID: "p", ActiveKey: "a", Tabs: []tabs.TabHeader{{Key: "a", Label: "Pagos", Icon: templ.Raw(`<i>rekon</i>`)}}}, nil)
+
+	assert.Contains(t, body, "<i>rekon</i><span>Pagos</span>")
+}

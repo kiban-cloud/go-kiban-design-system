@@ -30,7 +30,7 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 // common cases work without extra wiring.
 templ Row(href, bulkValue string) {
 	if flamboyant.On(ctx) {
-		@flamboyantRow(href, bulkValue) {
+		@flamboyantRow(RowOptions{Href: href, BulkValue: bulkValue}) {
 			{ children... }
 		}
 	} else {
@@ -57,4 +57,19 @@ templ classicRow(href, bulkValue string) {
 		}
 		{ children... }
 	</tr>
+}
+
+// RowWith es Row con opciones: atributos propios en el <tr> (abrir una
+// ficha con htmx en vez de navegar) y BulkLabel, el nombre de la fila que
+// muestra la confirmación de borrado. Con el diseño de siempre es Row.
+templ RowWith(o RowOptions) {
+	if flamboyant.On(ctx) {
+		@flamboyantRow(o) {
+			{ children... }
+		}
+	} else {
+		@classicRow(o.Href, o.BulkValue) {
+			{ children... }
+		}
+	}
 }
