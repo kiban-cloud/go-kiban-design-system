@@ -1,5 +1,7 @@
 package table
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // Row renders one `<tr>` in the canonical kiban style — bottom border,
 // hover tint (`hover:bg-kiban-primary-soft`), and click-to-navigate when
 // `href` is non-empty (handled by the global `[data-href]` listener in
@@ -27,6 +29,18 @@ package table
 // click originated on an `<a>`, `<button>`, or form input, so the
 // common cases work without extra wiring.
 templ Row(href, bulkValue string) {
+	if flamboyant.On(ctx) {
+		@flamboyantRow(href, bulkValue) {
+			{ children... }
+		}
+	} else {
+		@classicRow(href, bulkValue) {
+			{ children... }
+		}
+	}
+}
+
+templ classicRow(href, bulkValue string) {
 	<tr
 		class={
 			"border-b border-kiban-border hover:bg-kiban-primary-soft transition-colors",

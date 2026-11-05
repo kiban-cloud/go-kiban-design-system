@@ -36,7 +36,7 @@ func Button(p Options) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if hasHref(p) {
-			var templ_7745c5c3_Var2 = []any{BuildClass(p.EffectiveVariant(), p.ExtraClass)}
+			var templ_7745c5c3_Var2 = []any{classFor(ctx, p.EffectiveVariant(), p.ExtraClass)}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -116,7 +116,7 @@ func Button(p Options) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			var templ_7745c5c3_Var7 = []any{BuildClass(p.EffectiveVariant(), p.ExtraClass)}
+			var templ_7745c5c3_Var7 = []any{classFor(ctx, p.EffectiveVariant(), p.ExtraClass)}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

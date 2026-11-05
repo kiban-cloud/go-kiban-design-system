@@ -22,7 +22,7 @@ templ Split(cfg SplitOptions) {
 			@Button(cfg.primaryOptions())
 			<button
 				type="button"
-				class={ cfg.triggerClass() }
+				class={ cfg.triggerClass(ctx) }
 				aria-label={ cfg.triggerAriaLabel() }
 				{ splitTriggerAttrs(cfg.ID)... }
 			>

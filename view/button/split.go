@@ -1,6 +1,7 @@
 package button
 
 import (
+	"context"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -65,8 +66,8 @@ func (o SplitOptions) triggerAriaLabel() string {
 
 // triggerClass mirrors the primary variant so both halves share a fill,
 // minus the left rounding and with a divider between the segments.
-func (o SplitOptions) triggerClass() string {
-	return BuildClass(o.Primary.EffectiveVariant(),
+func (o SplitOptions) triggerClass(ctx context.Context) string {
+	return classFor(ctx, o.Primary.EffectiveVariant(),
 		"rounded-l-none border-l border-white/25 px-2")
 }
 

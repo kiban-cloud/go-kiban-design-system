@@ -3,9 +3,12 @@
 package button
 
 import (
+	"context"
 	"strings"
 
 	"github.com/a-h/templ"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 )
 
 const (
@@ -30,7 +33,7 @@ type Options struct {
 	// IconComponent optional: any templ component (e.g. icons.Database()). When
 	// non-nil it wins over Icon for the active slot (left/right or icon variant).
 	IconComponent templ.Component
-	Variant       string // primary | secondary | danger | icon
+	Variant       string // primary | secondary | danger | danger-outline | icon
 
 	// Href, when non-empty, makes Button render as an `<a>` and skips the
 	// button-only attributes (type/disabled/form). Empty -> renders <button>.
@@ -62,12 +65,12 @@ type Options struct {
 	// drawer / modal callsites that the ergonomic shortcut earns its keep.
 	OnClick string
 
-	Disabled    bool // ignored when Href is set (anchors have no disabled attr)
-	ExtraClass  string
-	Form        string // ignored when Href is set
-	AriaLabel   string
-	Title       string
-	Attrs       templ.Attributes
+	Disabled   bool // ignored when Href is set (anchors have no disabled attr)
+	ExtraClass string
+	Form       string // ignored when Href is set
+	AriaLabel  string
+	Title      string
+	Attrs      templ.Attributes
 }
 
 func (o Options) normalizedVariant() string {
@@ -75,7 +78,7 @@ func (o Options) normalizedVariant() string {
 	switch v {
 	case "destructive":
 		return "danger"
-	case "primary", "secondary", "danger", "icon":
+	case "primary", "secondary", "danger", "danger-outline", "icon":
 		return v
 	default:
 		return defaultVariant
@@ -135,10 +138,42 @@ func baseClasses(variant string) string {
 		return "inline-flex items-center justify-center gap-2 rounded-md border border-kiban-border bg-white px-4 py-2 text-sm font-medium text-kiban-ink transition-colors hover:border-kiban-ink3 hover:bg-kiban-surface disabled:cursor-not-allowed disabled:opacity-50"
 	case "danger":
 		return "inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+	case "danger-outline":
+		return "inline-flex items-center justify-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
 	case "icon":
 		return "inline-flex h-9 w-9 items-center justify-center rounded-md border border-kiban-border bg-white text-kiban-ink transition-colors hover:border-kiban-ink3 hover:bg-kiban-surface disabled:cursor-not-allowed disabled:opacity-50"
 	default:
 		return "inline-flex items-center justify-center gap-2 rounded-md bg-kiban-primary px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+	}
+}
+
+// classFor es BuildClass con la variante flamboyant cuando el request la pide
+// (view/flamboyant). BuildClass sigue siendo la del diseño de siempre, para
+// quien la use fuera de un templ.
+func classFor(ctx context.Context, variant, extraClass string) string {
+	if flamboyant.On(ctx) {
+		return joinClasses(flamboyantClasses(variant), extraClass)
+	}
+	return BuildClass(variant, extraClass)
+}
+
+// flamboyantClasses son los botones de kiban cloud flamboyant: 13 px, borde
+// gris claro, hover azul muy tenue; primario azul kiban, peligro rojo sólido
+// o con borde. El de ícono es el botón cuadrado sin borde de los encabezados.
+func flamboyantClasses(variant string) string {
+	const focus = " focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary"
+	const base = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-[7px] text-[13px] font-medium no-underline transition-colors disabled:cursor-not-allowed" + focus
+	switch strings.ToLower(strings.TrimSpace(variant)) {
+	case "secondary":
+		return base + " border-[#CDD3DF] bg-white text-kiban-ink hover:bg-[#F4F7FF] disabled:opacity-50"
+	case "danger":
+		return base + " border-[#D92D20] bg-[#D92D20] text-white hover:border-[#B42318] hover:bg-[#B42318] disabled:opacity-50"
+	case "danger-outline":
+		return base + " border-[#F3A6A6] bg-white text-[#B42318] hover:bg-[#FDECEC] disabled:opacity-50"
+	case "icon":
+		return "inline-grid h-[34px] w-[34px] place-items-center rounded-lg border border-transparent bg-transparent text-[#606875] transition-colors hover:bg-[#F5F6F9] hover:text-kiban-ink disabled:cursor-not-allowed disabled:opacity-50" + focus
+	default:
+		return base + " border-kiban-primary bg-kiban-primary text-white hover:opacity-90 disabled:border-[#80A4FF] disabled:bg-[#80A4FF]"
 	}
 }
 

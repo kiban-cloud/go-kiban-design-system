@@ -1,5 +1,7 @@
 package input
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // Checkbox renders a plain checkbox + label pair. The explicit `value="true"`
 // is load-bearing: by default browsers send a checked checkbox as `name=on`,
 // but Gin's `bool` binding uses strconv.ParseBool which doesn't accept "on" —
@@ -32,20 +34,58 @@ templ Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, 
 			templ.KV("cursor-not-allowed opacity-60", !enabled),
 		}
 	>
-		<input
-			type="checkbox"
-			name={ name }
-			if _, ok := attrs["value"]; !ok {
-				value="true"
-			}
-			checked?={ value }
-			disabled?={ !enabled }
-			class="cursor-pointer disabled:cursor-not-allowed"
-			{ attrs... }
-		/>
+		if flamboyant.On(ctx) {
+			<span class="relative inline-grid shrink-0 place-items-center">
+				<input
+					type="checkbox"
+					name={ name }
+					if _, ok := attrs["value"]; !ok {
+						value="true"
+					}
+					checked?={ value }
+					disabled?={ !enabled }
+					class={ squareCheckboxClass }
+					{ attrs... }
+				/>
+				@squareCheckMarks()
+			</span>
+		} else {
+			<input
+				type="checkbox"
+				name={ name }
+				if _, ok := attrs["value"]; !ok {
+					value="true"
+				}
+				checked?={ value }
+				disabled?={ !enabled }
+				class="cursor-pointer disabled:cursor-not-allowed"
+				{ attrs... }
+			/>
+		}
 		<span class="text-sm text-kiban-ink">{ label }</span>
 		if !enabled && disabledHint != "" {
 			<span class="text-xs text-kiban-ink4">{ disabledHint }</span>
 		}
 	</label>
+}
+
+// squareCheckboxClass es el checkbox cuadrado de kiban cloud flamboyant: 18 px,
+// borde gris de 1.5 px, azul kiban al marcar y también en estado parcial
+// (input.indeterminate, el «seleccionar todo» a medias). La palomita y la raya
+// las pinta squareCheckMarks encima del input.
+const squareCheckboxClass = "peer m-0 h-[18px] w-[18px] cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-[#CDD3DF] bg-white transition hover:border-kiban-primary hover:shadow-[0_0_0_3px_rgba(0,71,255,0.1)] checked:border-kiban-primary checked:bg-kiban-primary indeterminate:border-kiban-primary indeterminate:bg-kiban-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary disabled:cursor-not-allowed"
+
+templ squareCheckMarks() {
+	<svg class="pointer-events-none absolute h-2.5 w-2.5 text-white opacity-0 transition peer-checked:opacity-100 peer-indeterminate:opacity-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5 5 9l4.5-6"></path></svg>
+	<svg class="pointer-events-none absolute h-2.5 w-2.5 text-white opacity-0 transition peer-indeterminate:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h7"></path></svg>
+}
+
+// SquareCheckbox es sólo la casilla cuadrada de flamboyant, sin label: para
+// tablas (seleccionar una fila o todas) y menús de filtros. attrs lleva name,
+// value, aria-label, checked y lo que haga falta.
+templ SquareCheckbox(attrs templ.Attributes) {
+	<span class="relative inline-grid shrink-0 place-items-center">
+		<input type="checkbox" class={ squareCheckboxClass } { attrs... }/>
+		@squareCheckMarks()
+	</span>
 }

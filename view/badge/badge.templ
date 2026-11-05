@@ -1,5 +1,7 @@
 package badge
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // Variant is the explicit, generic badge: the caller decides the colour
 // scheme and size, the component renders the pill. Use this when a
 // project's status code isn't covered by `VariantForCode` (i.e. it isn't
@@ -9,6 +11,15 @@ package badge
 // `variant` accepts: "success" | "warning" | "danger" | "info" | "neutral"
 // (empty = "neutral"). `size` accepts: "sm" | "md" (empty = "sm").
 templ Variant(label, variant, size string) {
+	if flamboyant.On(ctx) {
+		<span class={ pillClass(variant, size) }>{ label }</span>
+	} else {
+		@classic(label, variant, size)
+	}
+}
+
+// classic es el badge de siempre: rectángulo de esquinas suaves sin punto.
+templ classic(label, variant, size string) {
 	<span
 		class={
 			"inline-block rounded-md font-medium whitespace-nowrap",

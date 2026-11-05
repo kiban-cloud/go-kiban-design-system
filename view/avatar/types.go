@@ -3,13 +3,25 @@
 // admin layout's user menu and any other "user identity" surface.
 package avatar
 
-import "strings"
+import (
+	"context"
+	"strings"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+)
 
 type Options struct {
 	Src     string // image URL; empty falls back to initials
 	Name    string // used for initials and default aria-label
-	Size    string // "sm" (24px) | "md" (32px, default) | "lg" (40px)
+	Size    string // "sm" (24px) | "md" (32px, default) | "lg" (40px; 36px square)
 	AltText string // optional override of Name for aria-label
+	// Shape "square" es el avatar de una entidad (un cliente, una empresa):
+	// cuadrado de esquinas redondeadas. Vacío o "circle", el de una persona
+	// usuaria.
+	Shape string
+	// Tone colorea el fondo y las iniciales: "" (azul kiban) o "success"
+	// (verde). Sirve para distinguir tipos, como persona física y moral.
+	Tone string
 }
 
 func (o Options) sizeClass() string {
@@ -20,6 +32,49 @@ func (o Options) sizeClass() string {
 		return "h-10 w-10 text-base"
 	default:
 		return "h-8 w-8 text-sm"
+	}
+}
+
+func (o Options) square() bool {
+	return strings.EqualFold(strings.TrimSpace(o.Shape), "square")
+}
+
+// class arma las clases del contenedor: forma, tamaño y tono, en su versión
+// flamboyant cuando el request la pide (view/flamboyant).
+func (o Options) class(ctx context.Context) string {
+	fl := flamboyant.On(ctx)
+	c := "relative inline-flex items-center justify-center overflow-hidden shrink-0 "
+	if fl {
+		c += "font-semibold "
+	} else {
+		c += "font-medium "
+	}
+	if o.square() {
+		c += "rounded-lg " + o.squareSizeClass()
+	} else {
+		c += "rounded-full " + o.sizeClass()
+	}
+	success := strings.EqualFold(strings.TrimSpace(o.Tone), "success")
+	switch {
+	case fl && success:
+		return c + " bg-[#E3FBF5] text-[#007A63]"
+	case fl:
+		return c + " bg-[#EAF0FF] text-[#0036C4]"
+	case success:
+		return c + " bg-emerald-50 text-emerald-700"
+	default:
+		return c + " bg-kiban-primary-soft text-kiban-primary"
+	}
+}
+
+func (o Options) squareSizeClass() string {
+	switch strings.ToLower(strings.TrimSpace(o.Size)) {
+	case "sm":
+		return "h-6 w-6 text-[10px]"
+	case "lg":
+		return "h-9 w-9 text-xs"
+	default:
+		return "h-8 w-8 text-[11px]"
 	}
 }
 

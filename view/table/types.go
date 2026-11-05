@@ -8,7 +8,11 @@
 // children. The package is intentionally chrome-only.
 package table
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/button"
+import (
+	"github.com/a-h/templ"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
+)
 
 // PaginationConfig drives the shared Pagination component. PageURL is a
 // callback so the caller controls how filter state and other context is
@@ -35,6 +39,13 @@ type PaginationConfig struct {
 	// kiban-primary solid-blue look (kept for callers that already
 	// rely on it). Anterior is always secondary regardless.
 	NextVariant string
+
+	// PageSizes ofrece el selector de filas por página del pie flamboyant
+	// (10, 25, 50…). PageSize es el actual y PageSizeURL la lista sin
+	// itemsPerPage ni page: el select agrega su valor como itemsPerPage.
+	PageSizes   []int
+	PageSize    int
+	PageSizeURL string
 }
 
 // paginationNextEnabledClass picks the Tailwind class string for the
@@ -108,6 +119,11 @@ type TableConfig struct {
 	// Because the floor only applies below md, changing this never alters
 	// desktop rendering for any existing caller.
 	MinWidth string
+
+	// Sort hace ordenables las columnas (ver HeaderSort), mismo índice que
+	// Headers. SortAttrs va en cada enlace de orden: hx-get, hx-target, …
+	Sort      []HeaderSort
+	SortAttrs templ.Attributes
 }
 
 // HeaderAlignClass returns the alignment class for a given header
@@ -169,4 +185,10 @@ type BulkActionBarConfig struct {
 	// HTMX wiring), but any combination of primary + secondaries is
 	// supported.
 	Actions button.Group
+
+	// CountOne y CountMany son el conteo de filas marcadas en la franja
+	// flamboyant ("1 seleccionado", "{n} seleccionados"); el navegador
+	// reemplaza {n}. Vacíos, la franja muestra Message.
+	CountOne  string
+	CountMany string
 }

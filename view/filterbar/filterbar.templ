@@ -1,0 +1,98 @@
+package filterbar
+
+import "strconv"
+
+// Bar es la barra completa. children van a la derecha (los botones de la
+// pantalla: «Carga masiva», «Nuevo cliente»).
+templ Bar(cfg Config) {
+	<form
+		id={ cfg.ID }
+		class="flex min-h-9 flex-wrap items-center gap-2"
+		hx-get={ cfg.Action }
+		hx-target={ cfg.Target }
+		hx-swap="innerHTML"
+		hx-push-url="true"
+		hx-indicator={ cfg.Indicator }
+		hx-trigger="submit, change, input changed delay:300ms from:find input[type=search]"
+	>
+		@State(cfg, false)
+		<label class="flex h-9 min-w-[220px] flex-[0_1_340px] items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)] max-sm:flex-[1_1_100%]">
+			<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+			<input
+				type="search"
+				name={ cfg.Search.Name }
+				value={ cfg.Search.Value }
+				placeholder={ cfg.Search.Placeholder }
+				aria-label={ cfg.Search.AriaLabel }
+				autocomplete="off"
+				class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm text-kiban-ink outline-none placeholder:text-[#9096A3]"
+			/>
+		</label>
+		for _, f := range cfg.Filters {
+			@filter(f)
+		}
+		if cfg.ClearHref != "" {
+			<a href={ templ.URL(cfg.ClearHref) } class="px-1 py-1.5 text-[13px] font-medium text-kiban-primary hover:underline" data-kiban-filter-clear hidden?={ !cfg.active() }>{ cfg.ClearLabel }</a>
+		}
+		<span class="flex-1"></span>
+		{ children... }
+	</form>
+}
+
+templ filter(f Filter) {
+	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label }>
+		<summary
+			class="inline-flex h-9 cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[#CDD3DF] bg-white px-3 text-[13px] font-medium text-[#474F66] hover:bg-[#F4F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary data-[on]:border-kiban-primary data-[on]:bg-[rgba(0,71,255,0.08)] data-[on]:text-[#0036C4] [&::-webkit-details-marker]:hidden"
+			data-kiban-filter-pill
+			data-on?={ len(f.selected()) > 0 }
+		>
+			<span data-kiban-filter-text>
+				@pillText(f)
+			</span>
+			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+		</summary>
+		<div class="absolute left-0 top-[calc(100%+6px)] z-[35] w-72 max-w-[calc(100vw-32px)] rounded-xl bg-white p-1.5 shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]" role="group" aria-label={ f.Label }>
+			for _, o := range f.Options {
+				<label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-kiban-ink hover:bg-[#F4F7FF] has-[:checked]:bg-[rgba(0,71,255,0.06)] has-[:checked]:font-medium has-[:checked]:text-[#0036C4]">
+					if f.Multi {
+						<span class="relative inline-grid shrink-0 place-items-center">
+							<input type={ f.inputType() } name={ f.Name } value={ o.Value } checked?={ o.Selected } data-label={ o.Label } class="peer m-0 h-[18px] w-[18px] cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-[#CDD3DF] bg-white checked:border-kiban-primary checked:bg-kiban-primary"/>
+							<svg class="pointer-events-none absolute h-2.5 w-2.5 text-white opacity-0 peer-checked:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5 5 9l4.5-6"></path></svg>
+						</span>
+					} else {
+						<span class="relative grid h-4 w-4 shrink-0 place-items-center">
+							<input type={ f.inputType() } name={ f.Name } value={ o.Value } checked?={ o.Selected } data-label={ o.Label } class="peer absolute inset-0 m-0 cursor-pointer appearance-none"/>
+							<svg class="pointer-events-none h-3.5 w-3.5 text-kiban-primary opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+						</span>
+					}
+					<span class="min-w-0 flex-1">{ o.Label }</span>
+				</label>
+			}
+		</div>
+	</details>
+}
+
+// pillText es el texto inicial de la píldora; después lo mantiene el
+// navegador con la misma regla.
+templ pillText(f Filter) {
+	switch sel := f.selected(); len(sel) {
+		case 0:
+			{ f.Label }
+		case 1:
+			{ f.Label + ": " }<b class="font-semibold">{ sel[0].Label }</b>
+		default:
+			{ f.Label + " " }<b class="font-semibold">{ "· " + strconv.Itoa(len(sel)) }</b>
+	}
+}
+
+// State son los campos ocultos de la barra (Hidden) en un contenedor con id.
+// La barra no se vuelve a pintar al filtrar, así que cuando el orden o las
+// filas por página cambian desde la tabla, la respuesta trae State con
+// oob=true y htmx lo reemplaza dentro del form (hx-swap-oob).
+templ State(cfg Config, oob bool) {
+	<div id={ cfg.ID + "-state" } hidden if oob { hx-swap-oob="true" }>
+		for _, h := range cfg.Hidden {
+			<input type="hidden" name={ h.Name } value={ h.Value }/>
+		}
+	</div>
+}
