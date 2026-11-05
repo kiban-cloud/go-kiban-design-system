@@ -1,0 +1,97 @@
+package drawer
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/button"
+
+// FormPanel es el panel de formulario flamboyant (ver FormPanelConfig).
+// children es el cuerpo: las tarjetas del formulario.
+templ FormPanel(cfg FormPanelConfig) {
+	<div
+		id={ cfg.ID }
+		class="fixed inset-0 z-[45] text-kiban-ink"
+		data-kiban-panel
+		data-close-href={ cfg.CloseHref }
+		data-standalone?={ cfg.Standalone }
+		role="presentation"
+	>
+		<div class="absolute inset-0 bg-[rgba(244,247,255,0.55)] backdrop-blur-[6px] backdrop-saturate-[.6]" data-kiban-panel-close></div>
+		<form
+			class={
+				"absolute inset-y-0 right-0 m-0 flex flex-col bg-white shadow-[-16px_0_40px_-20px_rgba(26,32,53,0.45)]",
+				templ.KV("w-1/2 max-[1100px]:w-screen", cfg.Half),
+				templ.KV("w-[95vw] max-sm:w-screen", !cfg.Half),
+				templ.KV("animate-[kiban-panel-in_.2s_ease-out]", !cfg.Static),
+			}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby={ cfg.ID + "-title" }
+			{ cfg.FormAttrs... }
+		>
+			<div class="flex min-h-16 items-center gap-3 border-b border-kiban-border px-5 py-3">
+				<div class="flex min-w-0 flex-1 items-center gap-3">
+					if cfg.Tile != nil {
+						@cfg.Tile
+					}
+					<div class="min-w-0 flex-1">
+						<div class="text-[11px] font-semibold uppercase tracking-[.06em] text-[#9096A3]">{ cfg.Eyebrow }</div>
+						<div
+							id={ cfg.ID + "-title" }
+							class="truncate text-[17px] font-medium leading-6 data-[empty]:font-normal data-[empty]:text-[#9096A3]"
+							data-kiban-panel-title
+							data-from={ cfg.titleFrom() }
+							data-placeholder={ cfg.TitlePlaceholder }
+							data-empty?={ cfg.Title == "" }
+						>{ cfg.titleText() }</div>
+						if cfg.Subtitle != nil {
+							<div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#606875]">
+								@cfg.Subtitle
+							</div>
+						}
+					</div>
+				</div>
+				<div class="flex items-center gap-2">
+					if cfg.HeaderActions != nil {
+						@cfg.HeaderActions
+					}
+					@button.Button(button.Options{Variant: "icon", Icon: "close", AriaLabel: cfg.CloseLabel, Attrs: templ.Attributes{"data-kiban-panel-close": ""}})
+				</div>
+			</div>
+			<div class="flex-1 overflow-auto bg-[#F4F7FF] px-6 pb-7 pt-5 max-sm:p-4 [&_.border-kiban-border]:border-[#CDD3DF] [&_.text-red-500]:text-[#B42318] [&_label.text-xs]:text-[#474F66]">
+				{ children... }
+			</div>
+			<div class="flex min-h-[60px] flex-wrap items-center gap-3 border-t border-kiban-border bg-white px-5 py-3">
+				if cfg.FooterLeft != nil {
+					@cfg.FooterLeft
+				}
+				<div class="min-w-0 flex-1 text-[13px] text-[#606875]" data-kiban-panel-sum data-pending={ cfg.SummaryPending } data-ready={ cfg.SummaryReady }>{ cfg.SummaryPending }</div>
+				<div class="flex shrink-0 gap-2 max-sm:w-full [&>*]:max-sm:flex-1">
+					for _, a := range cfg.Actions.SecondaryActions {
+						@button.Button(button.WithDefaultVariant(a, "secondary"))
+					}
+					if cfg.Actions.PrimaryAction != nil {
+						@button.Button(button.WithDefaultVariant(*cfg.Actions.PrimaryAction, "primary"))
+					}
+				</div>
+			</div>
+		</form>
+		if cfg.Guard != nil {
+			<div class="absolute inset-0 z-[5] flex items-center justify-center bg-[rgba(26,32,53,0.3)] p-4 [&[hidden]]:hidden" data-kiban-panel-guard hidden>
+				<div class="w-[min(480px,100%)] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true" aria-labelledby={ cfg.ID + "-guard-title" }>
+					<div class="flex items-start gap-3">
+						<span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#F3EAFF] text-[#6A00D6]">
+							<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+						</span>
+						<div>
+							<h2 id={ cfg.ID + "-guard-title" } class="mb-1.5 mt-[7px] text-base font-medium leading-[22px]">{ cfg.Guard.Title }</h2>
+							<p class="m-0 text-[13px] leading-normal text-[#606875]">{ cfg.Guard.Text }</p>
+						</div>
+					</div>
+					<div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-kiban-border pt-4">
+						@button.Button(button.Options{Label: cfg.Guard.Discard, Variant: "danger-outline", ExtraClass: "mr-auto", Attrs: templ.Attributes{"data-kiban-guard-discard": ""}})
+						@button.Button(button.Options{Label: cfg.Guard.Stay, Variant: "secondary", Attrs: templ.Attributes{"data-kiban-guard-stay": ""}})
+						@button.Button(button.Options{Label: cfg.Guard.SaveClose, Variant: "primary", Attrs: templ.Attributes{"data-kiban-guard-save": ""}})
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}

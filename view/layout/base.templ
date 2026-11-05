@@ -107,6 +107,9 @@ templ Base(cfg Config) {
 				.htmx-request.htmx-indicator { opacity: 1; pointer-events: auto; }
 
 				@keyframes kiban-spin { to { transform: rotate(360deg); } }
+				/* Entrada del panel de formulario flamboyant (drawer.FormPanel). */
+				@keyframes kiban-panel-in { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+				@media (prefers-reduced-motion: reduce) { [data-kiban-panel] form { animation: none !important; } }
 				.ds-spinner {
 					width: 32px; height: 32px;
 					border: 3px solid rgba(0, 71, 255, 0.15);
@@ -1648,6 +1651,125 @@ templ Base(cfg Config) {
 					document.cookie = 'kiban_ui=' + encodeURIComponent(btn.getAttribute('data-kiban-ui')) + '; path=/; max-age=31536000; SameSite=Lax';
 					try { localStorage.removeItem('htmx-history-cache'); } catch (_) {}
 					window.location.reload();
+				});
+
+				// drawer.FormPanel ([data-kiban-panel]) y card.Step
+				// ([data-kiban-step]). Al abrir y con cada cambio: los pasos
+				// visibles se numeran en orden y el número se pinta azul
+				// cuando el paso está completo (sus data-kiban-step-required
+				// con valor válido, o sin lista, cualquier campo lleno); el
+				// título se arma con los campos de data-from; el pie dice
+				// data-ready o data-pending según el form pase la validación
+				// del navegador. Cerrar (botón, fondo, Escape) con cambios y
+				// con aviso abre el aviso; si no, quita el panel o, si llegó
+				// con la página (data-standalone), navega a data-close-href.
+				function kibanFieldFilled(el) {
+					if (el.type === 'checkbox' || el.type === 'radio') return el.checked;
+					return el.value.trim() !== '' && el.checkValidity();
+				}
+				function kibanStepDone(card) {
+					var req = (card.getAttribute('data-kiban-step-required') || '').split(' ').filter(Boolean);
+					if (req.length) {
+						return req.every(function (n) {
+							var els = card.querySelectorAll('[name="' + n + '"]');
+							if (!els.length) return false;
+							return Array.prototype.some.call(els, kibanFieldFilled);
+						});
+					}
+					return Array.prototype.some.call(card.querySelectorAll('input, select, textarea'), function (el) {
+						return el.type !== 'hidden' && el.type !== 'button' && !el.disabled && kibanFieldFilled(el);
+					});
+				}
+				function kibanPanelRefresh(root) {
+					var n = 0;
+					root.querySelectorAll('[data-kiban-step]').forEach(function (card) {
+						if (card.offsetParent === null) return;
+						n++;
+						var num = card.querySelector('[data-kiban-step-n]');
+						if (!num) return;
+						num.textContent = n;
+						num.toggleAttribute('data-ok', kibanStepDone(card));
+					});
+					var form = root.querySelector('form');
+					var title = root.querySelector('[data-kiban-panel-title]');
+					var from = title ? (title.getAttribute('data-from') || '').split(' ').filter(Boolean) : [];
+					if (title && from.length && form) {
+						var parts = from.map(function (name) {
+							var el = form.querySelector('[name="' + name + '"]');
+							return el && el.offsetParent !== null ? el.value.trim() : '';
+						}).filter(Boolean);
+						title.textContent = parts.length ? parts.join(' ') : title.getAttribute('data-placeholder');
+						title.toggleAttribute('data-empty', !parts.length);
+					}
+					var sum = root.querySelector('[data-kiban-panel-sum]');
+					if (sum && form) {
+						var ok = form.checkValidity();
+						sum.textContent = (ok ? sum.getAttribute('data-ready') : sum.getAttribute('data-pending')) || '';
+					}
+				}
+				function kibanPanelInit() {
+					var any = false;
+					document.querySelectorAll('[data-kiban-panel]').forEach(function (root) { any = true; kibanPanelRefresh(root); });
+					document.documentElement.style.overflow = any ? 'hidden' : '';
+				}
+				function kibanPanelClose(root, force) {
+					var guard = root.querySelector('[data-kiban-panel-guard]');
+					if (!force && guard && root.hasAttribute('data-dirty')) {
+						guard.hidden = false;
+						var stay = guard.querySelector('[data-kiban-guard-stay]');
+						if (stay) stay.focus();
+						return;
+					}
+					if (root.hasAttribute('data-standalone') && root.getAttribute('data-close-href')) {
+						window.location.href = root.getAttribute('data-close-href');
+						return;
+					}
+					root.remove();
+					kibanPanelInit();
+				}
+				document.addEventListener('DOMContentLoaded', kibanPanelInit);
+				document.addEventListener('htmx:afterSettle', kibanPanelInit);
+				['input', 'change'].forEach(function (type) {
+					document.addEventListener(type, function (e) {
+						var root = e.target.closest && e.target.closest('[data-kiban-panel]');
+						if (!root || !(e.target.form || e.target.tagName === 'FORM')) return;
+						root.setAttribute('data-dirty', '');
+						kibanPanelRefresh(root);
+					});
+				});
+				// Un swap de htmx dentro del form del panel (agregar un
+				// renglón, una sección que se repinta) es un cambio de quien
+				// edita. Quitar un renglón lo avisa con un change en el form.
+				document.addEventListener('htmx:afterSettle', function (e) {
+					var el = e.detail && e.detail.elt;
+					var root = el && el.closest && el.closest('[data-kiban-panel] form') && el.closest('[data-kiban-panel]');
+					if (root) root.setAttribute('data-dirty', '');
+				});
+				document.addEventListener('click', function (e) {
+					var t = e.target;
+					if (!t.closest) return;
+					var root = t.closest('[data-kiban-panel]');
+					if (!root) return;
+					var guard = root.querySelector('[data-kiban-panel-guard]');
+					if (t.closest('[data-kiban-guard-stay]')) { guard.hidden = true; return; }
+					if (t.closest('[data-kiban-guard-discard]')) { kibanPanelClose(root, true); return; }
+					if (t.closest('[data-kiban-guard-save]')) {
+						guard.hidden = true;
+						var form = root.querySelector('form');
+						if (form.requestSubmit) form.requestSubmit(); else form.submit();
+						return;
+					}
+					if (t.closest('[data-kiban-panel-close]')) kibanPanelClose(root, false);
+				});
+				document.addEventListener('keydown', function (e) {
+					if (e.key !== 'Escape') return;
+					var panels = document.querySelectorAll('[data-kiban-panel]');
+					if (!panels.length) return;
+					var root = panels[panels.length - 1];
+					var guard = root.querySelector('[data-kiban-panel-guard]');
+					if (guard && !guard.hidden) { guard.hidden = true; return; }
+					if (document.querySelector('details[data-kiban-filter][open]')) return;
+					kibanPanelClose(root, false);
 				});
 
 				// filterbar.Bar: cada [data-kiban-filter] es un <details> con

@@ -1,5 +1,7 @@
 package input
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // Toggle is semantically a checkbox (form value, Gin binding, accessibility)
 // rendered as a switch. The hidden checkbox drives a peer-checked Tailwind
 // chain that animates a circle from left to right and tints the track
@@ -12,6 +14,33 @@ package input
 // `attrs` is the escape hatch for project-specific HTMX wiring; spread onto
 // the `<input>` exactly like Checkbox.
 templ Toggle(name, label string, value, enabled bool, attrs templ.Attributes) {
+	@ToggleWith(ToggleOptions{Name: name, Label: label, Value: value, Enabled: enabled, Attrs: attrs})
+}
+
+// ToggleWith es Toggle con texto de ayuda (Hint) debajo del label. En
+// flamboyant es un renglón: el texto a la izquierda y el interruptor a la
+// derecha; deshabilitado, el label se apaga y el Hint explica por qué.
+templ ToggleWith(o ToggleOptions) {
+	if flamboyant.On(ctx) {
+		<label class={ "flex items-center justify-between gap-3 py-0.5 text-[13px]", templ.KV("cursor-pointer", o.Enabled), templ.KV("cursor-not-allowed", !o.Enabled) }>
+			<span class="min-w-0">
+				<b class={ "block text-sm font-medium", templ.KV("text-kiban-ink", o.Enabled), templ.KV("text-[#9096A3]", !o.Enabled) }>{ o.Label }</b>
+				if o.Hint != "" {
+					<small class="block text-xs leading-4 text-[#9096A3]">{ o.Hint }</small>
+				}
+			</span>
+			<span class="relative inline-block h-5 w-9 shrink-0">
+				<input type="checkbox" name={ o.Name } value="true" checked?={ o.Value } disabled?={ !o.Enabled } class="peer sr-only" { o.Attrs... }/>
+				<span class="absolute inset-0 rounded-full bg-[#D5D9E2] transition-colors peer-checked:bg-kiban-primary peer-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-kiban-primary"></span>
+				<span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform peer-checked:translate-x-4"></span>
+			</span>
+		</label>
+	} else {
+		@classicToggle(o.Name, o.Label, o.Value, o.Enabled, o.Attrs)
+	}
+}
+
+templ classicToggle(name, label string, value, enabled bool, attrs templ.Attributes) {
 	<label
 		class={
 			"flex items-center gap-3",
