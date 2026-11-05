@@ -239,7 +239,9 @@ func strip(tabs []TabHeader) templ.Component {
 // flamboyantStrip es la tira de kiban-proto: subrayado bajo el label, ícono
 // en el color del módulo y contador en píldora, ambos sólo en la pestaña
 // activa. El estado activo lo da [data-kiban-tabs-active] en el botón
-// (base.templ), que las clases leen con group-data.
+// (base.templ), que las clases leen con group-data. El ícono lleva abajo el
+// mismo espacio que el subrayado del label (pb-2 + 1 px de borde) para
+// quedar centrado con el texto y no con la etiqueta entera.
 func flamboyantStrip(tabs []TabHeader) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -273,7 +275,7 @@ func flamboyantStrip(tabs []TabHeader) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(t.Key)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 93, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 95, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -284,7 +286,7 @@ func flamboyantStrip(tabs []TabHeader) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if t.Icon != nil {
-				var templ_7745c5c3_Var11 = []any{"inline-flex [&>svg]:h-[15px] [&>svg]:w-[15px]", tabIconActiveClass(t.IconColor)}
+				var templ_7745c5c3_Var11 = []any{"mb-[9px] inline-flex [&>svg]:h-[15px] [&>svg]:w-[15px]", tabIconActiveClass(t.IconColor)}
 				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -322,7 +324,7 @@ func flamboyantStrip(tabs []TabHeader) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(t.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 101, Col: 130}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 103, Col: 130}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -340,7 +342,7 @@ func flamboyantStrip(tabs []TabHeader) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(t.Count))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 103, Col: 250}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 105, Col: 250}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -404,7 +406,7 @@ func Body(key string) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(key)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 121, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/tabs/panel.templ`, Line: 123, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
