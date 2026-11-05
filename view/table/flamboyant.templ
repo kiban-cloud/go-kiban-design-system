@@ -45,8 +45,8 @@ templ flamboyantTable(cfg TableConfig) {
 			<thead>
 				<tr>
 					if cfg.BulkSelect {
-						<th class="h-11 w-11 border-b border-[#DCE5FF] bg-[#F4F7FF] pl-4 pr-0">
-							<label class="-m-1.5 inline-grid cursor-pointer place-items-center p-1.5">
+						<th class="h-11 w-11 border-b border-[#DCE5FF] bg-[#F4F7FF] pl-4 pr-0 text-left align-middle">
+							<label class="-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5">
 								@input.SquareCheckbox(templ.Attributes{"aria-label": catalog.T(ctx, "table.select_all"), "data-kiban-select-all": "ids"})
 							</label>
 						</th>
@@ -107,7 +107,7 @@ templ flamboyantRow(o RowOptions) {
 	>
 		if o.BulkValue != "" {
 			<td class="w-11 !pl-4 !pr-0">
-				<label class="-m-1.5 inline-grid cursor-pointer place-items-center p-1.5">
+				<label class="-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5">
 					@input.SquareCheckbox(templ.Attributes{"name": "ids", "value": o.BulkValue, "aria-label": catalog.T(ctx, "table.select_row"), "data-label": o.BulkLabel})
 				</label>
 			</td>

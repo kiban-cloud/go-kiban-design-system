@@ -158,3 +158,17 @@ func TestRowWith_AtributosEtiquetaYCursor(t *testing.T) {
 	assert.Contains(t, body, `data-label="Ana López"`)
 	assert.NotContains(t, body, "data-href")
 }
+
+// La casilla de «seleccionar todo» se alinea con las de las filas: celda a la
+// izquierda (un <th> centra por defecto) y etiqueta de bloque, que no cuelga
+// de la línea base del texto y queda centrada en la altura de la fila.
+func TestTable_CasillaDelEncabezadoAlineadaConLasFilas(t *testing.T) {
+	head := render(t, flam, table.Table(table.TableConfig{Headers: []string{"Cliente"}, BulkSelect: true}))
+	row := render(t, withChild(flam, `<td>Ana</td>`), table.RowWith(table.RowOptions{BulkValue: "c1"}))
+
+	assert.Contains(t, head, `pl-4 pr-0 text-left align-middle">`)
+	label := `<label class="-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5">`
+	assert.Contains(t, head, label)
+	assert.Contains(t, row, label)
+	assert.NotContains(t, head+row, "inline-grid cursor-pointer")
+}

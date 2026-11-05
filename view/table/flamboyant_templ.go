@@ -205,7 +205,7 @@ func flamboyantTable(cfg TableConfig) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if cfg.BulkSelect {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<th class=\"h-11 w-11 border-b border-[#DCE5FF] bg-[#F4F7FF] pl-4 pr-0\"><label class=\"-m-1.5 inline-grid cursor-pointer place-items-center p-1.5\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<th class=\"h-11 w-11 border-b border-[#DCE5FF] bg-[#F4F7FF] pl-4 pr-0 text-left align-middle\"><label class=\"-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -513,7 +513,7 @@ func flamboyantRow(o RowOptions) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if o.BulkValue != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<td class=\"w-11 !pl-4 !pr-0\"><label class=\"-m-1.5 inline-grid cursor-pointer place-items-center p-1.5\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<td class=\"w-11 !pl-4 !pr-0\"><label class=\"-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
