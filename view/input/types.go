@@ -16,10 +16,32 @@
 //     server-side and the label asterisk is the user-facing hint.
 package input
 
+import "github.com/a-h/templ"
+
 // SelectOption is one row of a `<select>`. Iterated by Select to render
 // `<option value=Value selected=...>Label</option>`. Value is what the form
 // submits; Label is what the user sees.
 type SelectOption struct {
 	Value string
 	Label string
+}
+
+// RadioCardOptions configura RadioCardWith.
+type RadioCardOptions struct {
+	Name, Value, Title, Subtitle string
+	Checked                      bool
+	Attrs                        templ.Attributes
+	// Icon y Tone sólo se ven en flamboyant: el ícono va en un cuadro azul
+	// (Tone vacío) o verde (Tone "success").
+	Icon templ.Component
+	Tone string
+}
+
+// ToggleOptions configura ToggleWith.
+type ToggleOptions struct {
+	Name, Label string
+	// Hint es la línea de ayuda: qué hace la opción o, deshabilitada, por qué.
+	Hint           string
+	Value, Enabled bool
+	Attrs          templ.Attributes
 }

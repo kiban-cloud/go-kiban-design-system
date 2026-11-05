@@ -1,5 +1,7 @@
 package input
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // RadioCard is the kiban "card-style radio button": a bordered, clickable
 // label that wraps a native `<input type="radio">` and a title + optional
 // subtitle block. The whole card highlights when checked
@@ -21,6 +23,34 @@ package input
 // would stay stuck on whichever option was originally checked at server
 // render time.
 templ RadioCard(name, value, title, subtitle string, checked bool, attrs templ.Attributes) {
+	@RadioCardWith(RadioCardOptions{Name: name, Value: value, Title: title, Subtitle: subtitle, Checked: checked, Attrs: attrs})
+}
+
+// RadioCardWith es RadioCard con opciones: en flamboyant, un ícono en un
+// cuadro de color (Icon, Tone "success" verde o vacío azul) y la tarjeta
+// marcada en azul. Con el diseño de siempre el ícono no se muestra.
+templ RadioCardWith(o RadioCardOptions) {
+	if flamboyant.On(ctx) {
+		<label data-kiban-radio-card class="relative grid cursor-pointer grid-cols-[36px_minmax(0,1fr)] items-center gap-2.5 rounded-lg border border-[#CDD3DF] bg-white px-3 py-2.5 hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary">
+			<input type="radio" name={ o.Name } value={ o.Value } checked?={ o.Checked } class="pointer-events-none absolute opacity-0" { o.Attrs... }/>
+			<span class={ "grid h-9 w-9 place-items-center rounded-lg", templ.KV("bg-[#E3FBF5] text-[#007A63]", o.Tone == "success"), templ.KV("bg-[#EAF0FF] text-[#0036C4]", o.Tone != "success") }>
+				if o.Icon != nil {
+					@o.Icon
+				}
+			</span>
+			<span class="min-w-0">
+				<b class="block text-sm font-medium leading-[18px] text-kiban-ink">{ o.Title }</b>
+				if o.Subtitle != "" {
+					<small class="block text-xs leading-4 text-[#606875]">{ o.Subtitle }</small>
+				}
+			</span>
+		</label>
+	} else {
+		@classicRadioCard(o.Name, o.Value, o.Title, o.Subtitle, o.Checked, o.Attrs)
+	}
+}
+
+templ classicRadioCard(name, value, title, subtitle string, checked bool, attrs templ.Attributes) {
 	<label
 		data-kiban-radio-card
 		class="border border-kiban-border rounded-md px-4 py-3 cursor-pointer flex items-center gap-3 hover:border-kiban-ink3"

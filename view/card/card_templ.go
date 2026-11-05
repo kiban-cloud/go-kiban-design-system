@@ -8,6 +8,8 @@ package card
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // Card renders the bare card chrome: white background, kiban-border (or a
 // status-coloured border via `variant`), `rounded-md`, `p-6`, and a
 // `space-y-5` rhythm between top-level children. Pass any content as
@@ -97,8 +99,10 @@ func CardWithClass(variant, extraClass string) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var4 = []any{"bg-white border rounded-md p-6 space-y-5",
-			templ.KV("border-kiban-border", variant == "" || variant == "default"),
+		var templ_7745c5c3_Var4 = []any{templ.KV("bg-white border rounded-md p-6 space-y-5", !flamboyant.On(ctx)),
+			templ.KV("bg-white border rounded-[10px] p-5 space-y-[14px]", flamboyant.On(ctx)),
+			templ.KV("border-kiban-border", (variant == "" || variant == "default") && !flamboyant.On(ctx)),
+			templ.KV("border-[#CDD3DF]", (variant == "" || variant == "default") && flamboyant.On(ctx)),
 			templ.KV("border-emerald-200", variant == "success"),
 			templ.KV("border-amber-200", variant == "warning"),
 			templ.KV("border-red-200", variant == "danger"),
