@@ -172,3 +172,25 @@ func TestTable_CasillaDelEncabezadoAlineadaConLasFilas(t *testing.T) {
 	assert.Contains(t, row, label)
 	assert.NotContains(t, head+row, "inline-grid cursor-pointer")
 }
+
+// Con varias columnas ordenables, cada enlace pide su propio orden: el hx-get
+// sale del Href de la columna, no de SortAttrs (que es uno para todas).
+func TestTable_CadaColumnaOrdenablePideSuURL(t *testing.T) {
+	cfg := table.TableConfig{
+		Headers:   []string{"Cliente", "Correo", "Creado"},
+		Sort:      []table.HeaderSort{{Href: "/c?sort=name_asc"}, {Href: "/c?sort=email_asc"}, {Href: "/c?sort=created_asc", Dir: "desc"}},
+		SortAttrs: templ.Attributes{"hx-target": "#lista", "hx-swap": "innerHTML"},
+	}
+	body := render(t, flam, table.Table(cfg))
+
+	for _, u := range []string{"name_asc", "email_asc", "created_asc"} {
+		assert.Contains(t, body, `hx-get="/c?sort=`+u+`" hx-swap="innerHTML" hx-target="#lista"`, u)
+	}
+}
+
+func TestTable_SinSortAttrsLosEnlacesNoLlevanHxGet(t *testing.T) {
+	body := render(t, flam, table.Table(table.TableConfig{Headers: []string{"Creado"}, Sort: []table.HeaderSort{{Href: "/c?sort=created_asc"}}}))
+
+	assert.Contains(t, body, `href="/c?sort=created_asc"`)
+	assert.NotContains(t, body, "hx-get")
+}

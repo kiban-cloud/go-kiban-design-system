@@ -61,6 +61,9 @@ templ flamboyantTable(cfg TableConfig) {
 										templ.KV("flex-row-reverse", cfg.HeaderAlignClass(i) == "text-right"),
 										templ.KV("text-kiban-primary", s.Dir != ""),
 									}
+									if len(cfg.SortAttrs) > 0 {
+										hx-get={ s.Href }
+									}
 									{ cfg.SortAttrs... }
 								>
 									{ h }
