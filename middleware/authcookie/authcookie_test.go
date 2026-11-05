@@ -13,11 +13,14 @@ import (
 	domain_core_authorization_model "github.com/kiban-cloud/go-kiban/domain/authorization/model"
 
 	"github.com/kiban-cloud/go-kiban-design-system/middleware/authcookie"
+	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
+	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 )
 
 type fakeAuthorize struct {
-	status string
-	err    error
+	status   string
+	err      error
+	features []string
 }
 
 func (f fakeAuthorize) AuthorizeWithSessionUseCase(_, spaceID, token string, sandbox bool, _ string) (domain_core_authorization_model.Authorization, error) {
@@ -29,6 +32,7 @@ func (f fakeAuthorize) AuthorizeWithSessionUseCase(_, spaceID, token string, san
 		Token:                token,
 		Sandbox:              sandbox,
 		BillingAccountStatus: f.status,
+		Features:             f.features,
 	}, nil
 }
 
@@ -150,4 +154,66 @@ func TestMiddleware_ContractExpiredGetsTheFullPage(t *testing.T) {
 	assert.Contains(t, body, `href="mailto:help@kiban.com"`)
 	assert.NotContains(t, body, `href="/kiban-cloud/billing"`)
 	assert.Empty(t, rec.Header().Get("Location"), "no redirige al login")
+}
+
+// shellFlags corre el middleware con los feature flags de la compañía y la
+// cookie kiban_ui dados, y devuelve qué banderas del shell vio la herramienta.
+func shellFlags(t *testing.T, features []string, ui string) (shell, sw bool) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	engine := gin.New()
+	m := authcookie.New(fakeAuthorize{features: features}, "/login")
+	engine.GET("/tool", m.Middleware(), func(c *gin.Context) {
+		ctx := c.Request.Context()
+		shell = feature.Enabled(ctx, layout.FlagShellFlamboyant)
+		sw = feature.Enabled(ctx, layout.FlagShellFlamboyantSwitch)
+		c.Status(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/tool", nil)
+	req.AddCookie(&http.Cookie{Name: authcookie.CookieSession, Value: "jwt"})
+	req.AddCookie(&http.Cookie{Name: authcookie.CookieSpaceID, Value: "space"})
+	if ui != "" {
+		req.AddCookie(&http.Cookie{Name: layout.UICookie, Value: ui})
+	}
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+	return shell, sw
+}
+
+func TestMiddleware_SinFeatureFlagNoHayShellNiSwitch(t *testing.T) {
+	shell, sw := shellFlags(t, nil, "")
+
+	assert.False(t, shell)
+	assert.False(t, sw)
+}
+
+func TestMiddleware_ConFeatureFlagYSinCookieSeOfreceElSwitch(t *testing.T) {
+	shell, sw := shellFlags(t, []string{authcookie.FeatureShellFlamboyant}, "")
+
+	assert.False(t, shell, "sin elección del usuario se ve el diseño actual")
+	assert.True(t, sw)
+}
+
+func TestMiddleware_ConFeatureFlagYCookieSePintaFlamboyant(t *testing.T) {
+	shell, sw := shellFlags(t, []string{authcookie.FeatureShellFlamboyant}, layout.UIFlamboyant)
+
+	assert.True(t, shell)
+	assert.True(t, sw)
+}
+
+func TestMiddleware_CookieClasicoDejaElDisenoActual(t *testing.T) {
+	shell, sw := shellFlags(t, []string{authcookie.FeatureShellFlamboyant}, layout.UIClasico)
+
+	assert.False(t, shell)
+	assert.True(t, sw)
+}
+
+func TestMiddleware_CookieSinFeatureFlagNoPrendeNada(t *testing.T) {
+	shell, sw := shellFlags(t, []string{"OTRO_FLAG"}, layout.UIFlamboyant)
+
+	assert.False(t, shell, "la cookie sola no alcanza: la compañía necesita el flag")
+	assert.False(t, sw)
 }

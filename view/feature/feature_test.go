@@ -87,6 +87,22 @@ func TestReplace_CompararMuestraAmbos(t *testing.T) {
 	assert.Equal(t, 2, strings.Count(body, `data-feature="cuotas"`))
 }
 
+func TestEnable_SumaSinApagarLasQueHabia(t *testing.T) {
+	ctx := feature.With(context.Background(), feature.Flags{Enabled: map[string]bool{"cuotas": true}, Compare: true})
+	ctx = feature.Enable(ctx, "dispersion")
+
+	assert.True(t, feature.Enabled(ctx, "cuotas"))
+	assert.True(t, feature.Enabled(ctx, "dispersion"))
+	assert.True(t, feature.Comparing(ctx))
+}
+
+func TestEnable_SinContextoPrevio(t *testing.T) {
+	ctx := feature.Enable(context.Background(), "cuotas")
+
+	assert.True(t, feature.Enabled(ctx, "cuotas"))
+	assert.False(t, feature.Enabled(ctx, "dispersion"))
+}
+
 func TestLabel_CaeAlNombre(t *testing.T) {
 	assert.Equal(t, "cuotas", feature.Label(context.Background(), "cuotas"))
 	ctx := feature.With(context.Background(), feature.Flags{Labels: map[string]string{"cuotas": "Fase 2"}})

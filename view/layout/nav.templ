@@ -3,6 +3,7 @@ package layout
 import (
 	"strconv"
 
+	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
 	"github.com/kiban-cloud/go-kiban-design-system/view/logo"
 )
@@ -237,6 +238,16 @@ templ topbarUserMenu(cfg Config) {
 					{ item.Label }
 				</a>
 			}
+			if feature.Enabled(ctx, FlagShellFlamboyantSwitch) {
+				<button
+					type="button"
+					role="menuitem"
+					class="w-full text-left px-3 py-2 text-sm hover:bg-kiban-surface text-kiban-primary"
+					data-kiban-ui={ UIFlamboyant }
+				>
+					{ docsCatalog.T(ctx, "shell.switch.try") }
+				</button>
+			}
 			<form method="POST" action={ templ.URL(cfg.LogoutAction) }>
 				<button
 					type="submit"
@@ -317,11 +328,36 @@ templ toolIcon(cfg Config, t Tool) {
 
 templ SubNav(cfg Config) {
 	<nav data-sidebar-subnav class="w-56 shrink-0 bg-white border-r border-kiban-border p-3">
-		<div class="text-xs text-kiban-ink4 px-3 py-2 font-medium">{ cfg.SectionLabel }</div>
-		for _, item := range cfg.SubItems {
-			@subItem(cfg, item)
+		if cfg.Grouped() {
+			@toolHeader(cfg)
+			for i, item := range cfg.SubItems {
+				if item.Group != "" && (i == 0 || cfg.SubItems[i-1].Group != item.Group) {
+					<div class="px-3 pt-4 pb-1 text-[11px] font-medium uppercase tracking-wide text-kiban-ink4">{ item.Group }</div>
+				} else if item.Gap {
+					<div class="pt-3"></div>
+				}
+				@subItem(cfg, item)
+			}
+		} else {
+			<div class="text-xs text-kiban-ink4 px-3 py-2 font-medium">{ cfg.SectionLabel }</div>
+			for _, item := range cfg.SubItems {
+				@subItem(cfg, item)
+			}
 		}
 	</nav>
+}
+
+// toolHeader names the tool the sub-nav belongs to: the rail icon of the
+// active tool plus the SectionLabel. Only used by the grouped sub-nav.
+templ toolHeader(cfg Config) {
+	<div class="flex items-center gap-2 px-3 py-2 mb-1 rounded-md text-kiban-ink" data-sidebar-tool-header>
+		if t, ok := cfg.ActiveTool(); ok && t.Icon != nil {
+			<span class="w-6 h-6 rounded-md bg-kiban-primary-soft text-kiban-primary inline-flex items-center justify-center shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">
+				@t.Icon()
+			</span>
+		}
+		<span class="text-[13px] font-medium flex-1">{ cfg.SectionLabel }</span>
+	</div>
 }
 
 templ subItem(cfg Config, item SubItem) {

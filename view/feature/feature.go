@@ -39,6 +39,23 @@ func With(ctx context.Context, f Flags) context.Context {
 	return context.WithValue(ctx, ctxKey{}, f)
 }
 
+// Enable prende las banderas name sin apagar las que el contexto ya traía.
+// Sirve cuando más de un middleware aporta banderas al mismo request
+// (middleware/authcookie las del shell, el módulo las suyas), donde With
+// pisaría lo anterior.
+func Enable(ctx context.Context, names ...string) context.Context {
+	f := flags(ctx)
+	enabled := make(map[string]bool, len(f.Enabled)+len(names))
+	for k, v := range f.Enabled {
+		enabled[k] = v
+	}
+	for _, n := range names {
+		enabled[n] = true
+	}
+	f.Enabled = enabled
+	return With(ctx, f)
+}
+
 func flags(ctx context.Context) Flags {
 	f, _ := ctx.Value(ctxKey{}).(Flags)
 	return f

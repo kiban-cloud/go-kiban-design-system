@@ -18,6 +18,7 @@
 package authcookie
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -28,7 +29,9 @@ import (
 
 	"github.com/kiban-cloud/go-kiban-design-system/view"
 	"github.com/kiban-cloud/go-kiban-design-system/view/accountblocked"
+	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
 	"github.com/kiban-cloud/go-kiban-design-system/view/ipblocked"
+	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 	controller_core_middleware "github.com/kiban-cloud/go-kiban/controller_core/middleware"
 	controller_core_model "github.com/kiban-cloud/go-kiban/controller_core/model"
 	domain_core_authorization_interface "github.com/kiban-cloud/go-kiban/domain/authorization/interface"
@@ -131,8 +134,30 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 		}
 
 		c.Set(controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT, authorization)
+		c.Request = c.Request.WithContext(shellFlags(c, authorization))
 		c.Next()
 	}
+}
+
+// FeatureShellFlamboyant es el feature flag de kiban-cloud (colección
+// feature_flags, en mayúsculas) que deja a una compañía usar el shell
+// flamboyant.
+const FeatureShellFlamboyant = "SHELL_FLAMBOYANT"
+
+// shellFlags traduce el feature flag de la compañía y la elección del usuario
+// (cookie kiban_ui) a las banderas del design system. Con el flag, el menú del
+// usuario ofrece el switch; el shell nuevo se pinta sólo si además el usuario
+// lo eligió. Sin cookie se ve el diseño actual.
+func shellFlags(c *gin.Context, authorization domain_core_authorization_model.Authorization) context.Context {
+	ctx := c.Request.Context()
+	if !authorization.HasFeature(FeatureShellFlamboyant) {
+		return ctx
+	}
+	names := []string{layout.FlagShellFlamboyantSwitch}
+	if ui, err := c.Cookie(layout.UICookie); err == nil && ui == layout.UIFlamboyant {
+		names = append(names, layout.FlagShellFlamboyant)
+	}
+	return feature.Enable(ctx, names...)
 }
 
 // localDevOverride returns the value of a cookie-fallback env var, but ONLY
