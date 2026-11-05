@@ -1650,6 +1650,138 @@ templ Base(cfg Config) {
 					window.location.reload();
 				});
 
+				// filterbar.Bar: cada [data-kiban-filter] es un <details> con
+				// casillas o radios. Al cambiar, se rearma el texto de su
+				// píldora («Tipo», «Tipo: Moral», «Tipo · 2»), se marca
+				// data-on y se muestra u oculta el enlace de limpiar. Un radio
+				// cierra su menú; un clic fuera o Escape cierra todos.
+				function kibanFilterSync(d) {
+					var vals = [];
+					d.querySelectorAll('input:checked').forEach(function (i) {
+						if (i.value !== '') vals.push(i.getAttribute('data-label') || i.value);
+					});
+					var txt = d.querySelector('[data-kiban-filter-text]');
+					var label = d.getAttribute('data-label') || '';
+					if (txt) {
+						txt.textContent = '';
+						if (!vals.length) {
+							txt.textContent = label;
+						} else {
+							var b = document.createElement('b');
+							b.className = 'font-semibold';
+							b.textContent = vals.length === 1 ? vals[0] : '· ' + vals.length;
+							txt.appendChild(document.createTextNode(vals.length === 1 ? label + ': ' : label + ' '));
+							txt.appendChild(b);
+						}
+					}
+					var pill = d.querySelector('[data-kiban-filter-pill]');
+					if (pill) pill.toggleAttribute('data-on', vals.length > 0);
+					kibanFilterClear(d.closest('form'));
+				}
+				function kibanFilterClear(form) {
+					var clear = form && form.querySelector('[data-kiban-filter-clear]');
+					if (!clear) return;
+					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""])');
+					var q = form.querySelector('input[type=search]');
+					clear.hidden = !(on || (q && q.value.trim() !== ''));
+				}
+				document.addEventListener('input', function (e) {
+					if (e.target.type === 'search' && e.target.form) kibanFilterClear(e.target.form);
+				});
+				document.addEventListener('change', function (e) {
+					var d = e.target.closest && e.target.closest('[data-kiban-filter]');
+					if (!d) return;
+					kibanFilterSync(d);
+					if (e.target.type === 'radio') d.open = false;
+				});
+				document.addEventListener('click', function (e) {
+					document.querySelectorAll('details[data-kiban-filter][open]').forEach(function (d) {
+						if (!d.contains(e.target)) d.open = false;
+					});
+				});
+				document.addEventListener('keydown', function (e) {
+					if (e.key !== 'Escape') return;
+					document.querySelectorAll('details[data-kiban-filter][open]').forEach(function (d) { d.open = false; });
+				});
+
+				// Selección en tablas flamboyant (view/table): la casilla del
+				// encabezado [data-kiban-select-all] marca o desmarca las
+				// input[name=ids] de su form y queda parcial cuando hay
+				// algunas; [data-kiban-bulk-count] muestra cuántas van
+				// (data-one / data-many, con {n}); [data-kiban-bulk-clear]
+				// las desmarca todas. Corre también tras un swap de htmx,
+				// porque la tabla llega nueva y la selección se pierde.
+				function kibanBulkSync(form) {
+					var boxes = form.querySelectorAll('input[name=ids]'), n = 0;
+					boxes.forEach(function (b) { if (b.checked) n++; });
+					var all = form.querySelector('[data-kiban-select-all]');
+					if (all) {
+						all.checked = boxes.length > 0 && n === boxes.length;
+						all.indeterminate = n > 0 && n < boxes.length;
+					}
+					form.querySelectorAll('[data-kiban-bulk-count]').forEach(function (el) {
+						var tpl = n === 1 ? el.getAttribute('data-one') : el.getAttribute('data-many');
+						el.textContent = (tpl || '{n}').replace('{n}', n);
+					});
+				}
+				document.addEventListener('change', function (e) {
+					var t = e.target;
+					if (!t.closest) return;
+					var form = t.closest('form');
+					if (!form) return;
+					if (t.matches('[data-kiban-select-all]')) {
+						form.querySelectorAll('input[name=ids]').forEach(function (b) { b.checked = t.checked; });
+						kibanBulkSync(form);
+					} else if (t.matches('input[name=ids]')) {
+						kibanBulkSync(form);
+					}
+				});
+				document.addEventListener('click', function (e) {
+					var b = e.target.closest && e.target.closest('[data-kiban-bulk-clear]');
+					if (!b) return;
+					var form = b.closest('form');
+					if (!form) return;
+					form.querySelectorAll('input[name=ids]').forEach(function (x) { x.checked = false; });
+					kibanBulkSync(form);
+				});
+
+				// copyable.ID: [data-kiban-copy] trae el valor. Se copia al
+				// portapapeles y el botón queda con data-copied 1.5 s (el
+				// ícono pasa a palomita) y con el título «Copiado» mientras.
+				// Si el navegador niega la API del portapapeles (permisos,
+				// iframes), se copia con un textarea y execCommand.
+				function kibanCopyText(text) {
+					var legacy = function () {
+						var ta = document.createElement('textarea');
+						ta.value = text;
+						ta.setAttribute('readonly', '');
+						ta.style.position = 'fixed';
+						ta.style.opacity = '0';
+						document.body.appendChild(ta);
+						ta.select();
+						var ok = false;
+						try { ok = document.execCommand('copy'); } catch (_) {}
+						ta.remove();
+						return ok ? Promise.resolve() : Promise.reject(new Error('copy'));
+					};
+					if (!navigator.clipboard) return legacy();
+					return navigator.clipboard.writeText(text).catch(legacy);
+				}
+				document.addEventListener('click', function (e) {
+					var btn = e.target.closest && e.target.closest('[data-kiban-copy]');
+					if (!btn) return;
+					kibanCopyText(btn.getAttribute('data-kiban-copy')).then(function () {
+						if (!btn.hasAttribute('data-copied')) btn._kibanTitle = btn.getAttribute('title');
+						btn.setAttribute('data-copied', '');
+						btn.setAttribute('title', btn.getAttribute('data-kiban-copied-label') || btn._kibanTitle);
+						clearTimeout(btn._kibanCopied);
+						btn._kibanCopied = setTimeout(function () {
+							btn.removeAttribute('data-copied');
+							btn.setAttribute('title', btn._kibanTitle);
+						}, 1500);
+					});
+				});
+
 				// flash.Banner — click-to-dismiss. Each banner carries
 				// [data-kiban-flash] and its × button carries
 				// [data-kiban-flash-dismiss]; the delegated click

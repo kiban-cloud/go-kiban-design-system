@@ -1,0 +1,8 @@
+# Flamboyant table copy (view/table).
+"table.select_all" = "Select every row on this page"
+"table.select_row" = "Select row"
+"table.page" = "Page {{.Page}}"
+"table.prev" = "Previous page"
+"table.next" = "Next page"
+"table.rows" = "Rows"
+"table.clear_selection" = "Clear selection"

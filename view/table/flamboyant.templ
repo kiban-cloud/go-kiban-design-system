@@ -1,0 +1,196 @@
+package table
+
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/avatar"
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+	"github.com/kiban-cloud/go-kiban-design-system/view/input"
+)
+
+// Frame es la tarjeta que reúne franja de selección, tabla y pie en
+// flamboyant. Con el diseño de siempre no pinta nada: sólo sus hijos.
+templ Frame() {
+	if flamboyant.On(ctx) {
+		<div class="overflow-hidden rounded-[10px] border border-kiban-border bg-white">
+			{ children... }
+		</div>
+	} else {
+		{ children... }
+	}
+}
+
+// MainCell es la celda principal de una fila: avatar, nombre y una línea
+// secundaria. Va dentro de un <td>.
+templ MainCell(o MainCellOptions) {
+	<div class="flex min-w-0 items-center gap-2.5">
+		@avatar.Avatar(o.Avatar)
+		<div class="min-w-0">
+			<div class="max-w-[260px] truncate font-medium leading-5 text-kiban-ink">{ o.Title }</div>
+			if o.Subtitle != "" {
+				<div
+					class={
+						"max-w-[260px] truncate leading-4",
+						templ.KV("font-mono text-[11px] text-[#9096A3]", o.SubtitleMono),
+						templ.KV("text-xs text-[#606875]", !o.SubtitleMono),
+					}
+				>{ o.Subtitle }</div>
+			}
+		</div>
+	</div>
+}
+
+templ flamboyantTable(cfg TableConfig) {
+	<div class="overflow-x-auto">
+		<table class={ "w-full border-collapse text-sm " + cfg.TableMinWidthClass() }>
+			<thead>
+				<tr>
+					if cfg.BulkSelect {
+						<th class="h-11 w-11 border-b border-[#DCE5FF] bg-[#F4F7FF] pl-4 pr-0">
+							<label class="-m-1.5 inline-grid cursor-pointer place-items-center p-1.5">
+								@input.SquareCheckbox(templ.Attributes{"aria-label": catalog.T(ctx, "table.select_all"), "data-kiban-select-all": "ids"})
+							</label>
+						</th>
+					}
+					for i, h := range cfg.Headers {
+						if s, ok := cfg.sortAt(i); ok {
+							<th class={ "h-11 whitespace-nowrap border-b border-[#DCE5FF] bg-[#F4F7FF] px-3 text-[13px] font-semibold text-[#0036C4] " + cfg.HeaderAlignClass(i) } aria-sort={ ariaSort(s) }>
+								<a
+									href={ templ.URL(s.Href) }
+									class={
+										"inline-flex items-center gap-1 hover:text-kiban-primary",
+										templ.KV("flex-row-reverse", cfg.HeaderAlignClass(i) == "text-right"),
+										templ.KV("text-kiban-primary", s.Dir != ""),
+									}
+									{ cfg.SortAttrs... }
+								>
+									{ h }
+									@sortIcon(s.Dir)
+								</a>
+							</th>
+						} else {
+							<th class={ "h-11 whitespace-nowrap border-b border-[#DCE5FF] bg-[#F4F7FF] px-3 text-[13px] font-semibold text-[#0036C4] " + cfg.HeaderAlignClass(i) }>{ h }</th>
+						}
+					}
+				</tr>
+			</thead>
+			<tbody>
+				{ children... }
+			</tbody>
+		</table>
+	</div>
+}
+
+templ sortIcon(dir string) {
+	<svg class={ "h-[13px] w-[13px]", templ.KV("opacity-50", dir == "") } viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		switch dir {
+			case "asc":
+				<path d="m7 14 5-5 5 5"></path>
+			case "desc":
+				<path d="m7 10 5 5 5-5"></path>
+			default:
+				<path d="m7 15 5 5 5-5"></path>
+				<path d="m7 9 5-5 5 5"></path>
+		}
+	</svg>
+}
+
+templ flamboyantRow(href, bulkValue string) {
+	<tr
+		class={
+			"border-b border-[#EEF0F4] transition-colors last:border-b-0 hover:bg-[#F4F7FF] has-[input[name=ids]:checked]:bg-[rgba(0,71,255,0.06)] [&>td]:px-3 [&>td]:py-3 [&>td]:align-middle [&>td]:text-kiban-ink",
+			templ.KV("cursor-pointer", href != ""),
+		}
+		if href != "" {
+			data-href={ href }
+		}
+	>
+		if bulkValue != "" {
+			<td class="w-11 !pl-4 !pr-0">
+				<label class="-m-1.5 inline-grid cursor-pointer place-items-center p-1.5">
+					@input.SquareCheckbox(templ.Attributes{"name": "ids", "value": bulkValue, "aria-label": catalog.T(ctx, "table.select_row")})
+				</label>
+			</td>
+		}
+		{ children... }
+	</tr>
+}
+
+templ flamboyantBulkActionBar(cfg BulkActionBarConfig) {
+	<div class="hidden flex-wrap items-center gap-3 border-b border-[#DCE5FF] bg-[#EAF0FF] px-4 py-2 text-[13px] text-[#0036C4] group-has-[input[name=ids]:checked]/bulk:flex">
+		if cfg.CountMany != "" {
+			<span class="font-semibold" data-kiban-bulk-count data-one={ cfg.CountOne } data-many={ cfg.CountMany }></span>
+		} else if cfg.Message != "" {
+			<span>{ cfg.Message }</span>
+		}
+		<button type="button" class="font-medium text-kiban-primary hover:underline" data-kiban-bulk-clear>{ catalog.T(ctx, "table.clear_selection") }</button>
+		<span class="flex-1"></span>
+		@button.RenderGroup(cfg.Actions)
+	</div>
+}
+
+templ flamboyantPagination(cfg PaginationConfig) {
+	<div class="flex flex-wrap items-center gap-3 border-t border-kiban-border px-4 py-2.5 text-[13px] text-[#606875]">
+		<span>{ catalog.Tf(ctx, "table.page", map[string]any{"Page": cfg.Page}) }</span>
+		<span class="flex-1"></span>
+		if len(cfg.PageSizes) > 0 {
+			<label class="inline-flex items-center gap-1.5">
+				{ catalog.T(ctx, "table.rows") }
+				<select
+					name="itemsPerPage"
+					class="rounded-md border border-[#CDD3DF] bg-white px-1.5 py-0.5 text-[13px] text-kiban-ink"
+					hx-get={ cfg.PageSizeURL }
+					hx-target={ cfg.Target }
+					hx-swap="innerHTML"
+					hx-push-url="true"
+					hx-indicator={ cfg.Indicator }
+				>
+					for _, n := range cfg.PageSizes {
+						<option value={ itoa(n) } selected?={ n == cfg.PageSize }>{ itoa(n) }</option>
+					}
+				</select>
+			</label>
+		}
+		<span class="inline-flex items-center gap-2 tabular-nums">
+			@pagerButton(cfg, cfg.Page-1, cfg.HasPrev, catalog.T(ctx, "table.prev"), "m15 18-6-6 6-6")
+			{ itoa(cfg.Page) }
+			@pagerButton(cfg, cfg.Page+1, cfg.HasNext, catalog.T(ctx, "table.next"), "m9 18 6-6-6-6")
+		</span>
+	</div>
+}
+
+templ pagerButton(cfg PaginationConfig, page int, enabled bool, label, path string) {
+	if enabled {
+		<button
+			type="button"
+			aria-label={ label }
+			title={ label }
+			hx-get={ cfg.PageURL(page) }
+			hx-target={ cfg.Target }
+			hx-swap="innerHTML"
+			hx-push-url="true"
+			hx-indicator={ cfg.Indicator }
+			hx-disabled-elt="this"
+			class="grid h-[30px] w-[30px] place-items-center rounded-md border border-[#CDD3DF] bg-white text-kiban-ink hover:bg-[#F4F7FF]"
+		>
+			@chevron(path)
+		</button>
+	} else {
+		<button type="button" disabled aria-label={ label } class="grid h-[30px] w-[30px] cursor-not-allowed place-items-center rounded-md border border-[#CDD3DF] bg-white text-kiban-ink opacity-40">
+			@chevron(path)
+		</button>
+	}
+}
+
+templ chevron(path string) {
+	<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ path }></path></svg>
+}
+
+templ flamboyantEmptyState(title, hint string) {
+	<div class="px-4 py-14 text-center">
+		<div class="mb-1 text-base font-medium text-kiban-ink">{ title }</div>
+		if hint != "" {
+			<div class="mx-auto max-w-md text-sm text-kiban-ink3">{ hint }</div>
+		}
+		<div class="mt-4 flex justify-center gap-2 empty:hidden">{ children... }</div>
+	</div>
+}

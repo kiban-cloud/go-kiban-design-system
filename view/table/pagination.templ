@@ -1,12 +1,24 @@
 package table
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+)
 
 // Pagination renders Anterior/Siguiente buttons that swap a partial via
 // HTMX. The disabled state is fully styled (kiban-ink4 muted text) so the 
 // edges of the result set are visually obvious.
 // Pagination is a shared component that is used to paginate a list of items.
 templ Pagination(cfg PaginationConfig) {
+	if flamboyant.On(ctx) {
+		@flamboyantPagination(cfg)
+	} else {
+		@classicPagination(cfg)
+	}
+}
+
+templ classicPagination(cfg PaginationConfig) {
 	<div class="flex items-center justify-between pt-4 text-sm">
 		<div class="text-kiban-ink3">Página { fmt.Sprint(cfg.Page) }</div>
 		<div class="flex gap-2">

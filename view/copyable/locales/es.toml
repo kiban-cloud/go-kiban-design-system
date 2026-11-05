@@ -1,0 +1,3 @@
+# Valor copiable (view/copyable).
+"copyable.copy" = "Copiar {{.Value}}"
+"copyable.copied" = "Copiado"

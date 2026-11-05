@@ -56,6 +56,12 @@ const (
 	// vars are ignored entirely.
 	EnvLocalSession = "KIBAN_SESSION"
 	EnvLocalSpaceID = "KIBAN_SPACE_ID"
+
+	// EnvLocalFeatures es, sólo fuera de Cloud Run, una lista de feature flags
+	// separados por coma que se suman a los de la compañía
+	// ("SHELL_FLAMBOYANT"). Sirve para probar en local algo que depende de un
+	// flag sin darlo de alta en kiban-cloud. Desplegado se ignora.
+	EnvLocalFeatures = "KIBAN_FEATURES"
 )
 
 // Middleware holds the dependencies and configuration the gin handler needs
@@ -150,7 +156,7 @@ const FeatureShellFlamboyant = "SHELL_FLAMBOYANT"
 // lo eligió. Sin cookie se ve el diseño actual.
 func shellFlags(c *gin.Context, authorization domain_core_authorization_model.Authorization) context.Context {
 	ctx := c.Request.Context()
-	if !authorization.HasFeature(FeatureShellFlamboyant) {
+	if !authorization.HasFeature(FeatureShellFlamboyant) && !localFeature(FeatureShellFlamboyant) {
 		return ctx
 	}
 	names := []string{layout.FlagShellFlamboyantSwitch}
@@ -169,6 +175,17 @@ func localDevOverride(envKey string) string {
 		return ""
 	}
 	return strings.TrimSpace(os.Getenv(envKey))
+}
+
+// localFeature dice si el flag está en EnvLocalFeatures (sólo fuera de Cloud
+// Run, como el resto de los overrides locales).
+func localFeature(key string) bool {
+	for _, f := range strings.Split(localDevOverride(EnvLocalFeatures), ",") {
+		if strings.TrimSpace(f) == key {
+			return true
+		}
+	}
+	return false
 }
 
 // unauthorized redirects to the kiban shell login. HTMX requests get an

@@ -1,0 +1,9 @@
+# Textos de la tabla flamboyant (view/table). Los de la tabla de siempre
+# siguen escritos en los templ.
+"table.select_all" = "Seleccionar todas las filas de esta página"
+"table.select_row" = "Seleccionar fila"
+"table.page" = "Página {{.Page}}"
+"table.prev" = "Página anterior"
+"table.next" = "Página siguiente"
+"table.rows" = "Filas"
+"table.clear_selection" = "Quitar selección"

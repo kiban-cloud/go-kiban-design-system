@@ -35,7 +35,7 @@ func Avatar(o Options) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var2 = []any{"relative inline-flex items-center justify-center rounded-full bg-kiban-primary-soft text-kiban-primary font-medium overflow-hidden shrink-0 " + o.sizeClass()}
+		var templ_7745c5c3_Var2 = []any{o.class(ctx)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

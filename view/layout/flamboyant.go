@@ -12,6 +12,7 @@ import (
 	"github.com/a-h/templ"
 
 	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 )
 
 // Shell «kiban cloud flamboyant»: el mismo que estrenó la página de link
@@ -35,7 +36,7 @@ import (
 //   - Todas las fechas como «28 oct 2026 12:02» (flamboyant/fechas.js).
 //
 // Apagada la bandera, Layout queda exactamente como hoy.
-const FlagShellFlamboyant = "shell-flamboyant"
+const FlagShellFlamboyant = flamboyant.Flag
 
 // FlagShellFlamboyantSwitch muestra en el menú del usuario la opción de pasar
 // de un diseño al otro. Se prende para toda compañía que tiene flamboyant
@@ -68,7 +69,7 @@ const MonitoreoHref = "/monitoreo"
 // mostrar los dos lado a lado. Las vistas que se pintan dentro del shell (el
 // fragmento de Pendientes, por ejemplo) lo usan para elegir su variante.
 func ShellFlamboyant(ctx context.Context) bool {
-	return feature.Comparing(ctx) || feature.Enabled(ctx, FlagShellFlamboyant)
+	return flamboyant.On(ctx)
 }
 
 var (

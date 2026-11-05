@@ -217,3 +217,22 @@ func TestMiddleware_CookieSinFeatureFlagNoPrendeNada(t *testing.T) {
 	assert.False(t, shell, "la cookie sola no alcanza: la compañía necesita el flag")
 	assert.False(t, sw)
 }
+
+func TestMiddleware_FeatureLocalPrendeElSwitchSinFlagDeLaCompania(t *testing.T) {
+	t.Setenv(authcookie.EnvLocalFeatures, "OTRO, "+authcookie.FeatureShellFlamboyant)
+
+	shell, sw := shellFlags(t, nil, layout.UIFlamboyant)
+
+	assert.True(t, shell)
+	assert.True(t, sw)
+}
+
+func TestMiddleware_FeatureLocalSeIgnoraEnCloudRun(t *testing.T) {
+	t.Setenv(authcookie.EnvLocalFeatures, authcookie.FeatureShellFlamboyant)
+	t.Setenv("K_REVISION", "crm-00042")
+
+	shell, sw := shellFlags(t, nil, layout.UIFlamboyant)
+
+	assert.False(t, shell, "desplegado, la variable no puede prender nada")
+	assert.False(t, sw)
+}

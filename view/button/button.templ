@@ -10,7 +10,7 @@ templ Button(p Options) {
 	if hasHref(p) {
 		<a
 			href={ hrefFor(p) }
-			class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
+			class={ classFor(ctx, p.EffectiveVariant(), p.ExtraClass) }
 			aria-label={ effectiveAriaLabelForVariant(p) }
 			title={ effectiveTitleForVariant(p) }
 			if NonEmptyAttrs(resolvedAttrs(p)) {
@@ -22,7 +22,7 @@ templ Button(p Options) {
 	} else {
 		<button
 			type={ htmlButtonType(p) }
-			class={ BuildClass(p.EffectiveVariant(), p.ExtraClass) }
+			class={ classFor(ctx, p.EffectiveVariant(), p.ExtraClass) }
 			aria-label={ effectiveAriaLabelForVariant(p) }
 			title={ effectiveTitleForVariant(p) }
 			disabled?={ p.Disabled }
