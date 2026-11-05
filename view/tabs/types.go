@@ -102,10 +102,25 @@ type PanelConfig struct {
 //     signals "this tab has something to fix" without switching to
 //     it.
 //   - Icon, opcional, va a la izquierda del label (flamboyant: el
-//     ícono del módulo en su color, layout.ModuleIcon).
+//     ícono del módulo, layout.ModuleIcon). IconColor es su color en
+//     la pestaña activa; inactiva toma el del texto (como en el proto).
+//   - Count + HasCount: el número junto al label (flamboyant); el
+//     toggle deja mostrar un 0 real.
 type TabHeader struct {
-	Key      string
-	Label    string
-	HasError bool
-	Icon     templ.Component
+	Key       string
+	Label     string
+	HasError  bool
+	Icon      templ.Component
+	IconColor string
+	Count     int
+	HasCount  bool
+}
+
+// tabIconActiveClass pinta el ícono de la pestaña activa en su color. La
+// clase se arma en el servidor y el Tailwind del CDN la genera al verla.
+func tabIconActiveClass(color string) string {
+	if color == "" {
+		return ""
+	}
+	return "group-data-[kiban-tabs-active]/tab:text-[" + color + "]"
 }
