@@ -26,3 +26,10 @@ type StepOptions struct {
 func (o StepOptions) hasHint() bool { return o.Hint != nil || o.HintText != "" }
 
 func (o StepOptions) required() string { return strings.Join(o.Required, " ") }
+
+// EmptyOptions describe un estado vacío (Empty).
+type EmptyOptions struct {
+	Icon  templ.Component
+	Title string
+	Text  string
+}

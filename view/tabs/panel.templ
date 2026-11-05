@@ -1,5 +1,7 @@
 package tabs
 
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
 // Panel renders a tab-panel container: header strip on top, body
 // area below, with CSS-only switching driven by the parent's
 // `data-kiban-tabs-active-key` attribute. Tab bodies are passed
@@ -22,7 +24,7 @@ templ Panel(cfg PanelConfig) {
 		id={ cfg.ID }
 		data-kiban-tabs-panel
 		data-kiban-tabs-active-key={ cfg.ActiveKey }
-		class="bg-white border border-kiban-border rounded-md"
+		class={ "bg-white border", templ.KV("border-kiban-border rounded-md", !flamboyant.On(ctx)), templ.KV("border-[#CDD3DF] rounded-[10px]", flamboyant.On(ctx)) }
 	>
 		if len(cfg.Tabs) > 0 {
 			@strip(cfg.Tabs)
@@ -49,6 +51,9 @@ templ strip(tabs []TabHeader) {
 					class="px-3 py-2 text-sm transition-colors border-b"
 				>
 					<span class="inline-flex items-center gap-1.5">
+						if t.Icon != nil {
+							@t.Icon
+						}
 						<span>{ t.Label }</span>
 						if t.HasError {
 							<span aria-hidden="true" class="inline-block w-1.5 h-1.5 rounded-full bg-red-500"></span>

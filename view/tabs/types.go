@@ -101,8 +101,11 @@ type PanelConfig struct {
 //     inactive tab's body would otherwise be invisible; the dot
 //     signals "this tab has something to fix" without switching to
 //     it.
+//   - Icon, opcional, va a la izquierda del label (flamboyant: el
+//     ícono del módulo en su color, layout.ModuleIcon).
 type TabHeader struct {
 	Key      string
 	Label    string
 	HasError bool
+	Icon     templ.Component
 }

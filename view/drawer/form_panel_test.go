@@ -83,3 +83,31 @@ func TestFormPanel_SinAvisoStandaloneYEstatico(t *testing.T) {
 	assert.Contains(t, body, ">Ana Pérez</div>")
 	assert.NotContains(t, body, "data-empty")
 }
+
+func TestViewPanel_MismoEncabezadoSinFormNiPie(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := drawer.ViewPanelConfig{ID: "ficha", Eyebrow: "Expediente", Title: "Ana López", CloseLabel: "Cerrar", CloseHref: "/crm/customers", HeaderActions: templ.Raw(`<a>Editar</a>`)}
+	require.NoError(t, drawer.ViewPanel(cfg).Render(templ.WithChildren(context.Background(), templ.Raw(`<p>datos</p>`)), &buf))
+	body := buf.String()
+
+	assert.Contains(t, body, `id="ficha"`)
+	assert.Contains(t, body, "data-kiban-panel")
+	assert.Contains(t, body, ">Expediente</div>")
+	assert.Contains(t, body, ">Ana López</div>")
+	assert.Contains(t, body, "<a>Editar</a>")
+	assert.Contains(t, body, "<p>datos</p>")
+	assert.Contains(t, body, "w-[95vw]", "sin Half es el panel del 95 %")
+	assert.Contains(t, body, `data-close-href="/crm/customers"`)
+	assert.NotContains(t, body, "<form")
+	assert.NotContains(t, body, "data-kiban-panel-sum")
+}
+
+func TestViewPanel_StandaloneYStatic(t *testing.T) {
+	var buf bytes.Buffer
+	require.NoError(t, drawer.ViewPanel(drawer.ViewPanelConfig{ID: "f", Half: true, Standalone: true, Static: true}).Render(context.Background(), &buf))
+	body := buf.String()
+
+	assert.Contains(t, body, "data-standalone")
+	assert.Contains(t, body, "w-1/2")
+	assert.NotContains(t, body, "animate-[kiban-panel-in")
+}

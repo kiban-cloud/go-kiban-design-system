@@ -440,7 +440,7 @@ func sortIcon(dir string) templ.Component {
 	})
 }
 
-func flamboyantRow(href, bulkValue string) templ.Component {
+func flamboyantRow(o RowOptions) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -462,7 +462,7 @@ func flamboyantRow(href, bulkValue string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		var templ_7745c5c3_Var24 = []any{"border-b border-[#EEF0F4] transition-colors last:border-b-0 hover:bg-[#F4F7FF] has-[input[name=ids]:checked]:bg-[rgba(0,71,255,0.06)] [&>td]:px-3 [&>td]:py-3 [&>td]:align-middle [&>td]:text-kiban-ink",
-			templ.KV("cursor-pointer", href != ""),
+			templ.KV("cursor-pointer", o.Href != "" || len(o.Attrs) > 0),
 		}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var24...)
 		if templ_7745c5c3_Err != nil {
@@ -485,15 +485,15 @@ func flamboyantRow(href, bulkValue string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if href != "" {
+		if o.Href != "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " data-href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var26 string
-			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(href)
+			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(o.Href)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 104, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 104, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -504,16 +504,20 @@ func flamboyantRow(href, bulkValue string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, o.Attrs)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if bulkValue != "" {
+		if o.BulkValue != "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<td class=\"w-11 !pl-4 !pr-0\"><label class=\"-m-1.5 inline-grid cursor-pointer place-items-center p-1.5\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = input.SquareCheckbox(templ.Attributes{"name": "ids", "value": bulkValue, "aria-label": catalog.T(ctx, "table.select_row")}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = input.SquareCheckbox(templ.Attributes{"name": "ids", "value": o.BulkValue, "aria-label": catalog.T(ctx, "table.select_row"), "data-label": o.BulkLabel}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -567,7 +571,7 @@ func flamboyantBulkActionBar(cfg BulkActionBarConfig) templ.Component {
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.CountOne)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 121, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 122, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -580,7 +584,7 @@ func flamboyantBulkActionBar(cfg BulkActionBarConfig) templ.Component {
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.CountMany)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 121, Col: 104}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 122, Col: 104}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -598,7 +602,7 @@ func flamboyantBulkActionBar(cfg BulkActionBarConfig) templ.Component {
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Message)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 123, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 124, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -616,7 +620,7 @@ func flamboyantBulkActionBar(cfg BulkActionBarConfig) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(catalog.T(ctx, "table.clear_selection"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 125, Col: 142}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 126, Col: 142}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -666,7 +670,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(catalog.Tf(ctx, "table.page", map[string]any{"Page": cfg.Page}))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 133, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 134, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -684,7 +688,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(catalog.T(ctx, "table.rows"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 137, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 138, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -697,7 +701,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.PageSizeURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 141, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 142, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -710,7 +714,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Target)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 142, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 143, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -723,7 +727,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Indicator)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 145, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 146, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
@@ -741,7 +745,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(n))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 148, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 149, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -764,7 +768,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(n))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 148, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 149, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -791,7 +795,7 @@ func flamboyantPagination(cfg PaginationConfig) templ.Component {
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(itoa(cfg.Page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 155, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 156, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -838,7 +842,7 @@ func pagerButton(cfg PaginationConfig, page int, enabled bool, label, path strin
 			var templ_7745c5c3_Var42 string
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 165, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 166, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
@@ -851,7 +855,7 @@ func pagerButton(cfg PaginationConfig, page int, enabled bool, label, path strin
 			var templ_7745c5c3_Var43 string
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 166, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 167, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
@@ -864,7 +868,7 @@ func pagerButton(cfg PaginationConfig, page int, enabled bool, label, path strin
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.PageURL(page))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 167, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 168, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 			if templ_7745c5c3_Err != nil {
@@ -877,7 +881,7 @@ func pagerButton(cfg PaginationConfig, page int, enabled bool, label, path strin
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Target)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 168, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 169, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -890,7 +894,7 @@ func pagerButton(cfg PaginationConfig, page int, enabled bool, label, path strin
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Indicator)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 171, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 172, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
@@ -916,7 +920,7 @@ func pagerButton(cfg PaginationConfig, page int, enabled bool, label, path strin
 			var templ_7745c5c3_Var47 string
 			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 178, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 179, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 			if templ_7745c5c3_Err != nil {
@@ -967,7 +971,7 @@ func chevron(path string) templ.Component {
 		var templ_7745c5c3_Var49 string
 		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 185, Col: 173}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 186, Col: 173}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 		if templ_7745c5c3_Err != nil {
@@ -1009,7 +1013,7 @@ func flamboyantEmptyState(title, hint string) templ.Component {
 		var templ_7745c5c3_Var51 string
 		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 190, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 191, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 		if templ_7745c5c3_Err != nil {
@@ -1027,7 +1031,7 @@ func flamboyantEmptyState(title, hint string) templ.Component {
 			var templ_7745c5c3_Var52 string
 			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(hint)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 192, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 193, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 			if templ_7745c5c3_Err != nil {

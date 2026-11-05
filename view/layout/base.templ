@@ -1772,6 +1772,62 @@ templ Base(cfg Config) {
 					kibanPanelClose(root, false);
 				});
 
+				// input.Dropzone: el nombre y el tamaño del archivo elegido.
+				document.addEventListener('change', function (e) {
+					var zone = e.target.closest && e.target.closest('[data-kiban-dropzone]');
+					if (!zone || e.target.type !== 'file') return;
+					var f = e.target.files && e.target.files[0];
+					var out = zone.querySelector('[data-kiban-dropzone-file]');
+					if (!out) return;
+					out.textContent = f ? f.name + ' · ' + Math.max(1, Math.round(f.size / 1024)) + ' KB' : '';
+					out.classList.toggle('hidden', !f);
+				});
+
+				// Confirmación flamboyant de una acción htmx: un botón con
+				// data-kiban-confirm-title pide confirmar en un diálogo (en
+				// vez del confirm() del navegador) con data-kiban-confirm-text,
+				// y si trae data-kiban-confirm-list="<name>", la lista de las
+				// casillas marcadas con ese name en su form (su data-label).
+				// Los botones dicen data-kiban-confirm-ok y -cancel.
+				document.addEventListener('htmx:confirm', function (e) {
+					var btn = e.detail && e.detail.elt;
+					if (!btn || !btn.getAttribute || !btn.getAttribute('data-kiban-confirm-title')) return;
+					e.preventDefault();
+					var names = [];
+					var listName = btn.getAttribute('data-kiban-confirm-list');
+					if (listName && btn.form) {
+						btn.form.querySelectorAll('input[name="' + listName + '"]:checked').forEach(function (i) {
+							names.push(i.getAttribute('data-label') || i.value);
+						});
+					}
+					var count = names.length;
+					var title = btn.getAttribute('data-kiban-confirm-title').replace('{n}', count);
+					var ok = (btn.getAttribute('data-kiban-confirm-ok') || 'OK').replace('{n}', count);
+					var wrap = document.createElement('div');
+					wrap.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(26,32,53,0.3)] p-4';
+					wrap.innerHTML = '<div class="w-[min(480px,100%)] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true">' +
+						'<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#FDECEC] text-[#B42318]"><svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></span>' +
+						'<div class="min-w-0"><h2 class="mb-1.5 mt-[7px] text-base font-medium leading-[22px] text-kiban-ink" data-t></h2><p class="m-0 text-[13px] leading-normal text-[#606875]" data-p></p><ul class="mb-0 mt-2.5 list-disc pl-[18px] text-[13px] text-[#474F66]" data-l></ul></div></div>' +
+						'<div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-kiban-border pt-4"><button type="button" class="rounded-md border border-[#CDD3DF] bg-white px-3 py-[7px] text-[13px] font-medium text-kiban-ink hover:bg-[#F4F7FF]" data-no></button><button type="button" class="rounded-md border border-[#D92D20] bg-[#D92D20] px-3 py-[7px] text-[13px] font-medium text-white hover:bg-[#B42318]" data-yes></button></div></div>';
+					wrap.querySelector('[data-t]').textContent = title;
+					wrap.querySelector('[data-p]').textContent = btn.getAttribute('data-kiban-confirm-text') || '';
+					var ul = wrap.querySelector('[data-l]');
+					names.slice(0, 5).forEach(function (n) { var li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
+					if (count > 5) { var more = document.createElement('li'); more.textContent = '+' + (count - 5); ul.appendChild(more); }
+					if (!count) ul.remove();
+					wrap.querySelector('[data-no]').textContent = btn.getAttribute('data-kiban-confirm-cancel') || 'Cancel';
+					wrap.querySelector('[data-yes]').textContent = ok;
+					document.body.appendChild(wrap);
+					wrap.querySelector('[data-no]').focus();
+					var close = function () { wrap.remove(); document.removeEventListener('keydown', esc, true); };
+					var esc = function (ev) { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
+					document.addEventListener('keydown', esc, true);
+					wrap.addEventListener('click', function (ev) {
+						if (ev.target === wrap || ev.target.closest('[data-no]')) { close(); return; }
+						if (ev.target.closest('[data-yes]')) { close(); e.detail.issueRequest(true); }
+					});
+				});
+
 				// filterbar.Bar: cada [data-kiban-filter] es un <details> con
 				// casillas o radios. Al cambiar, se rearma el texto de su
 				// píldora («Tipo», «Tipo: Moral», «Tipo · 2»), se marca

@@ -154,3 +154,27 @@ func TestLocales_MismasClavesEnLosDosIdiomas(t *testing.T) {
 	}
 	assert.Equal(t, keys("locales/es.toml"), keys("locales/en.toml"))
 }
+
+func TestModuleTile_ColorDelModuloOGris(t *testing.T) {
+	var buf bytes.Buffer
+	require.NoError(t, layout.ModuleTile("rekon", 36, false).Render(context.Background(), &buf))
+	assert.Contains(t, buf.String(), "#8000FF")
+	assert.Contains(t, buf.String(), "<svg")
+
+	buf.Reset()
+	require.NoError(t, layout.ModuleTile("rekon", 36, true).Render(context.Background(), &buf))
+	assert.NotContains(t, buf.String(), "#8000FF", "dim lo pinta en gris")
+
+	buf.Reset()
+	require.NoError(t, layout.ModuleIcon("klin").Render(context.Background(), &buf))
+	assert.Contains(t, buf.String(), "color:#00A884")
+}
+
+func TestBase_ConfirmacionYDropzone(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "htmx:confirm")
+	assert.Contains(t, body, "data-kiban-confirm-title")
+	assert.Contains(t, body, "issueRequest(true)")
+	assert.Contains(t, body, "[data-kiban-dropzone-file]")
+}

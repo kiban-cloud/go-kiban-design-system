@@ -148,3 +148,13 @@ func localeKeys(t *testing.T, path string) []string {
 	sort.Strings(out)
 	return out
 }
+
+func TestRowWith_AtributosEtiquetaYCursor(t *testing.T) {
+	body := render(t, withChild(flam, `<td>Ana</td>`), table.RowWith(table.RowOptions{BulkValue: "c1", BulkLabel: "Ana López", Attrs: templ.Attributes{"hx-get": "/crm/customers/c1"}}))
+
+	assert.Contains(t, body, `hx-get="/crm/customers/c1"`)
+	assert.Contains(t, body, "cursor-pointer")
+	assert.Contains(t, body, `value="c1"`)
+	assert.Contains(t, body, `data-label="Ana López"`)
+	assert.NotContains(t, body, "data-href")
+}

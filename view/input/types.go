@@ -45,3 +45,10 @@ type ToggleOptions struct {
 	Value, Enabled bool
 	Attrs          templ.Attributes
 }
+
+// DropzoneOptions configura Dropzone. Title es la invitación («Arrastra tu
+// archivo CSV aquí o elígelo») y Hint, las condiciones.
+type DropzoneOptions struct {
+	Name, Accept, Title, Hint string
+	Required                  bool
+}

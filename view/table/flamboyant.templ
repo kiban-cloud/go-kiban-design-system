@@ -94,20 +94,21 @@ templ sortIcon(dir string) {
 	</svg>
 }
 
-templ flamboyantRow(href, bulkValue string) {
+templ flamboyantRow(o RowOptions) {
 	<tr
 		class={
 			"border-b border-[#EEF0F4] transition-colors last:border-b-0 hover:bg-[#F4F7FF] has-[input[name=ids]:checked]:bg-[rgba(0,71,255,0.06)] [&>td]:px-3 [&>td]:py-3 [&>td]:align-middle [&>td]:text-kiban-ink",
-			templ.KV("cursor-pointer", href != ""),
+			templ.KV("cursor-pointer", o.Href != "" || len(o.Attrs) > 0),
 		}
-		if href != "" {
-			data-href={ href }
+		if o.Href != "" {
+			data-href={ o.Href }
 		}
+		{ o.Attrs... }
 	>
-		if bulkValue != "" {
+		if o.BulkValue != "" {
 			<td class="w-11 !pl-4 !pr-0">
 				<label class="-m-1.5 inline-grid cursor-pointer place-items-center p-1.5">
-					@input.SquareCheckbox(templ.Attributes{"name": "ids", "value": bulkValue, "aria-label": catalog.T(ctx, "table.select_row")})
+					@input.SquareCheckbox(templ.Attributes{"name": "ids", "value": o.BulkValue, "aria-label": catalog.T(ctx, "table.select_row"), "data-label": o.BulkLabel})
 				</label>
 			</td>
 		}

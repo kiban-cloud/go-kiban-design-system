@@ -63,11 +63,45 @@ type FormPanelGuard struct {
 	Discard, Stay, SaveClose string
 }
 
-func (c FormPanelConfig) titleFrom() string { return strings.Join(c.TitleFrom, " ") }
+// panelHead es lo que pinta panelHeader, común a FormPanel y ViewPanel.
+type panelHead struct {
+	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel string
+	TitleFrom                                        []string
+	Tile, Subtitle, HeaderActions                    templ.Component
+}
 
-func (c FormPanelConfig) titleText() string {
-	if c.Title != "" {
-		return c.Title
+func (h panelHead) titleFrom() string { return strings.Join(h.TitleFrom, " ") }
+
+func (h panelHead) titleText() string {
+	if h.Title != "" {
+		return h.Title
 	}
-	return c.TitlePlaceholder
+	return h.TitlePlaceholder
+}
+
+func (c FormPanelConfig) header() panelHead {
+	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel,
+		TitleFrom: c.TitleFrom, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
+}
+
+// ViewPanelConfig describe el panel de consulta (ViewPanel). Sin Half es el
+// de 95 %, el de la ficha del cliente.
+type ViewPanelConfig struct {
+	ID       string
+	Half     bool
+	Tile     templ.Component
+	Eyebrow  string
+	Title    string
+	Subtitle templ.Component
+	// HeaderActions va antes del botón de cerrar («Editar»).
+	HeaderActions templ.Component
+	CloseLabel    string
+	CloseHref     string
+	Standalone    bool
+	Static        bool
+}
+
+func (c ViewPanelConfig) header() panelHead {
+	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, CloseLabel: c.CloseLabel,
+		Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
 }
