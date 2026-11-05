@@ -121,7 +121,8 @@ type TableConfig struct {
 	MinWidth string
 
 	// Sort hace ordenables las columnas (ver HeaderSort), mismo índice que
-	// Headers. SortAttrs va en cada enlace de orden: hx-get, hx-target, …
+	// Headers. SortAttrs es el htmx común a los enlaces de orden (hx-target,
+	// hx-swap, …); con SortAttrs, cada enlace pide su propio Href con hx-get.
 	Sort      []HeaderSort
 	SortAttrs templ.Attributes
 }
