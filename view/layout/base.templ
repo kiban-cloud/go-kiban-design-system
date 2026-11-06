@@ -1886,7 +1886,7 @@ templ Base(cfg Config) {
 				// encabezado [data-kiban-select-all] marca o desmarca las
 				// input[name=ids] de su form y queda parcial cuando hay
 				// algunas; [data-kiban-bulk-count] muestra cuántas van
-				// (data-one / data-many, con {n}); [data-kiban-bulk-clear]
+				// (data-one / data-many, con {n}, el número en negritas); [data-kiban-bulk-clear]
 				// las desmarca todas. Corre también tras un swap de htmx,
 				// porque la tabla llega nueva y la selección se pierde.
 				function kibanBulkSync(form) {
@@ -1897,9 +1897,16 @@ templ Base(cfg Config) {
 						all.checked = boxes.length > 0 && n === boxes.length;
 						all.indeterminate = n > 0 && n < boxes.length;
 					}
+					// Sólo el número va en negritas («<b>3</b> seleccionados»).
 					form.querySelectorAll('[data-kiban-bulk-count]').forEach(function (el) {
-						var tpl = n === 1 ? el.getAttribute('data-one') : el.getAttribute('data-many');
-						el.textContent = (tpl || '{n}').replace('{n}', n);
+						var tpl = (n === 1 ? el.getAttribute('data-one') : el.getAttribute('data-many')) || '{n}';
+						var i = tpl.indexOf('{n}');
+						el.textContent = '';
+						if (i < 0) { el.textContent = tpl; return; }
+						var b = document.createElement('b');
+						b.className = 'font-semibold';
+						b.textContent = n;
+						el.append(tpl.slice(0, i), b, tpl.slice(i + 3));
 					});
 				}
 				document.addEventListener('change', function (e) {

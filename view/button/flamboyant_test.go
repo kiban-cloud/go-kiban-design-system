@@ -79,3 +79,10 @@ func TestButton_TamanoLGNoCambiaElDisenoDeSiempre(t *testing.T) {
 	body := renderIn(t, context.Background(), button.Options{Label: "Nuevo", Variant: "primary", Size: "lg"})
 	assert.Contains(t, body, `class="`+button.BuildClass("primary", "")+`"`)
 }
+
+func TestButton_FlamboyantTamanoSM(t *testing.T) {
+	body := renderIn(t, flam, button.Options{Label: "Eliminar", Variant: "danger", Size: "sm"})
+	assert.Contains(t, body, "py-[5px]")
+	assert.Contains(t, body, "[&amp;&gt;svg]:h-3.5", "el ícono baja a 14 px")
+	assert.NotContains(t, body, "py-[7px]")
+}
