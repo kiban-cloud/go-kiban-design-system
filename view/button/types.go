@@ -35,6 +35,11 @@ type Options struct {
 	IconComponent templ.Component
 	Variant       string // primary | secondary | danger | danger-outline | icon
 
+	// Size "lg" es el botón grande de crear en la barra de un listado («Nuevo
+	// flujo»): 14 px, 16 px a los lados y 36 px de alto. Sólo cambia el diseño
+	// flamboyant (el de siempre ya mide eso) y no aplica a la variante icon.
+	Size string
+
 	// Href, when non-empty, makes Button render as an `<a>` and skips the
 	// button-only attributes (type/disabled/form). Empty -> renders <button>.
 	Href string
@@ -151,8 +156,13 @@ func baseClasses(variant string) string {
 // (view/flamboyant). BuildClass sigue siendo la del diseño de siempre, para
 // quien la use fuera de un templ.
 func classFor(ctx context.Context, variant, extraClass string) string {
+	return classForSize(ctx, variant, "", extraClass)
+}
+
+// classForSize es classFor con el tamaño de Options.Size.
+func classForSize(ctx context.Context, variant, size, extraClass string) string {
 	if flamboyant.On(ctx) {
-		return joinClasses(flamboyantClasses(variant), extraClass)
+		return joinClasses(flamboyantClasses(variant, size), extraClass)
 	}
 	return BuildClass(variant, extraClass)
 }
@@ -160,9 +170,13 @@ func classFor(ctx context.Context, variant, extraClass string) string {
 // flamboyantClasses son los botones de kiban cloud flamboyant: 13 px, borde
 // gris claro, hover azul muy tenue; primario azul kiban, peligro rojo sólido
 // o con borde. El de ícono es el botón cuadrado sin borde de los encabezados.
-func flamboyantClasses(variant string) string {
+func flamboyantClasses(variant, size string) string {
 	const focus = " focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary"
-	const base = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-[7px] text-[13px] font-medium no-underline transition-colors disabled:cursor-not-allowed" + focus
+	medida := "px-3 py-[7px] text-[13px]"
+	if strings.EqualFold(strings.TrimSpace(size), "lg") {
+		medida = "h-9 px-4 py-0 text-sm"
+	}
+	base := "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border " + medida + " font-medium no-underline transition-colors disabled:cursor-not-allowed" + focus
 	switch strings.ToLower(strings.TrimSpace(variant)) {
 	case "secondary":
 		return base + " border-[#CDD3DF] bg-white text-kiban-ink hover:bg-[#F4F7FF] disabled:opacity-50"
