@@ -180,3 +180,15 @@ func TestBase_ConfirmacionYDropzone(t *testing.T) {
 	assert.Contains(t, body, "issueRequest(true)")
 	assert.Contains(t, body, "[data-kiban-dropzone-file]")
 }
+
+// Lo que pide la confirmación del proto: singular con uno solo, un nombre
+// fijo cuando no hay casillas (borrar desde el panel) y «y N más».
+func TestBase_ConfirmacionComoElProto(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "data-kiban-confirm-title-one")
+	assert.Contains(t, body, "data-kiban-confirm-ok-one")
+	assert.Contains(t, body, "data-kiban-confirm-item")
+	assert.Contains(t, body, "data-kiban-confirm-more")
+	assert.Contains(t, body, "[&>li]:my-0.5", "renglones separados como kp-dg-list")
+}
