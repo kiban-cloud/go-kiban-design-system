@@ -13,7 +13,7 @@ templ Bar(cfg Config) {
 		hx-swap="innerHTML"
 		hx-push-url="true"
 		hx-indicator={ cfg.Indicator }
-		hx-trigger="submit, change, input changed delay:300ms from:find input[type=search]"
+		hx-trigger="submit, change[!event.target.hasAttribute('data-kiban-filter-q')], input changed delay:300ms from:find input[type=search]"
 	>
 		@State(cfg, false)
 		<label class="flex h-9 min-w-[220px] flex-[0_1_340px] items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)] max-sm:flex-[1_1_100%]">
@@ -29,7 +29,7 @@ templ Bar(cfg Config) {
 			/>
 		</label>
 		for _, f := range cfg.Filters {
-			@filter(f)
+			@filter(cfg, f)
 		}
 		if cfg.ClearHref != "" {
 			<a href={ templ.URL(cfg.ClearHref) } class="px-1 py-1.5 text-[13px] font-medium text-kiban-primary hover:underline" data-kiban-filter-clear hidden?={ !cfg.active() }>{ cfg.ClearLabel }</a>
@@ -39,7 +39,7 @@ templ Bar(cfg Config) {
 	</form>
 }
 
-templ filter(f Filter) {
+templ filter(cfg Config, f Filter) {
 	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label }>
 		<summary
 			class="inline-flex h-9 cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[#CDD3DF] bg-white px-3 text-[13px] font-medium text-[#474F66] hover:bg-[#F4F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary data-[on]:border-kiban-primary data-[on]:bg-[rgba(0,71,255,0.08)] data-[on]:text-[#0036C4] [&::-webkit-details-marker]:hidden"
@@ -51,25 +51,70 @@ templ filter(f Filter) {
 			</span>
 			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
 		</summary>
-		<div class="absolute left-0 top-[calc(100%+6px)] z-[35] w-72 max-w-[calc(100vw-32px)] rounded-xl bg-white p-1.5 shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]" role="group" aria-label={ f.Label }>
-			for _, o := range f.Options {
-				<label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-kiban-ink hover:bg-[#F4F7FF] has-[:checked]:bg-[rgba(0,71,255,0.06)] has-[:checked]:font-medium has-[:checked]:text-[#0036C4]">
-					if f.Multi {
-						<span class="relative inline-grid shrink-0 place-items-center">
-							<input type={ f.inputType() } name={ f.Name } value={ o.Value } checked?={ o.Selected } data-label={ o.Label } class="peer m-0 h-[18px] w-[18px] cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-[#CDD3DF] bg-white checked:border-kiban-primary checked:bg-kiban-primary"/>
-							<svg class="pointer-events-none absolute h-2.5 w-2.5 text-white opacity-0 peer-checked:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5 5 9l4.5-6"></path></svg>
-						</span>
-					} else {
-						<span class="relative grid h-4 w-4 shrink-0 place-items-center">
-							<input type={ f.inputType() } name={ f.Name } value={ o.Value } checked?={ o.Selected } data-label={ o.Label } class="peer absolute inset-0 m-0 cursor-pointer appearance-none"/>
-							<svg class="pointer-events-none h-3.5 w-3.5 text-kiban-primary opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
-						</span>
-					}
-					<span class="min-w-0 flex-1">{ o.Label }</span>
+		<div class="absolute left-0 top-[calc(100%+6px)] z-[35] flex max-h-[min(440px,calc(100vh-200px))] w-80 max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-xl bg-white shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]" role="group" aria-label={ f.Label }>
+			if f.Search.Placeholder != "" {
+				<label class="mx-2.5 mb-1 mt-2.5 flex h-[38px] shrink-0 items-center gap-2 rounded-lg border border-[#CDD3DF] px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]">
+					<svg class="h-[15px] w-[15px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<input type="text" placeholder={ f.Search.Placeholder } aria-label={ f.Search.Placeholder } autocomplete="off" data-kiban-filter-q class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm text-kiban-ink outline-none placeholder:text-[#9096A3]"/>
 				</label>
+			}
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5">
+				for _, o := range f.Options {
+					<label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-kiban-ink hover:bg-[#F4F7FF] has-[:checked]:bg-[rgba(0,71,255,0.06)] has-[:checked]:font-medium has-[:checked]:text-[#0036C4] [&[hidden]]:hidden" data-kiban-filter-opt>
+						if f.Multi {
+							<span class="relative inline-grid shrink-0 place-items-center">
+								<input type={ f.inputType() } name={ f.Name } value={ o.Value } checked?={ o.Selected } data-label={ o.Label } class="peer m-0 h-[18px] w-[18px] cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-[#CDD3DF] bg-white checked:border-kiban-primary checked:bg-kiban-primary"/>
+								<svg class="pointer-events-none absolute h-2.5 w-2.5 text-white opacity-0 peer-checked:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5 5 9l4.5-6"></path></svg>
+							</span>
+						} else {
+							<span class="relative grid h-4 w-4 shrink-0 place-items-center">
+								<input type={ f.inputType() } name={ f.Name } value={ o.Value } checked?={ o.Selected } data-label={ o.Label } class="peer absolute inset-0 m-0 cursor-pointer appearance-none"/>
+								<svg class="pointer-events-none h-3.5 w-3.5 text-kiban-primary opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+							</span>
+						}
+						<span class="min-w-0 flex-1">{ o.Label }</span>
+						if o.HasCount {
+							@count(cfg.ID, f.Name, o.Value, o.Count, false)
+						}
+					</label>
+				}
+				if f.Search.Placeholder != "" {
+					<div class="px-3.5 py-3.5 text-[13px] text-[#9096A3]" data-kiban-filter-empty data-empty={ f.Search.Empty } hidden></div>
+				}
+			</div>
+			if cfg.MenuClear != "" || (f.Multi && cfg.MenuSelectAll != "") {
+				<div class="flex shrink-0 justify-between gap-2 border-t border-[#E2E5EC] bg-[#FAFBFF] px-2.5 py-2">
+					if f.Multi && cfg.MenuSelectAll != "" {
+						<button type="button" class="p-1 text-xs font-medium text-kiban-primary hover:underline" data-kiban-filter-all>{ cfg.MenuSelectAll }</button>
+					} else {
+						<span></span>
+					}
+					if cfg.MenuClear != "" {
+						<button type="button" class="p-1 text-xs font-medium text-[#B42318] hover:underline" data-kiban-filter-none hidden?={ len(f.selected()) == 0 }>{ cfg.MenuClear }</button>
+					}
+				</div>
 			}
 		</div>
 	</details>
+}
+
+// count es el número de una opción. Con oob, Counts lo manda solo para que
+// htmx reemplace el de la barra (que no se vuelve a pintar).
+templ count(formID, filter, value string, n int, oob bool) {
+	<span id={ countID(formID, filter, value) } class="text-xs tabular-nums text-[#9096A3]" data-kiban-filter-count if oob { hx-swap-oob="true" }>{ strconv.Itoa(n) }</span>
+}
+
+// Counts son los conteos de todas las opciones (las que llevan HasCount)
+// para una respuesta parcial: la tabla cambia y los números de los menús se
+// ponen al día sin pintar otra vez la barra.
+templ Counts(cfg Config) {
+	for _, f := range cfg.Filters {
+		for _, o := range f.Options {
+			if o.HasCount {
+				@count(cfg.ID, f.Name, o.Value, o.Count, true)
+			}
+		}
+	}
 }
 
 // pillText es el texto inicial de la píldora; después lo mantiene el

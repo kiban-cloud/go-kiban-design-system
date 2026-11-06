@@ -1897,7 +1897,7 @@ templ Base(cfg Config) {
 						});
 					}
 					if (!names.length && btn.getAttribute('data-kiban-confirm-item')) names.push(btn.getAttribute('data-kiban-confirm-item'));
-					var count = names.length;
+					var count = kibanBulkMatching(btn.form) || names.length;
 					var one = count === 1;
 					var title = ((one && btn.getAttribute('data-kiban-confirm-title-one')) || btn.getAttribute('data-kiban-confirm-title')).replace('{n}', count);
 					var ok = ((one && btn.getAttribute('data-kiban-confirm-ok-one')) || btn.getAttribute('data-kiban-confirm-ok') || 'OK').replace('{n}', count);
@@ -1952,8 +1952,59 @@ templ Base(cfg Config) {
 					}
 					var pill = d.querySelector('[data-kiban-filter-pill]');
 					if (pill) pill.toggleAttribute('data-on', vals.length > 0);
+					var none = d.querySelector('[data-kiban-filter-none]');
+					if (none) none.hidden = !vals.length;
 					kibanFilterClear(d.closest('form'));
 				}
+				// Menú de un filtro: el buscador ([data-kiban-filter-q]) oculta
+				// las opciones que no coinciden (sin acentos ni mayúsculas) y
+				// muestra data-empty si no queda ninguna; «Seleccionar todos»
+				// y «Limpiar» cambian las casillas y piden la lista una vez.
+				function kibanFold(s) {
+					return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+				}
+				function kibanFilterQuery(d, raw) {
+					var q = kibanFold(raw.trim()), shown = 0;
+					d.querySelectorAll('[data-kiban-filter-opt]').forEach(function (o) {
+						var input = o.querySelector('input');
+						var hit = !q || kibanFold(input && input.getAttribute('data-label')).indexOf(q) >= 0;
+						o.hidden = !hit;
+						if (hit) shown++;
+					});
+					var empty = d.querySelector('[data-kiban-filter-empty]');
+					if (empty) {
+						empty.textContent = (empty.getAttribute('data-empty') || '').replace('{q}', raw.trim());
+						empty.hidden = shown > 0;
+					}
+				}
+				function kibanFilterSet(d, on) {
+					var inputs = d.querySelectorAll('[data-kiban-filter-opt] input'), last = null;
+					inputs.forEach(function (i) {
+						if (i.type === 'radio') i.checked = !on && i.value === '';
+						else i.checked = on;
+						last = i;
+					});
+					if (last) last.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+				document.addEventListener('input', function (e) {
+					var q = e.target.closest && e.target.closest('[data-kiban-filter-q]');
+					if (q) kibanFilterQuery(q.closest('[data-kiban-filter]'), q.value);
+				});
+				document.addEventListener('keydown', function (e) {
+					if (e.key === 'Enter' && e.target.hasAttribute && e.target.hasAttribute('data-kiban-filter-q')) e.preventDefault();
+				});
+				document.addEventListener('click', function (e) {
+					var b = e.target.closest && e.target.closest('[data-kiban-filter-all], [data-kiban-filter-none]');
+					if (!b) return;
+					kibanFilterSet(b.closest('[data-kiban-filter]'), b.hasAttribute('data-kiban-filter-all'));
+				});
+				// Al cerrar un menú, su buscador vuelve a vacío (como el proto).
+				document.addEventListener('toggle', function (e) {
+					var d = e.target;
+					if (!d.matches || !d.matches('details[data-kiban-filter]') || d.open) return;
+					var q = d.querySelector('[data-kiban-filter-q]');
+					if (q && q.value) { q.value = ''; kibanFilterQuery(d, ''); }
+				}, true);
 				function kibanFilterClear(form) {
 					var clear = form && form.querySelector('[data-kiban-filter-clear]');
 					if (!clear) return;
@@ -1987,9 +2038,22 @@ templ Base(cfg Config) {
 				// (data-one / data-many, con {n}, el número en negritas); [data-kiban-bulk-clear]
 				// las desmarca todas. Corre también tras un swap de htmx,
 				// porque la tabla llega nueva y la selección se pierde.
+				// table.BulkActionBar con SelectAllMatching: el modo «todos los
+				// que coinciden» vive en el campo oculto [data-kiban-bulk-all];
+				// kibanBulkMatching devuelve su total, o 0 si no está elegido.
+				function kibanBulkMatching(form) {
+					var all = form && form.querySelector('[data-kiban-bulk-all]');
+					return all && all.value === '1' ? parseInt(all.getAttribute('data-total'), 10) || 0 : 0;
+				}
 				function kibanBulkSync(form) {
 					var boxes = form.querySelectorAll('input[name=ids]'), n = 0;
 					boxes.forEach(function (b) { if (b.checked) n++; });
+					var allField = form.querySelector('[data-kiban-bulk-all]');
+					if (allField && allField.value === '1' && n < boxes.length) allField.value = '';
+					var matching = kibanBulkMatching(form);
+					var offer = form.querySelector('[data-kiban-bulk-matching]');
+					if (offer) offer.hidden = !!matching || n === 0 || n >= (parseInt(allField.getAttribute('data-total'), 10) || 0);
+					if (matching) n = matching;
 					var all = form.querySelector('[data-kiban-select-all]');
 					if (all) {
 						all.checked = boxes.length > 0 && n === boxes.length;
@@ -2025,6 +2089,17 @@ templ Base(cfg Config) {
 					var form = b.closest('form');
 					if (!form) return;
 					form.querySelectorAll('input[name=ids]').forEach(function (x) { x.checked = false; });
+					var allField = form.querySelector('[data-kiban-bulk-all]');
+					if (allField) allField.value = '';
+					kibanBulkSync(form);
+				});
+				document.addEventListener('click', function (e) {
+					var b = e.target.closest && e.target.closest('[data-kiban-bulk-matching]');
+					if (!b) return;
+					var form = b.closest('form');
+					if (!form) return;
+					form.querySelectorAll('input[name=ids]').forEach(function (x) { x.checked = true; });
+					form.querySelector('[data-kiban-bulk-all]').value = '1';
 					kibanBulkSync(form);
 				});
 

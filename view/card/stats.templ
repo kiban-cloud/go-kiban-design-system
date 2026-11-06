@@ -1,0 +1,24 @@
+package card
+
+// Stats son las cifras de un resultado en tarjetas (flamboyant, como el
+// resultado de la carga masiva del proto: importados, duplicados, errores).
+// Tres por renglón; una por renglón en móvil. Sin cifras no pinta nada.
+templ Stats(items []StatOptions) {
+	if len(items) > 0 {
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+			for _, s := range items {
+				<div class="flex items-center gap-3 rounded-xl border border-[#E2E5EC] bg-white px-4 py-3.5" data-kiban-stat>
+					<span class={ "grid h-9 w-9 shrink-0 place-items-center rounded-[10px] [&>svg]:h-[18px] [&>svg]:w-[18px]", statToneClass(s.Tone) }>
+						if s.Icon != nil {
+							@s.Icon
+						}
+					</span>
+					<div class="min-w-0">
+						<div class="text-[22px] font-medium leading-[26px] tabular-nums">{ s.Value }</div>
+						<div class="text-xs text-[#606875]">{ s.Label }</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
