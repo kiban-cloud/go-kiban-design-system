@@ -32,9 +32,14 @@ type RadioCardOptions struct {
 	Checked                      bool
 	Attrs                        templ.Attributes
 	// Icon y Tone sólo se ven en flamboyant: el ícono va en un cuadro azul
-	// (Tone vacío) o verde (Tone "success").
+	// (Tone vacío), verde (Tone "success") o gris (Tone "neutral").
 	Icon templ.Component
 	Tone string
+	// Tags son etiquetas bajo el subtítulo (lo que incluye una plantilla) y
+	// Big la tarjeta más alta, con el ícono arriba (las plantillas de un
+	// flujo). Sólo flamboyant.
+	Tags []string
+	Big  bool
 }
 
 // ToggleOptions configura ToggleWith.

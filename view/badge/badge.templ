@@ -18,6 +18,17 @@ templ Variant(label, variant, size string) {
 	}
 }
 
+// VariantWith es Variant con opciones. NoDot quita el punto de la píldora
+// flamboyant (los estados de la lista de flujos del proto); con el diseño de
+// siempre es exactamente Variant.
+templ VariantWith(o Options) {
+	if flamboyant.On(ctx) {
+		<span class={ pillClassWith(o.Variant, o.Size, !o.NoDot) }>{ o.Label }</span>
+	} else {
+		@classic(o.Label, o.Variant, o.Size)
+	}
+}
+
 // classic es el badge de siempre: rectángulo de esquinas suaves sin punto.
 templ classic(label, variant, size string) {
 	<span

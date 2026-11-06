@@ -31,9 +31,16 @@ templ RadioCard(name, value, title, subtitle string, checked bool, attrs templ.A
 // marcada en azul. Con el diseño de siempre el ícono no se muestra.
 templ RadioCardWith(o RadioCardOptions) {
 	if flamboyant.On(ctx) {
-		<label data-kiban-radio-card class="relative grid cursor-pointer grid-cols-[36px_minmax(0,1fr)] items-center gap-2.5 rounded-lg border border-[#CDD3DF] bg-white px-3 py-2.5 hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary">
+		<label
+			data-kiban-radio-card
+			class={
+				"relative grid cursor-pointer gap-2.5 rounded-lg border border-[#CDD3DF] bg-white hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary",
+				templ.KV("grid-cols-[36px_minmax(0,1fr)] items-center px-3 py-2.5", !o.Big),
+				templ.KV("grid-cols-[40px_minmax(0,1fr)] items-start p-3", o.Big),
+			}
+		>
 			<input type="radio" name={ o.Name } value={ o.Value } checked?={ o.Checked } class="pointer-events-none absolute opacity-0" { o.Attrs... }/>
-			<span class={ "grid h-9 w-9 place-items-center rounded-lg", templ.KV("bg-[#E3FBF5] text-[#007A63]", o.Tone == "success"), templ.KV("bg-[#EAF0FF] text-[#0036C4]", o.Tone != "success") }>
+			<span class={ "grid h-9 w-9 place-items-center rounded-lg", templ.KV("bg-[#E3FBF5] text-[#007A63]", o.Tone == "success"), templ.KV("bg-[#F2F2F2] text-[#474747]", o.Tone == "neutral"), templ.KV("bg-[#EAF0FF] text-[#0036C4]", o.Tone != "success" && o.Tone != "neutral") }>
 				if o.Icon != nil {
 					@o.Icon
 				}
@@ -42,6 +49,13 @@ templ RadioCardWith(o RadioCardOptions) {
 				<b class="block text-sm font-medium leading-[18px] text-kiban-ink">{ o.Title }</b>
 				if o.Subtitle != "" {
 					<small class="block text-xs leading-4 text-[#606875]">{ o.Subtitle }</small>
+				}
+				if len(o.Tags) > 0 {
+					<span class="mt-1 flex flex-wrap gap-1">
+						for _, t := range o.Tags {
+							<span class="rounded-full bg-[#F2F4F8] px-2 py-px text-[11px] text-[#474F66]">{ t }</span>
+						}
+					</span>
 				}
 			</span>
 		</label>

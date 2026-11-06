@@ -42,6 +42,22 @@ func TestRadioCardWith_FlamboyantIconoYTono(t *testing.T) {
 	assert.Contains(t, body, ` checked`)
 }
 
+func TestRadioCardWith_FlamboyantEtiquetasTonoGrisYGrande(t *testing.T) {
+	body := renderIn(t, flamCtx, input.RadioCardWith(input.RadioCardOptions{
+		Name: "template", Value: "pf", Title: "Onboarding PF", Subtitle: "Incluye:", Tags: []string{"Identidad", "Firma"}, Big: true,
+	}))
+	assert.Contains(t, body, ">Identidad</span>")
+	assert.Contains(t, body, ">Firma</span>")
+	assert.Contains(t, body, "grid-cols-[40px_minmax(0,1fr)] items-start p-3")
+	assert.Contains(t, body, "bg-[#EAF0FF]", "sin Tone, azul")
+
+	gris := renderIn(t, flamCtx, input.RadioCardWith(input.RadioCardOptions{Name: "template", Value: "empty", Title: "En blanco", Tone: "neutral"}))
+	assert.Contains(t, gris, "bg-[#F2F2F2] text-[#474747]")
+	assert.NotContains(t, gris, "bg-[#EAF0FF]")
+	assert.Contains(t, gris, "grid-cols-[36px_minmax(0,1fr)] items-center", "sin Big, la de siempre")
+	assert.NotContains(t, gris, "rounded-full bg-[#F2F4F8]", "sin etiquetas")
+}
+
 func TestToggleWith_ClasicoIgualQueToggle(t *testing.T) {
 	assert.Equal(t,
 		renderIn(t, context.Background(), input.Toggle("isSTP", "STP", true, true, nil)),
