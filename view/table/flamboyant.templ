@@ -122,7 +122,7 @@ templ flamboyantRow(o RowOptions) {
 templ flamboyantBulkActionBar(cfg BulkActionBarConfig) {
 	<div class="hidden flex-wrap items-center gap-3 border-b border-[#DCE5FF] bg-[#EAF0FF] px-4 py-2 text-[13px] text-[#0036C4] group-has-[input[name=ids]:checked]/bulk:flex">
 		if cfg.CountMany != "" {
-			<span class="font-semibold" data-kiban-bulk-count data-one={ cfg.CountOne } data-many={ cfg.CountMany }></span>
+			<span data-kiban-bulk-count data-one={ cfg.CountOne } data-many={ cfg.CountMany }></span>
 		} else if cfg.Message != "" {
 			<span>{ cfg.Message }</span>
 		}

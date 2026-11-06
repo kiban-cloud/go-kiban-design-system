@@ -36,8 +36,9 @@ type Options struct {
 	Variant       string // primary | secondary | danger | danger-outline | icon
 
 	// Size "lg" es el botón grande de crear en la barra de un listado («Nuevo
-	// flujo»): 14 px, 16 px a los lados y 36 px de alto. Sólo cambia el diseño
-	// flamboyant (el de siempre ya mide eso) y no aplica a la variante icon.
+	// flujo»): 14 px, 16 px a los lados y 36 px de alto. "sm" es el bajo de la
+	// franja de selección («Eliminar»): 5 px arriba y abajo, ícono de 14 px.
+	// Sólo cambia el diseño flamboyant y no aplica a la variante icon.
 	Size string
 
 	// Href, when non-empty, makes Button render as an `<a>` and skips the
@@ -173,8 +174,11 @@ func classForSize(ctx context.Context, variant, size, extraClass string) string 
 func flamboyantClasses(variant, size string) string {
 	const focus = " focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary"
 	medida := "px-3 py-[7px] text-[13px]"
-	if strings.EqualFold(strings.TrimSpace(size), "lg") {
+	switch strings.ToLower(strings.TrimSpace(size)) {
+	case "lg":
 		medida = "h-9 px-4 py-0 text-sm"
+	case "sm":
+		medida = "px-3 py-[5px] text-[13px] leading-[normal] [&>svg]:h-3.5 [&>svg]:w-3.5"
 	}
 	base := "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border " + medida + " font-medium no-underline transition-colors disabled:cursor-not-allowed" + focus
 	switch strings.ToLower(strings.TrimSpace(variant)) {
