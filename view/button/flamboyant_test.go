@@ -59,3 +59,23 @@ func TestButton_DangerOutlineExisteEnLosDosDisenos(t *testing.T) {
 	body := renderIn(t, context.Background(), button.Options{Label: "Descartar", Variant: "danger-outline"})
 	assert.Contains(t, body, "border-red-300")
 }
+
+func TestButton_FlamboyantTamanoLG(t *testing.T) {
+	for _, v := range []string{"primary", "secondary", "danger", "danger-outline"} {
+		body := renderIn(t, flam, button.Options{Label: "Nuevo flujo", Variant: v, Size: "lg"})
+		assert.Contains(t, body, "h-9 px-4 py-0 text-sm", v)
+		assert.NotContains(t, body, "text-[13px]", v)
+		assert.NotContains(t, body, "px-3", v)
+	}
+
+	icon := renderIn(t, flam, button.Options{Variant: "icon", AriaLabel: "Más", Size: "lg"})
+	assert.Contains(t, icon, "h-[34px] w-[34px]", "el de ícono no cambia de tamaño")
+
+	normal := renderIn(t, flam, button.Options{Label: "Guardar", Variant: "primary"})
+	assert.Contains(t, normal, "px-3 py-[7px] text-[13px]", "sin Size sigue el de siempre")
+}
+
+func TestButton_TamanoLGNoCambiaElDisenoDeSiempre(t *testing.T) {
+	body := renderIn(t, context.Background(), button.Options{Label: "Nuevo", Variant: "primary", Size: "lg"})
+	assert.Contains(t, body, `class="`+button.BuildClass("primary", "")+`"`)
+}
