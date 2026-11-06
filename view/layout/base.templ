@@ -109,7 +109,29 @@ templ Base(cfg Config) {
 				@keyframes kiban-spin { to { transform: rotate(360deg); } }
 				/* Entrada del panel de formulario flamboyant (drawer.FormPanel). */
 				@keyframes kiban-panel-in { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
-				@media (prefers-reduced-motion: reduce) { [data-kiban-panel] form { animation: none !important; } }
+				/* Salida: el panel se desliza y el fondo se desvanece antes de
+				   quitarlo (kibanPanelClose pone data-closing). */
+				@keyframes kiban-panel-out { to { transform: translateX(24px); opacity: 0; } }
+				@keyframes kiban-fade-out { to { opacity: 0; } }
+				[data-kiban-panel][data-closing] { pointer-events: none; }
+				[data-kiban-panel][data-closing] > [role=dialog] { animation: kiban-panel-out .16s ease-in forwards; }
+				[data-kiban-panel][data-closing] > [data-kiban-panel-close] { animation: kiban-fade-out .16s ease-in forwards; }
+				/* El panel que reemplaza a la hoja de carga ya está a la vista
+				   (sin entrada; la salida sí). */
+				[data-kiban-panel][data-instant]:not([data-closing]) > [role=dialog] { animation: none; }
+				/* Hoja de carga: lo que se ve al instante al abrir un panel
+				   (disparador con data-kiban-panel-open) mientras responde el
+				   servidor. CSS propio, no Tailwind: el CDN genera las clases
+				   la primera vez que aparecen y eso trabaría la animación. */
+				.kiban-panel-ph { position: fixed; inset: 0; z-index: 45; }
+				.kiban-panel-ph-bg { position: absolute; inset: 0; background: rgba(244, 247, 255, .55); backdrop-filter: blur(6px) saturate(.6); -webkit-backdrop-filter: blur(6px) saturate(.6); }
+				.kiban-panel-ph-sheet { position: absolute; top: 0; bottom: 0; right: 0; width: 95vw; display: flex; flex-direction: column; background: #fff; box-shadow: -16px 0 40px -20px rgba(26, 32, 53, .45); animation: kiban-panel-in .2s ease-out; }
+				.kiban-panel-ph[data-half] .kiban-panel-ph-sheet { width: 50%; }
+				.kiban-panel-ph-head { min-height: 64px; border-bottom: 1px solid #E2E5EC; }
+				.kiban-panel-ph-body { flex: 1; display: grid; place-items: center; background: #F4F7FF; }
+				@media (max-width: 1100px) { .kiban-panel-ph[data-half] .kiban-panel-ph-sheet { width: 100vw; } }
+				@media (max-width: 639px) { .kiban-panel-ph-sheet { width: 100vw; } }
+				@media (prefers-reduced-motion: reduce) { [data-kiban-panel] [role=dialog], [data-kiban-panel] > [data-kiban-panel-close], .kiban-panel-ph-sheet { animation: none !important; } }
 				.ds-spinner {
 					width: 32px; height: 32px;
 					border: 3px solid rgba(0, 71, 255, 0.15);
@@ -1724,9 +1746,77 @@ templ Base(cfg Config) {
 						window.location.href = root.getAttribute('data-close-href');
 						return;
 					}
-					root.remove();
+					kibanPanelLeave(root);
+				}
+				// kibanPanelLeave quita el panel con su animación de salida
+				// (data-closing). El scroll de la página vuelve cuando ya no
+				// está, para que no salte mientras se va.
+				function kibanPanelLeave(root) {
+					if (root.hasAttribute('data-closing')) return;
+					var sheet = root.querySelector(':scope > [role=dialog]');
+					var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+					var done = false;
+					var fin = function () { if (done) return; done = true; root.remove(); kibanPanelInit(); };
+					if (still || !sheet) { fin(); return; }
+					sheet.addEventListener('animationend', function end(ev) {
+						if (ev.target !== sheet) return;
+						sheet.removeEventListener('animationend', end);
+						fin();
+					});
+					root.setAttribute('data-closing', '');
+					setTimeout(fin, 300);
+				}
+				// drawer.ClosePanelEvent: el servidor cierra el panel desde el que
+				// se hizo la acción (HX-Trigger), con la misma salida.
+				document.addEventListener('kiban-panel-close', function (e) {
+					var root = e.target && e.target.closest && e.target.closest('[data-kiban-panel]');
+					if (!root) {
+						var open = document.querySelectorAll('[data-kiban-panel]:not([data-closing])');
+						root = open[open.length - 1];
+					}
+					if (root) kibanPanelClose(root, true);
+				});
+
+				// Apertura al instante: un disparador htmx con
+				// data-kiban-panel-open (valor "half" para el de 50 %) muestra
+				// al momento la hoja de carga; cuando llega el panel, toma su
+				// lugar sin volver a deslizarse. Si la respuesta no trae panel
+				// (error, redirect), la hoja se quita. Clic en el fondo o Escape
+				// cancelan la petición.
+				function kibanPanelSource(e) {
+					return (e.detail && e.detail.requestConfig && e.detail.requestConfig.elt) || (e.detail && e.detail.elt);
+				}
+				function kibanPanelPhDrop(src, abort) {
+					var ph = src && src._kibanPanelPh;
+					if (!ph) return;
+					src._kibanPanelPh = null;
+					if (abort && window.htmx) htmx.trigger(src, 'htmx:abort');
+					ph.remove();
 					kibanPanelInit();
 				}
+				document.addEventListener('htmx:beforeRequest', function (e) {
+					var src = e.detail && e.detail.elt;
+					if (!src || !src.hasAttribute || !src.hasAttribute('data-kiban-panel-open') || src._kibanPanelPh) return;
+					var ph = document.createElement('div');
+					ph.className = 'kiban-panel-ph';
+					ph.setAttribute('data-kiban-panel-ph', '');
+					if (src.getAttribute('data-kiban-panel-open') === 'half') ph.setAttribute('data-half', '');
+					ph.innerHTML = '<div class="kiban-panel-ph-bg"></div><div class="kiban-panel-ph-sheet" role="status" aria-busy="true"><div class="kiban-panel-ph-head"></div><div class="kiban-panel-ph-body"><div class="ds-spinner"></div></div></div>';
+					ph.querySelector('.kiban-panel-ph-bg').addEventListener('click', function () { kibanPanelPhDrop(src, true); });
+					ph._kibanPanelSrc = src;
+					src._kibanPanelPh = ph;
+					document.body.appendChild(ph);
+					document.documentElement.style.overflow = 'hidden';
+				});
+				document.addEventListener('htmx:afterSwap', function (e) {
+					var src = kibanPanelSource(e);
+					if (!src || !src._kibanPanelPh) return;
+					var panels = document.querySelectorAll('[data-kiban-panel]:not([data-closing])');
+					var last = panels[panels.length - 1];
+					if (last) last.setAttribute('data-instant', '');
+					kibanPanelPhDrop(src, false);
+				});
+				document.addEventListener('htmx:afterRequest', function (e) { kibanPanelPhDrop(kibanPanelSource(e), false); });
 				document.addEventListener('DOMContentLoaded', kibanPanelInit);
 				document.addEventListener('htmx:afterSettle', kibanPanelInit);
 				['input', 'change'].forEach(function (type) {
@@ -1763,7 +1853,9 @@ templ Base(cfg Config) {
 				});
 				document.addEventListener('keydown', function (e) {
 					if (e.key !== 'Escape') return;
-					var panels = document.querySelectorAll('[data-kiban-panel]');
+					var ph = document.querySelector('[data-kiban-panel-ph]');
+					if (ph) { kibanPanelPhDrop(ph._kibanPanelSrc, true); return; }
+					var panels = document.querySelectorAll('[data-kiban-panel]:not([data-closing])');
 					if (!panels.length) return;
 					var root = panels[panels.length - 1];
 					var guard = root.querySelector('[data-kiban-panel-guard]');

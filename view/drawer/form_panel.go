@@ -105,3 +105,9 @@ func (c ViewPanelConfig) header() panelHead {
 	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, CloseLabel: c.CloseLabel,
 		Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
 }
+
+// ClosePanelEvent es el evento con el que el servidor cierra el panel desde
+// el que se hizo la acción, con la animación de salida: c.Header("HX-Trigger",
+// drawer.ClosePanelEvent). Lo atiende base.templ. Sirve cuando la respuesta
+// cambia otra parte de la página (la lista tras borrar) y el panel sobra.
+const ClosePanelEvent = "kiban-panel-close"
