@@ -17,6 +17,7 @@ import (
 
 	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
+	"github.com/kiban-cloud/go-kiban-design-system/view/drawer"
 	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 )
 
@@ -191,4 +192,19 @@ func TestBase_ConfirmacionComoElProto(t *testing.T) {
 	assert.Contains(t, body, "data-kiban-confirm-item")
 	assert.Contains(t, body, "data-kiban-confirm-more")
 	assert.Contains(t, body, "[&>li]:my-0.5", "renglones separados como kp-dg-list")
+}
+
+// Los paneles se van animados (como entran) y abren al instante: el
+// disparador con data-kiban-panel-open muestra una hoja de carga con CSS
+// propio (sin esperar a que Tailwind genere clases) mientras llega el panel.
+func TestBase_PanelSalidaAnimadaYAperturaAlInstante(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "@keyframes kiban-panel-out")
+	assert.Contains(t, body, "[data-kiban-panel][data-closing] > [role=dialog]")
+	assert.Contains(t, body, "data-kiban-panel-open")
+	assert.Contains(t, body, ".kiban-panel-ph")
+	assert.Contains(t, body, "[data-kiban-panel][data-instant]:not([data-closing]) > [role=dialog]", "el panel que reemplaza la hoja no vuelve a deslizarse, pero sí sale")
+	assert.Contains(t, body, "'"+drawer.ClosePanelEvent+"'", "el servidor puede cerrar el panel con HX-Trigger")
+	assert.Contains(t, body, "prefers-reduced-motion: reduce) { [data-kiban-panel] [role=dialog]")
 }
