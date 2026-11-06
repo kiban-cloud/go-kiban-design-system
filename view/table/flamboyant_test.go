@@ -109,6 +109,26 @@ func TestPagination_FlamboyantConFilasPorPagina(t *testing.T) {
 	assert.Contains(t, en, "Rows")
 }
 
+func TestPagination_FlamboyantConLead(t *testing.T) {
+	cfg := table.PaginationConfig{
+		Page: 2, HasPrev: true, HasNext: true,
+		PageURL:   func(p int) string { return "/l?page=" + string(rune('0'+p)) },
+		PageSizes: []int{10, 25},
+		PageSize:  10,
+		Lead:      templ.Raw(`<p data-ds-tzlabel></p>`),
+	}
+	body := render(t, flam, table.Pagination(cfg))
+
+	assert.Contains(t, body, `<div class="mr-auto min-w-0"><p data-ds-tzlabel></p></div>`, "el Lead ocupa la izquierda")
+	assert.NotContains(t, body, `<span>Página 2</span>`, "«Página N» ya no va a la izquierda")
+	assert.Contains(t, body, `</button>Página 2<button`, "va entre las flechas")
+	assert.Contains(t, body, "py-[3px]")
+
+	sinLead := render(t, flam, table.Pagination(table.PaginationConfig{Page: 2, PageURL: cfg.PageURL}))
+	assert.Contains(t, sinLead, `<span>Página 2</span>`, "sin Lead, el pie de siempre")
+	assert.Contains(t, sinLead, `</button>2<button`)
+}
+
 func TestEmptyState_AceptaAcciones(t *testing.T) {
 	ctx := withChild(context.Background(), `<a href="/nuevo">Nuevo</a>`)
 	assert.Contains(t, render(t, ctx, table.EmptyState("Sin clientes", "")), `<a href="/nuevo">Nuevo</a>`)
