@@ -52,6 +52,11 @@ type PaginationConfig struct {
 	// lista de flujos del proto, con la zona horaria a la izquierda. Nil deja
 	// el pie como siempre.
 	Lead templ.Component
+
+	// Pages, sólo flamboyant, es el total de páginas cuando se conoce: entre
+	// las flechas va «2 / 13», como el pie de la lista de clientes del proto.
+	// 0 deja el número de página solo (o «Página N» con Lead).
+	Pages int
 }
 
 // paginationNextEnabledClass picks the Tailwind class string for the
@@ -198,4 +203,14 @@ type BulkActionBarConfig struct {
 	// reemplaza {n}. Vacíos, la franja muestra Message.
 	CountOne  string
 	CountMany string
+
+	// SelectAllMatching es «Seleccionar los {n} que coinciden» (flamboyant,
+	// como el proto): con algo marcado y menos que Matching, la franja ofrece
+	// pasar la acción a todos los registros del filtro, no sólo a los de la
+	// página. Elegirlo pone all_matching=1 en el form (quien recibe la acción
+	// resuelve los registros con los filtros) y el conteo y la confirmación
+	// dicen Matching. Desmarcar una casilla o «Quitar selección» lo deshace.
+	// Sin texto o con Matching 0 no se ofrece.
+	SelectAllMatching string
+	Matching          int
 }

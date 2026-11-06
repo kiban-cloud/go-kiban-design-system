@@ -76,6 +76,19 @@ func TestRow_FlamboyantCasillaDentroDeLabel(t *testing.T) {
 	assert.Contains(t, body, "<td>x</td>")
 }
 
+// «Seleccionar los N que coinciden» del proto: la acción alcanza a todos los
+// registros del filtro, no sólo a los de la página.
+func TestBulkActionBar_FlamboyantSeleccionarLosQueCoinciden(t *testing.T) {
+	cfg := table.BulkActionBarConfig{CountOne: "1 seleccionado", CountMany: "{n} seleccionados", SelectAllMatching: "Seleccionar los {n} que coinciden", Matching: 121}
+	body := render(t, flam, table.BulkActionBar(cfg))
+
+	assert.Contains(t, body, `<input type="hidden" name="all_matching" value="" data-kiban-bulk-all data-total="121">`, "vacío hasta que se elige")
+	assert.Contains(t, body, `data-kiban-bulk-matching hidden>Seleccionar los 121 que coinciden</button>`)
+
+	cfg.Matching = 0
+	assert.NotContains(t, render(t, flam, table.BulkActionBar(cfg)), "data-kiban-bulk-matching", "sin total no se ofrece")
+}
+
 func TestBulkActionBar_FlamboyantConteoEnVivo(t *testing.T) {
 	body := render(t, flam, table.BulkActionBar(table.BulkActionBarConfig{CountOne: "1 seleccionado", CountMany: "{n} seleccionados"}))
 
@@ -127,6 +140,23 @@ func TestPagination_FlamboyantConLead(t *testing.T) {
 	sinLead := render(t, flam, table.Pagination(table.PaginationConfig{Page: 2, PageURL: cfg.PageURL}))
 	assert.Contains(t, sinLead, `<span>Página 2</span>`, "sin Lead, el pie de siempre")
 	assert.Contains(t, sinLead, `</button>2<button`)
+}
+
+// El pie de la lista de clientes del proto: «1–10 de 121 clientes» a la
+// izquierda (Lead) y «1 / 13» entre las flechas cuando se conoce el total.
+func TestPagination_FlamboyantConTotalDePaginas(t *testing.T) {
+	cfg := table.PaginationConfig{
+		Page: 2, HasPrev: true, HasNext: true, Pages: 13,
+		PageURL: func(p int) string { return "/l?page=" + string(rune('0'+p)) },
+		Lead:    templ.Raw(`<span>11–20 de 121 clientes</span>`),
+	}
+	body := render(t, flam, table.Pagination(cfg))
+
+	assert.Contains(t, body, `</button>2 / 13<button`)
+	assert.Contains(t, body, "11–20 de 121 clientes")
+
+	cfg.Lead = nil
+	assert.Contains(t, render(t, flam, table.Pagination(cfg)), `</button>2 / 13<button`, "sin Lead también")
 }
 
 func TestEmptyState_AceptaAcciones(t *testing.T) {

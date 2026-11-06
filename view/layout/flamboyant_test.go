@@ -197,6 +197,26 @@ func TestBase_ConfirmacionComoElProto(t *testing.T) {
 // Los paneles se van animados (como entran) y abren al instante: el
 // disparador con data-kiban-panel-open muestra una hoja de carga con CSS
 // propio (sin esperar a que Tailwind genere clases) mientras llega el panel.
+// «Seleccionar los N que coinciden»: el botón, el modo en el campo oculto y
+// la confirmación que cuenta el total.
+func TestBase_SeleccionarLosQueCoinciden(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "[data-kiban-bulk-matching]")
+	assert.Contains(t, body, "[data-kiban-bulk-all]")
+	assert.Contains(t, body, "kibanBulkMatching(btn.form)", "la confirmación cuenta todos los que coinciden")
+}
+
+// El menú de filtros del proto: buscador, «Seleccionar todos» y «Limpiar».
+func TestBase_MenuDeFiltros(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "[data-kiban-filter-q]")
+	assert.Contains(t, body, "[data-kiban-filter-all], [data-kiban-filter-none]")
+	assert.Contains(t, body, "[data-kiban-filter-none]')")
+	assert.Contains(t, body, "normalize('NFD')", "busca sin acentos")
+}
+
 func TestBase_PanelSalidaAnimadaYAperturaAlInstante(t *testing.T) {
 	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
 
