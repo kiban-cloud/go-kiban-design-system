@@ -134,14 +134,20 @@ templ flamboyantBulkActionBar(cfg BulkActionBarConfig) {
 
 templ flamboyantPagination(cfg PaginationConfig) {
 	<div class="flex flex-wrap items-center gap-3 border-t border-kiban-border px-4 py-2.5 text-[13px] text-[#606875]">
-		<span>{ catalog.Tf(ctx, "table.page", map[string]any{"Page": cfg.Page}) }</span>
-		<span class="flex-1"></span>
+		if cfg.Lead != nil {
+			<div class="mr-auto min-w-0">
+				@cfg.Lead
+			</div>
+		} else {
+			<span>{ catalog.Tf(ctx, "table.page", map[string]any{"Page": cfg.Page}) }</span>
+			<span class="flex-1"></span>
+		}
 		if len(cfg.PageSizes) > 0 {
 			<label class="inline-flex items-center gap-1.5">
 				{ catalog.T(ctx, "table.rows") }
 				<select
 					name="itemsPerPage"
-					class="rounded-md border border-[#CDD3DF] bg-white px-1.5 py-0.5 text-[13px] text-kiban-ink"
+					class="rounded-md border border-[#CDD3DF] bg-white px-1.5 py-[3px] text-[13px] text-kiban-ink"
 					hx-get={ cfg.PageSizeURL }
 					hx-target={ cfg.Target }
 					hx-swap="innerHTML"
@@ -156,7 +162,11 @@ templ flamboyantPagination(cfg PaginationConfig) {
 		}
 		<span class="inline-flex items-center gap-2 tabular-nums">
 			@pagerButton(cfg, cfg.Page-1, cfg.HasPrev, catalog.T(ctx, "table.prev"), "m15 18-6-6 6-6")
-			{ itoa(cfg.Page) }
+			if cfg.Lead != nil {
+				{ catalog.Tf(ctx, "table.page", map[string]any{"Page": cfg.Page}) }
+			} else {
+				{ itoa(cfg.Page) }
+			}
 			@pagerButton(cfg, cfg.Page+1, cfg.HasNext, catalog.T(ctx, "table.next"), "m9 18 6-6-6-6")
 		</span>
 	</div>

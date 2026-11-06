@@ -46,6 +46,12 @@ type PaginationConfig struct {
 	PageSizes   []int
 	PageSize    int
 	PageSizeURL string
+
+	// Lead, sólo flamboyant, va a la izquierda del pie en lugar de «Página
+	// N», que pasa a ir entre las flechas («‹ Página 2 ›»). Es el pie de la
+	// lista de flujos del proto, con la zona horaria a la izquierda. Nil deja
+	// el pie como siempre.
+	Lead templ.Component
 }
 
 // paginationNextEnabledClass picks the Tailwind class string for the

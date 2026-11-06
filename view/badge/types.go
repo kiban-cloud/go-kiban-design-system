@@ -38,7 +38,23 @@ package badge
 // de siempre; neutral no aparece en el diseño y toma el gris de los textos
 // secundarios.
 func pillClass(variant, size string) string {
-	c := "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']"
+	return pillClassWith(variant, size, true)
+}
+
+// Options configura VariantWith: las mismas Label, Variant y Size de Variant,
+// más NoDot para la píldora sin punto.
+type Options struct {
+	Label   string
+	Variant string
+	Size    string
+	NoDot   bool
+}
+
+func pillClassWith(variant, size string, dot bool) string {
+	c := "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium"
+	if dot {
+		c += " before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']"
+	}
 	if size == "md" {
 		c += " px-3 py-1 text-sm"
 	} else {

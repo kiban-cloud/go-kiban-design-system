@@ -47,6 +47,24 @@ func TestVariant_FlamboyantEsPildoraConPunto(t *testing.T) {
 	assert.Contains(t, renderBadge(t, ctx, "info", "md"), "text-sm")
 }
 
+func TestVariantWith_SinPunto(t *testing.T) {
+	ctx := feature.Enable(context.Background(), flamboyant.Flag)
+	render := func(ctx context.Context, o badge.Options) string {
+		var buf bytes.Buffer
+		require.NoError(t, badge.VariantWith(o).Render(ctx, &buf))
+		return buf.String()
+	}
+
+	sin := render(ctx, badge.Options{Label: "Sandbox", Variant: "info", NoDot: true})
+	assert.Contains(t, sin, "rounded-full")
+	assert.Contains(t, sin, "text-[#0036C4]")
+	assert.NotContains(t, sin, "before:")
+	assert.Contains(t, sin, ">Sandbox<")
+
+	assert.Contains(t, render(ctx, badge.Options{Label: "Sandbox", Variant: "info"}), "before:bg-current", "sin NoDot lleva el punto")
+	assert.Contains(t, render(context.Background(), badge.Options{Label: "Sandbox", Variant: "info", NoDot: true}), "bg-kiban-primary-soft text-kiban-primary", "el diseño de siempre no cambia")
+}
+
 func TestStatus_SigueElDisenoDelRequest(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, badge.Status("PAID", "Pagado", "").Render(feature.Enable(context.Background(), flamboyant.Flag), &buf))
