@@ -129,3 +129,12 @@ func TestBar_SinTextosDeMenuNoHayPie(t *testing.T) {
 	assert.NotContains(t, body, "data-kiban-filter-none")
 	assert.NotContains(t, body, "data-kiban-filter-count")
 }
+
+func TestBar_OpcionConIcono(t *testing.T) {
+	c := cfg()
+	c.Filters[0].Options[0].Icon = templ.Raw(`<img src="/logo-buro.png" alt="">`)
+	body := render(t, filterbar.Bar(c))
+
+	assert.Contains(t, body, `<img src="/logo-buro.png" alt="">`, "el ícono va en la opción")
+	assert.Equal(t, 1, bytes.Count([]byte(body), []byte(`aria-hidden="true"><img`)), "sólo la opción con ícono lo lleva")
+}
