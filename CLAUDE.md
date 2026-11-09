@@ -627,6 +627,59 @@ htmxerror "github.com/kiban-cloud/go-kiban-design-system/htmxerror"
 | `authcookie.CookieSession`, `CookieSpaceID` | done | Constantes con los nombres de las cookies. |
 | Banderas del shell en `authcookie` | done | Tras autorizar, si la compañía tiene el feature flag `authcookie.FeatureShellFlamboyant` (`SHELL_FLAMBOYANT` en `feature_flags` de kiban-cloud) prende `layout.FlagShellFlamboyantSwitch`, y además `layout.FlagShellFlamboyant` si la cookie `kiban_ui` dice `flamboyant`. Sin cookie se ve el diseño actual. Ningún módulo registra nada. En local (fuera de Cloud Run) `KIBAN_FEATURES=SHELL_FLAMBOYANT` (`authcookie.EnvLocalFeatures`, lista separada por coma) cuenta como si la compañía tuviera el flag. |
 
+## Migrar un módulo a flamboyant
+
+Flamboyant es el rediseño de kiban cloud que viene de kiban-proto. Convive con el diseño de siempre detrás de una bandera hasta que se apague el viejo. Esta sección es el «cómo» para quien migre un módulo (workfloo, rekon, link, klin…); el «qué» de cada componente está en el catálogo de arriba. El CRM (`crm-backend`, rama local `mike-claude/flamboyant`) fue el primero y es la referencia de código.
+
+### Ramas y versiones
+
+- **El DS flamboyant vive en la rama `flamboyant`, nunca en `main`**: `main` sigue saliendo a producción mientras dura el rediseño. Se trabaja en una rama propia (`<prefijo>/flamboyant`) con PR hacia `flamboyant`.
+- **Versiones prerelease `v0.0.78-flamboyant.N`**, un tag anotado sobre el commit del merge. Lo publica más de una persona: antes de numerar, `git fetch --tags` y revisar el último (`git tag -l 'v0.0.78-flamboyant.*' --sort=-v:refname | head -1`).
+- **El módulo consume el tag, no un `replace`.** El `replace` a `../go-kiban-design-system` es sólo para desarrollar; antes de commitear en el módulo se quita y se instala el tag (`GOPRIVATE=github.com/kiban-cloud go get github.com/kiban-cloud/go-kiban-design-system@<tag>` + `go mod tidy`).
+- **Lo que sirve a más de un módulo se hace aquí**, con su variante flamboyant y su fila en el catálogo, antes de usarlo en el módulo. El módulo no copia markup ni JS del DS.
+
+### Fuente de verdad: el proto
+
+- El diseño es el de kiban-proto (`vendor/kiban.mx/kiban-cloud/<módulo>/`; el del CRM, con el comportamiento de cada pantalla, está en `crm/view/flamboyant/flamboyant/app.js`). Textos, orden de columnas, avisos, confirmaciones y estados vacíos se copian de ahí, no se reinventan.
+- Lo que el proto muestra con datos de ejemplo de **otro** módulo (p. ej. las pestañas de la ficha del cliente que leen de workfloo o rekon) no se inventa en el módulo: se deja en estado vacío («Próximamente», `card.Empty`) hasta que el módulo dueño exponga esos datos.
+
+### La bandera
+
+- **Cómo se prende**: `authcookie` la resuelve sola (feature flag `SHELL_FLAMBOYANT` de la compañía + cookie `kiban_ui=flamboyant` del switch del menú de usuario). El módulo no registra nada. En local, `KIBAN_FEATURES=SHELL_FLAMBOYANT` en su env.
+- **Dónde se pregunta**: `flamboyant.On(c.Request.Context())` en el controller, para decidir qué vista renderizar y qué consultas hacer. En los `.templ`, `flamboyant.On(ctx)` sólo para ajustes chicos dentro de una vista compartida; si la pantalla cambia de verdad, va en su propio archivo.
+- **Pantalla por pantalla, archivo aparte**: `list_flamboyant.templ` junto a `list.templ`, `detail_flamboyant.templ`, `new_panel.templ`, etc. Con la bandera apagada el módulo se ve **exactamente** como antes: las rutas, los handlers y las vistas de siempre no cambian de comportamiento.
+
+### Cómo se arma cada pantalla
+
+- **Lista**: `filterbar.Bar` (búsqueda y filtros en línea), `table.Table` con `Sort`/`SortAttrs` (el orden lo hace el servidor sobre todos los datos), `table.RowWith` con `hx-get` al panel, `table.BulkActionBar` y `table.Pagination` con `Lead`/`Pages`. Una petición htmx responde sólo el contenido de la tabla; la barra de filtros no se repinta (su estado viaja con `filterbar.State` y los conteos con `filterbar.Counts`, oob).
+- **Alta, ficha y edición van en paneles, no en páginas**: `drawer.FormPanel` (alta, edición) y `drawer.ViewPanel` (ficha). La misma URL sirve el panel solo a htmx y la página con el panel abierto (`Standalone`) a una carga directa, así un enlace compartido abre lo mismo.
+- **Los disparadores llevan `data-kiban-panel-open`** (`"half"` para el de 50 %): el panel aparece al instante con una hoja de carga mientras llega la respuesta.
+- **Las consultas independientes de un panel corren en paralelo** (kiban cloud, otro módulo, Mongo): en fila suman sus tiempos y el panel se siente lento. Cada goroutine escribe su propio campo, marca sus errores con `htmxerror.TagError` (seguro entre goroutines) y se protege con `recover` (un panic fuera de la goroutine del request tumba el servidor). Referencia: `paralelo` en `crm-backend/internal/controller/http/htmx/customers/customers_detail.go`.
+- **Borrar** usa la confirmación `data-kiban-confirm-*` (con `-item` desde un panel, con la lista de casillas desde la franja de selección), no `hx-confirm`.
+
+### Avisos después de una acción
+
+Cada acción que termina bien deja su aviso, con el texto del proto («Se eliminó el cliente «X».»). Cómo llega depende de a dónde va el usuario:
+
+- **La acción redirige a otra página** (crear y abrir lo creado, un form sin htmx): el aviso cruza el redirect en una cookie de un solo uso (corta, `httpOnly`, con el path del módulo) que la página siguiente lee y borra. Referencia: `crm-backend/internal/controller/http/htmx/flash.go`.
+- **La acción cierra el panel y el usuario vuelve a la lista** (eliminar): no se redirige, porque se pierde el filtro, la página y el aviso. La respuesta repinta la lista **con el estado que el usuario estaba viendo**, leído del header `HX-Current-URL` (no del form), con el aviso arriba; cambia el destino con `HX-Retarget`/`HX-Reswap` y cierra el panel con `HX-Trigger: drawer.ClosePanelEvent` (sale con su animación).
+- **La acción se hizo en un panel que debe quedar abierto** (guardar la edición: vuelve a la ficha): se responde la ficha con el aviso y la lista va como `hx-swap-oob`.
+
+### Consultas que la lista necesita
+
+- **Conteos por opción de filtro** (el número junto a cada opción): un solo `aggregate` con `$facet`, donde cada filtro se cuenta con los demás aplicados pero sin el suyo (como el menú del proto). El `$match` vacío va como `bson.D{}`, nunca `nil` (Mongo lo rechaza).
+- **El total para el pie** («1–10 de N») sale de esos mismos conteos; no hace falta otra consulta.
+- **«Seleccionar los N que coinciden»** manda `all_matching=1`: el servidor vuelve a resolver los registros con los filtros del form, nunca confía en una lista de ids del cliente.
+- Lista, conteos y catálogos (etiquetas) se piden en paralelo.
+
+### Antes de dar una pantalla por terminada
+
+- Comparada con el proto lado a lado, incluidos avisos, confirmaciones, estados vacíos y errores.
+- Probada con la bandera apagada: el diseño de siempre sigue igual.
+- Textos por `i18n.T` con clave en `es.toml` y `en.toml`.
+- Tests de vista para cada rama nueva del `.templ` y de controller para lo que decide la bandera; la suite con `-race` si hay consultas en paralelo.
+- Lo que el proto pide y depende de otro módulo queda anotado como pendiente de ese módulo, no a medias en este.
+
 ## Convenciones
 
 ### Templ
