@@ -9,7 +9,11 @@
 // base.templ en el navegador ([data-kiban-filter]).
 package filterbar
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+
+	"github.com/a-h/templ"
+)
 
 // Config describe la barra. Los textos llegan traducidos por quien la usa.
 type Config struct {
@@ -73,6 +77,9 @@ type Option struct {
 	// demás filtros). HasCount lo muestra, para que un 0 real se vea.
 	Count    int
 	HasCount bool
+	// Icon va antes del texto de la opción: el logo de un SIC, el punto de
+	// color de un estado. Nil, nada.
+	Icon templ.Component
 }
 
 type Field struct {

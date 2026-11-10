@@ -72,6 +72,11 @@ templ filter(cfg Config, f Filter) {
 								<svg class="pointer-events-none h-3.5 w-3.5 text-kiban-primary opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
 							</span>
 						}
+						if o.Icon != nil {
+							<span class="inline-flex shrink-0 items-center" aria-hidden="true">
+								@o.Icon
+							</span>
+						}
 						<span class="min-w-0 flex-1">{ o.Label }</span>
 						if o.HasCount {
 							@count(cfg.ID, f.Name, o.Value, o.Count, false)
