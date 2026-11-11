@@ -111,3 +111,18 @@ func TestViewPanel_StandaloneYStatic(t *testing.T) {
 	assert.Contains(t, body, "w-1/2")
 	assert.NotContains(t, body, "animate-[kiban-panel-in")
 }
+
+// PrimarySplit pone un botón dividido en lugar del botón principal: las
+// variantes de la acción viajan en el campo que cada una lleva.
+func TestFormPanel_BotonDivididoComoPrincipal(t *testing.T) {
+	cfg := panelCfg()
+	cfg.PrimarySplit = &button.SplitOptions{
+		ID:      "crear",
+		Primary: button.Options{Label: "Crear", IsSubmit: true},
+		Items:   []button.SplitItem{{Label: "Crear y cerrar", Name: "_action", Value: "save_and_close"}},
+	}
+	body := renderPanel(t, cfg)
+	assert.Contains(t, body, `data-kiban-menu="crear"`)
+	assert.Contains(t, body, `value="save_and_close"`)
+	assert.NotContains(t, body, "Crear cliente", "el botón de Actions no se pinta")
+}

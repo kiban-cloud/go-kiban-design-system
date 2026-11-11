@@ -2008,16 +2008,112 @@ templ Base(cfg Config) {
 				function kibanFilterClear(form) {
 					var clear = form && form.querySelector('[data-kiban-filter-clear]');
 					if (!clear) return;
-					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""])');
+					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""]), [data-kiban-num-v]:not([disabled])');
 					var q = form.querySelector('input[type=search]');
 					clear.hidden = !(on || (q && q.value.trim() !== ''));
 				}
 				document.addEventListener('input', function (e) {
 					if (e.target.type === 'search' && e.target.form) kibanFilterClear(e.target.form);
 				});
+				// filterbar.Numeric: la condición se elige en botones, el valor
+				// se teclea y viaja sólo al aplicar (botón, Enter o un atajo):
+				// se valida, se copia a los ocultos (deshabilitados sin valor,
+				// para que la URL no lleve filtros vacíos), se rearma la
+				// píldora y se pide la lista.
+				function kibanNumFmt(v) {
+					return Number(v).toLocaleString('es-MX', { maximumFractionDigits: 2 });
+				}
+				function kibanNumText(box, op, a, b) {
+					var btn = box.querySelector('[data-kiban-num-opbtn="' + op + '"]');
+					var sym = btn ? btn.getAttribute('data-symbol') : op;
+					var unit = box.getAttribute('data-unit') || '';
+					if (unit && unit !== '%') unit = ' ' + unit;
+					if (op === 'bt') return sym + ' ' + kibanNumFmt(Math.min(a, b)) + ' ' + (box.getAttribute('data-and') || '') + ' ' + kibanNumFmt(Math.max(a, b)) + unit;
+					return sym + ' ' + kibanNumFmt(a) + unit;
+				}
+				function kibanNumSetOp(box, op) {
+					box.setAttribute('data-op', op);
+					box.querySelectorAll('[data-kiban-num-opbtn]').forEach(function (b) {
+						b.setAttribute('aria-pressed', b.getAttribute('data-kiban-num-opbtn') === op ? 'true' : 'false');
+					});
+					var bt = op === 'bt';
+					box.querySelector('[data-kiban-num-and]').hidden = !bt;
+					box.querySelector('[data-kiban-num-2]').hidden = !bt;
+					var in1 = box.querySelector('[data-kiban-num-in]');
+					var ph = bt && box.getAttribute('data-from') ? box.getAttribute('data-from') : box.getAttribute('data-ph');
+					in1.placeholder = ph || '';
+					in1.setAttribute('aria-label', ph || '');
+					box.querySelector('[data-kiban-num-err]').hidden = true;
+				}
+				function kibanNumSubmit(d, text) {
+					var form = d.closest('form');
+					var txt = d.querySelector('[data-kiban-filter-text]');
+					var label = d.getAttribute('data-label') || '';
+					if (txt) {
+						txt.textContent = label;
+						if (text) {
+							txt.appendChild(document.createTextNode(': '));
+							var b = document.createElement('b');
+							b.className = 'font-semibold';
+							b.textContent = text;
+							txt.appendChild(b);
+						}
+					}
+					var pill = d.querySelector('[data-kiban-filter-pill]');
+					if (pill) pill.toggleAttribute('data-on', !!text);
+					var clr = d.querySelector('[data-kiban-num-clear]');
+					if (clr) clr.hidden = !text;
+					d.open = false;
+					kibanFilterClear(form);
+					if (window.htmx) window.htmx.trigger(form, 'submit');
+					else form.requestSubmit();
+				}
+				function kibanNumApply(box) {
+					var d = box.closest('[data-kiban-filter]');
+					var op = box.getAttribute('data-op');
+					var a = box.querySelector('[data-kiban-num-in]').value.trim();
+					var b = box.querySelector('[data-kiban-num-in2]').value.trim();
+					var err = box.querySelector('[data-kiban-num-err]');
+					var bad = function (m) { err.textContent = m; err.hidden = false; };
+					if (a === '' || isNaN(+a)) return bad(box.getAttribute('data-err-number') || '');
+					if (op === 'bt' && (b === '' || isNaN(+b))) return bad(box.getAttribute('data-err-range') || '');
+					var max = box.getAttribute('data-max');
+					if (max && (+a > +max || (op === 'bt' && +b > +max))) return bad((box.getAttribute('data-err-max') || '').replace('{max}', max));
+					err.hidden = true;
+					var hop = box.querySelector('[data-kiban-num-op]'), hv = box.querySelector('[data-kiban-num-v]'), hv2 = box.querySelector('[data-kiban-num-v2]');
+					hop.value = op; hop.disabled = false;
+					hv.value = a; hv.disabled = false;
+					hv2.value = op === 'bt' ? b : ''; hv2.disabled = op !== 'bt';
+					kibanNumSubmit(d, kibanNumText(box, op, +a, +b));
+				}
+				document.addEventListener('click', function (e) {
+					var t = e.target.closest && e.target.closest('[data-kiban-num-opbtn], [data-kiban-num-apply], [data-kiban-num-preset], [data-kiban-num-clear]');
+					if (!t) return;
+					var box = t.closest('[data-kiban-num]');
+					if (t.hasAttribute('data-kiban-num-opbtn')) {
+						kibanNumSetOp(box, t.getAttribute('data-kiban-num-opbtn'));
+						box.querySelector('[data-kiban-num-in]').focus();
+					} else if (t.hasAttribute('data-kiban-num-preset')) {
+						kibanNumSetOp(box, t.getAttribute('data-op'));
+						box.querySelector('[data-kiban-num-in]').value = t.getAttribute('data-v');
+						box.querySelector('[data-kiban-num-in2]').value = '';
+						kibanNumApply(box);
+					} else if (t.hasAttribute('data-kiban-num-clear')) {
+						box.querySelectorAll('[data-kiban-num-in], [data-kiban-num-in2]').forEach(function (i) { i.value = ''; });
+						box.querySelectorAll('[data-kiban-num-op], [data-kiban-num-v], [data-kiban-num-v2]').forEach(function (i) { i.value = ''; i.disabled = true; });
+						kibanNumSubmit(box.closest('[data-kiban-filter]'), '');
+					} else {
+						kibanNumApply(box);
+					}
+				});
+				document.addEventListener('keydown', function (e) {
+					if (e.key !== 'Enter' || !e.target.closest || !e.target.closest('[data-kiban-num]') || e.target.tagName !== 'INPUT') return;
+					e.preventDefault();
+					kibanNumApply(e.target.closest('[data-kiban-num]'));
+				});
 				document.addEventListener('change', function (e) {
 					var d = e.target.closest && e.target.closest('[data-kiban-filter]');
-					if (!d) return;
+					if (!d || d.hasAttribute('data-kiban-filter-numeric')) return;
 					kibanFilterSync(d);
 					if (e.target.type === 'radio') d.open = false;
 				});

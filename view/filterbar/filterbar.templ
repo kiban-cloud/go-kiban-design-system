@@ -13,7 +13,7 @@ templ Bar(cfg Config) {
 		hx-swap="innerHTML"
 		hx-push-url="true"
 		hx-indicator={ cfg.Indicator }
-		hx-trigger="submit, change[!event.target.hasAttribute('data-kiban-filter-q')], input changed delay:300ms from:find input[type=search]"
+		hx-trigger="submit, change[!event.target.closest('[data-kiban-filter-q],[data-kiban-filter-manual]')], input changed delay:300ms from:find input[type=search]"
 	>
 		@State(cfg, false)
 		<label class="flex h-9 min-w-[220px] flex-[0_1_340px] items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)] max-sm:flex-[1_1_100%]">
@@ -40,17 +40,26 @@ templ Bar(cfg Config) {
 }
 
 templ filter(cfg Config, f Filter) {
-	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label }>
+	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label } data-kiban-filter-numeric?={ f.Numeric != nil }>
 		<summary
 			class="inline-flex h-9 cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[#CDD3DF] bg-white px-3 text-[13px] font-medium text-[#474F66] hover:bg-[#F4F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary data-[on]:border-kiban-primary data-[on]:bg-[rgba(0,71,255,0.08)] data-[on]:text-[#0036C4] [&::-webkit-details-marker]:hidden"
 			data-kiban-filter-pill
-			data-on?={ len(f.selected()) > 0 }
+			data-on?={ f.on() }
 		>
 			<span data-kiban-filter-text>
 				@pillText(f)
 			</span>
 			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
 		</summary>
+		if f.Numeric != nil {
+			@numericMenu(cfg, f, *f.Numeric)
+		} else {
+			@optionsMenu(cfg, f)
+		}
+	</details>
+}
+
+templ optionsMenu(cfg Config, f Filter) {
 		<div class="absolute left-0 top-[calc(100%+6px)] z-[35] flex max-h-[min(440px,calc(100vh-200px))] w-80 max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-xl bg-white shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]" role="group" aria-label={ f.Label }>
 			if f.Search.Placeholder != "" {
 				<label class="mx-2.5 mb-1 mt-2.5 flex h-[38px] shrink-0 items-center gap-2 rounded-lg border border-[#CDD3DF] px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]">
@@ -58,7 +67,13 @@ templ filter(cfg Config, f Filter) {
 					<input type="text" placeholder={ f.Search.Placeholder } aria-label={ f.Search.Placeholder } autocomplete="off" data-kiban-filter-q class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm text-kiban-ink outline-none placeholder:text-[#9096A3]"/>
 				</label>
 			}
+			if f.Note != "" {
+				<p class="m-0 shrink-0 px-3.5 pb-0.5 pt-2 text-[11px] text-[#606875]">{ f.Note }</p>
+			}
 			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5">
+				if len(f.Options) == 0 && f.Empty != "" {
+					<div class="px-3.5 py-3.5 text-[13px] text-[#9096A3]">{ f.Empty }</div>
+				}
 				for _, o := range f.Options {
 					<label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-kiban-ink hover:bg-[#F4F7FF] has-[:checked]:bg-[rgba(0,71,255,0.06)] has-[:checked]:font-medium has-[:checked]:text-[#0036C4] [&[hidden]]:hidden" data-kiban-filter-opt>
 						if f.Multi {
@@ -77,7 +92,7 @@ templ filter(cfg Config, f Filter) {
 								@o.Icon
 							</span>
 						}
-						<span class="min-w-0 flex-1">{ o.Label }</span>
+						<span class="min-w-0 flex-1">{ o.Label }<span class="ml-1 text-[11px] font-normal text-[#9096A3] [&[hidden]]:hidden" hidden?={ o.Hint == "" }>{ o.Hint }</span></span>
 						if o.HasCount {
 							@count(cfg.ID, f.Name, o.Value, o.Count, false)
 						}
@@ -100,7 +115,91 @@ templ filter(cfg Config, f Filter) {
 				</div>
 			}
 		</div>
-	</details>
+}
+
+// numericMenu es la ventana del filtro numérico: la condición en botones
+// segmentados, el valor (dos con «entre»), los atajos y el pie con «Quitar
+// filtro» y «Aplicar». Lo tecleado no viaja: base.templ copia lo aplicado a
+// los ocultos y los deshabilita si no hay valor.
+templ numericMenu(cfg Config, f Filter, n Numeric) {
+	<div
+		class="absolute left-0 top-[calc(100%+6px)] z-[35] flex w-[340px] max-w-[calc(100vw-32px)] flex-col gap-2.5 rounded-xl bg-white p-3 shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]"
+		role="dialog"
+		aria-label={ f.Label }
+		data-kiban-filter-manual
+		data-kiban-num
+		data-op={ n.op() }
+		data-unit={ n.Unit }
+		data-max={ n.Max }
+		data-and={ n.And }
+		data-ph={ n.Placeholder }
+		data-from={ n.From }
+		data-err-number={ n.ErrNumber }
+		data-err-range={ n.ErrRange }
+		data-err-max={ n.ErrMax }
+	>
+		<input type="hidden" name={ n.OpName } value={ n.Op } disabled?={ n.Value == "" } data-kiban-num-op/>
+		<input type="hidden" name={ n.Name } value={ n.Value } disabled?={ n.Value == "" } data-kiban-num-v/>
+		<input type="hidden" name={ n.Name2 } value={ n.Value2 } disabled?={ n.Value == "" || n.Op != "bt" } data-kiban-num-v2/>
+		<div class="grid grid-cols-4 gap-0.5 rounded-lg bg-[#F2F4F8] p-[3px]" role="group">
+			for _, o := range n.Ops {
+				<button
+					type="button"
+					class="whitespace-nowrap rounded-md px-1 py-1.5 text-xs font-medium text-[#606875] aria-pressed:bg-white aria-pressed:text-[#0036C4] aria-pressed:shadow-[0_1px_2px_rgba(26,32,53,0.12)]"
+					data-kiban-num-opbtn={ o.Value }
+					data-symbol={ o.Symbol }
+					aria-pressed={ boolAttr(o.Value == n.op()) }
+				>{ o.Label }</button>
+			}
+		</div>
+		<div class="flex items-center gap-2">
+			@numInput(n, n.Value, n.placeholder1(), "data-kiban-num-in")
+			<span class="text-xs text-[#606875]" data-kiban-num-and hidden?={ n.op() != "bt" }>{ n.And }</span>
+			<span class="contents [&[hidden]]:!hidden" data-kiban-num-2 hidden?={ n.op() != "bt" }>
+				@numInput(n, n.Value2, n.To, "data-kiban-num-in2")
+			</span>
+		</div>
+		<p class="-mt-1 mb-0 text-xs text-[#B42318]" data-kiban-num-err hidden></p>
+		if len(n.Presets) > 0 {
+			<div class="flex flex-wrap items-center gap-1.5">
+				if n.PresetsLabel != "" {
+					<span class="text-xs text-[#606875]">{ n.PresetsLabel }</span>
+				}
+				for _, p := range n.Presets {
+					<button type="button" class="rounded-full border border-[#CDD3DF] bg-white px-2.5 py-1 text-xs text-[#474F66] hover:border-kiban-primary hover:bg-[#F4F7FF] hover:text-[#0036C4]" data-kiban-num-preset data-op={ p.Op } data-v={ p.Value }>{ p.Label }</button>
+				}
+			</div>
+		}
+		<div class="-mx-3 -mb-3 flex justify-between gap-2 rounded-b-xl border-t border-[#E2E5EC] bg-[#FAFBFF] px-2.5 py-2">
+			if cfg.MenuClear != "" {
+				<button type="button" class="p-1 text-xs font-medium text-[#B42318] hover:underline" data-kiban-num-clear hidden?={ n.Value == "" }>{ cfg.MenuClear }</button>
+			}
+			<span class="flex-1"></span>
+			<button type="button" class="rounded-md bg-kiban-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0036C4]" data-kiban-num-apply>{ n.Apply }</button>
+		</div>
+	</div>
+}
+
+templ numInput(n Numeric, value, placeholder, marker string) {
+	<span class="flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-[#CDD3DF] bg-white px-2.5 focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]">
+		<input
+			type="number"
+			inputmode="decimal"
+			min="0"
+			step={ n.Step }
+			if n.Max != "" {
+				max={ n.Max }
+			}
+			value={ value }
+			placeholder={ placeholder }
+			aria-label={ placeholder }
+			class="min-w-0 flex-1 border-0 bg-transparent text-sm tabular-nums text-kiban-ink outline-none"
+			{ templ.Attributes{marker: true}... }
+		/>
+		if n.Unit != "" {
+			<span class="text-xs text-[#9096A3]">{ n.Unit }</span>
+		}
+	</span>
 }
 
 // count es el número de una opción. Con oob, Counts lo manda solo para que
@@ -125,6 +224,16 @@ templ Counts(cfg Config) {
 // pillText es el texto inicial de la píldora; después lo mantiene el
 // navegador con la misma regla.
 templ pillText(f Filter) {
+	if f.Numeric != nil && f.Numeric.Value != "" {
+		{ f.Label + ": " }<b class="font-semibold">{ f.Numeric.text() }</b>
+	} else if f.Numeric != nil {
+		{ f.Label }
+	} else {
+		@optionsPillText(f)
+	}
+}
+
+templ optionsPillText(f Filter) {
 	switch sel := f.selected(); len(sel) {
 		case 0:
 			{ f.Label }

@@ -39,7 +39,9 @@ templ FormPanel(cfg FormPanelConfig) {
 					for _, a := range cfg.Actions.SecondaryActions {
 						@button.Button(button.WithDefaultVariant(a, "secondary"))
 					}
-					if cfg.Actions.PrimaryAction != nil {
+					if cfg.PrimarySplit != nil {
+						@button.Split(*cfg.PrimarySplit)
+					} else if cfg.Actions.PrimaryAction != nil {
 						@button.Button(button.WithDefaultVariant(*cfg.Actions.PrimaryAction, "primary"))
 					}
 				</div>
