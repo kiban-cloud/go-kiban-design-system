@@ -21,6 +21,9 @@ type StepOptions struct {
 	// flamboyant el número se pinta azul cuando todos tienen un valor
 	// válido. Vacío: el paso se completa con cualquier campo lleno.
 	Required []string
+	// NoNumber quita el número en flamboyant: la tarjeta única de un panel
+	// de edición, donde no hay pasos que contar.
+	NoNumber bool
 }
 
 func (o StepOptions) hasHint() bool { return o.Hint != nil || o.HintText != "" }

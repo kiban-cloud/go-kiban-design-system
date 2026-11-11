@@ -34,7 +34,7 @@ templ FormPanel(cfg FormPanelConfig) {
 				if cfg.FooterLeft != nil {
 					@cfg.FooterLeft
 				}
-				<div class="min-w-0 flex-1 text-[13px] text-[#606875]" data-kiban-panel-sum data-pending={ cfg.SummaryPending } data-ready={ cfg.SummaryReady }>{ cfg.SummaryPending }</div>
+				<div class="min-w-0 flex-1 text-[13px] text-[#606875]" data-kiban-panel-sum data-pending={ cfg.SummaryPending } data-ready={ cfg.SummaryReady } data-clean={ cfg.SummaryClean }>{ cfg.summaryInitial() }</div>
 				<div class="flex shrink-0 gap-2 max-sm:w-full [&>*]:max-sm:flex-1">
 					for _, a := range cfg.Actions.SecondaryActions {
 						@button.Button(button.WithDefaultVariant(a, "secondary"))
@@ -79,15 +79,34 @@ templ panelHeader(h panelHead) {
 				@h.Tile
 			}
 			<div class="min-w-0 flex-1">
-				<div class="text-[11px] font-semibold uppercase tracking-[.06em] text-[#9096A3]">{ h.Eyebrow }</div>
-				<div
-					id={ h.ID + "-title" }
-					class="truncate text-[17px] font-medium leading-6 data-[empty]:font-normal data-[empty]:text-[#9096A3]"
-					data-kiban-panel-title
-					data-from={ h.titleFrom() }
-					data-placeholder={ h.TitlePlaceholder }
-					data-empty?={ h.Title == "" }
-				>{ h.titleText() }</div>
+				if h.TitleInput != nil {
+					<label for={ h.ID + "-title" } class="block text-[11px] font-semibold uppercase tracking-[.06em] text-[#9096A3]">{ h.Eyebrow }</label>
+					<input
+						id={ h.ID + "-title" }
+						name={ h.TitleInput.Name }
+						value={ h.TitleInput.Value }
+						placeholder={ h.TitleInput.Placeholder }
+						required?={ h.TitleInput.Required }
+						if h.TitleInput.Help != "" {
+							aria-describedby={ h.ID + "-title-help" }
+						}
+						autocomplete="off"
+						class="-ml-[7px] block w-full max-w-[640px] rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[17px] font-medium leading-6 text-kiban-ink placeholder:font-normal placeholder:text-[#9096A3] hover:border-[#E2E5EC] focus:border-kiban-primary focus:outline-none [&:user-invalid]:border-[#F3A6A6]"
+					/>
+					if h.TitleInput.Help != "" {
+						<span id={ h.ID + "-title-help" } class="sr-only">{ h.TitleInput.Help }</span>
+					}
+				} else {
+					<div class="text-[11px] font-semibold uppercase tracking-[.06em] text-[#9096A3]">{ h.Eyebrow }</div>
+					<div
+						id={ h.ID + "-title" }
+						class="truncate text-[17px] font-medium leading-6 data-[empty]:font-normal data-[empty]:text-[#9096A3]"
+						data-kiban-panel-title
+						data-from={ h.titleFrom() }
+						data-placeholder={ h.TitlePlaceholder }
+						data-empty?={ h.Title == "" }
+					>{ h.titleText() }</div>
+				}
 				if h.Subtitle != nil {
 					<div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#606875]">
 						@h.Subtitle

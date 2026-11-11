@@ -61,3 +61,11 @@ func TestCard_FlamboyantCambiaBordeYRadio(t *testing.T) {
 	assert.Contains(t, body, "rounded-[10px]")
 	assert.Contains(t, body, "border-[#CDD3DF]")
 }
+
+func TestStep_FlamboyantSinNumero(t *testing.T) {
+	body := render(t, flam, card.Step(card.StepOptions{Key: "creds", Title: "Credenciales", NoNumber: true}))
+
+	assert.Contains(t, body, `data-kiban-step="creds"`)
+	assert.Contains(t, body, "Credenciales")
+	assert.NotContains(t, body, "data-kiban-step-n")
+}
