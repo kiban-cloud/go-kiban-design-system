@@ -228,3 +228,14 @@ func TestBase_PanelSalidaAnimadaYAperturaAlInstante(t *testing.T) {
 	assert.Contains(t, body, "'"+drawer.ClosePanelEvent+"'", "el servidor puede cerrar el panel con HX-Trigger")
 	assert.Contains(t, body, "prefers-reduced-motion: reduce) { [data-kiban-panel] [role=dialog]")
 }
+
+// Un doble clic en la fila que abre un panel: el primer clic lo abre y el
+// segundo cae en el fondo (la hoja de carga o el panel ya llegado). Ese
+// segundo clic (event.detail > 1) no debe cerrarlo.
+func TestBase_PanelNoSeCierraConElSegundoClicDeUnDobleClic(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "function kibanPanelBackdropClick(e)", "el fondo decide si un clic lo cierra")
+	assert.Contains(t, body, "return e.detail > 1;", "el segundo clic de un doble clic no cuenta")
+	assert.Contains(t, body, "ph.querySelector('.kiban-panel-ph-bg').addEventListener('click', function (ev) { if (kibanPanelBackdropClick(ev)) return;", "tampoco en la hoja de carga")
+}
