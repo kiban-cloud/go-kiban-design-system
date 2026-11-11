@@ -1706,9 +1706,9 @@ templ Base(cfg Config) {
 					var n = 0;
 					root.querySelectorAll('[data-kiban-step]').forEach(function (card) {
 						if (card.offsetParent === null) return;
-						n++;
 						var num = card.querySelector('[data-kiban-step-n]');
 						if (!num) return;
+						n++;
 						num.textContent = n;
 						num.toggleAttribute('data-ok', kibanStepDone(card));
 					});
@@ -1726,7 +1726,8 @@ templ Base(cfg Config) {
 					var sum = root.querySelector('[data-kiban-panel-sum]');
 					if (sum && form) {
 						var ok = form.checkValidity();
-						sum.textContent = (ok ? sum.getAttribute('data-ready') : sum.getAttribute('data-pending')) || '';
+						var ready = sum.getAttribute('data-clean') && !root.hasAttribute('data-dirty') ? sum.getAttribute('data-clean') : sum.getAttribute('data-ready');
+						sum.textContent = (ok ? ready : sum.getAttribute('data-pending')) || '';
 					}
 				}
 				function kibanPanelInit() {

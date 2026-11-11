@@ -30,9 +30,13 @@ type FormPanelConfig struct {
 	Title            string
 	TitlePlaceholder string
 	TitleFrom        []string
-	Subtitle         templ.Component
-	HeaderActions    templ.Component
-	CloseLabel       string
+	// TitleInput pone el título como un campo del form que se edita en el
+	// encabezado (el nombre del secret): reemplaza a Title y TitleFrom, y el
+	// Eyebrow es su label.
+	TitleInput    *TitleInput
+	Subtitle      templ.Component
+	HeaderActions templ.Component
+	CloseLabel    string
 
 	// FormAttrs van en el <form>: method, action, hx-post, hx-target…
 	FormAttrs templ.Attributes
@@ -40,8 +44,11 @@ type FormPanelConfig struct {
 	FooterLeft templ.Component
 	// SummaryPending y SummaryReady son el texto del pie según el form pase
 	// o no la validación del navegador (required, type=email…).
+	// SummaryClean, si viene, reemplaza a SummaryReady mientras no se haya
+	// tocado nada («Sin cambios» en una edición).
 	SummaryPending string
 	SummaryReady   string
+	SummaryClean   string
 	Actions        button.Group
 	// PrimarySplit reemplaza a Actions.PrimaryAction por un botón dividido
 	// con variantes de la misma acción («Crear», «Crear y cerrar», «Crear y
@@ -62,6 +69,16 @@ type FormPanelConfig struct {
 	Static bool
 }
 
+// TitleInput es el campo del título editable de FormPanel.
+type TitleInput struct {
+	Name, Value, Placeholder string
+	// Help es para qué sirve el campo, sólo para lectores de pantalla (el
+	// encabezado no tiene lugar para una ayuda visible).
+	Help string
+	// Required lo exige el navegador: el pie dice SummaryPending sin él.
+	Required bool
+}
+
 type FormPanelGuard struct {
 	Title, Text              string
 	Discard, Stay, SaveClose string
@@ -71,6 +88,7 @@ type FormPanelGuard struct {
 type panelHead struct {
 	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel string
 	TitleFrom                                        []string
+	TitleInput                                       *TitleInput
 	Tile, Subtitle, HeaderActions                    templ.Component
 }
 
@@ -83,9 +101,16 @@ func (h panelHead) titleText() string {
 	return h.TitlePlaceholder
 }
 
+func (c FormPanelConfig) summaryInitial() string {
+	if c.SummaryClean != "" {
+		return c.SummaryClean
+	}
+	return c.SummaryPending
+}
+
 func (c FormPanelConfig) header() panelHead {
 	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel,
-		TitleFrom: c.TitleFrom, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
+		TitleFrom: c.TitleFrom, TitleInput: c.TitleInput, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
 }
 
 // ViewPanelConfig describe el panel de consulta (ViewPanel). Sin Half es el

@@ -126,3 +126,24 @@ func TestFormPanel_BotonDivididoComoPrincipal(t *testing.T) {
 	assert.Contains(t, body, `value="save_and_close"`)
 	assert.NotContains(t, body, "Crear cliente", "el botón de Actions no se pinta")
 }
+
+func TestFormPanel_TituloEditableEnElEncabezado(t *testing.T) {
+	cfg := panelCfg()
+	cfg.TitleInput = &drawer.TitleInput{Name: "name", Value: "MIFIEL Chat IA", Placeholder: "Ponle nombre al secret", Required: true, Help: "Con este nombre lo eliges"}
+	body := renderPanel(t, cfg)
+
+	assert.Contains(t, body, `<label for="p-title"`)
+	assert.Contains(t, body, ">Nuevo cliente</label>")
+	assert.Contains(t, body, `id="p-title" name="name" value="MIFIEL Chat IA" placeholder="Ponle nombre al secret" required aria-describedby="p-title-help"`)
+	assert.Contains(t, body, `<span id="p-title-help" class="sr-only">Con este nombre lo eliges</span>`)
+	assert.NotContains(t, body, "data-kiban-panel-title", "el título en vivo no aplica: el título es el campo")
+}
+
+func TestFormPanel_SinCambiosMientrasNoSeToque(t *testing.T) {
+	cfg := panelCfg()
+	cfg.SummaryClean = "Sin cambios"
+	body := renderPanel(t, cfg)
+
+	assert.Contains(t, body, `data-clean="Sin cambios"`)
+	assert.Contains(t, body, ">Sin cambios</div>")
+}
