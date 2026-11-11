@@ -1786,6 +1786,12 @@ templ Base(cfg Config) {
 				function kibanPanelSource(e) {
 					return (e.detail && e.detail.requestConfig && e.detail.requestConfig.elt) || (e.detail && e.detail.elt);
 				}
+				// El segundo clic de un doble clic en la fila que abre un panel
+				// cae en el fondo (la hoja de carga o el panel ya llegado): no
+				// cierra. El fondo es el que no es botón: Cancelar sí cierra.
+				function kibanPanelBackdropClick(e) {
+					return e.detail > 1;
+				}
 				function kibanPanelPhDrop(src, abort) {
 					var ph = src && src._kibanPanelPh;
 					if (!ph) return;
@@ -1802,7 +1808,7 @@ templ Base(cfg Config) {
 					ph.setAttribute('data-kiban-panel-ph', '');
 					if (src.getAttribute('data-kiban-panel-open') === 'half') ph.setAttribute('data-half', '');
 					ph.innerHTML = '<div class="kiban-panel-ph-bg"></div><div class="kiban-panel-ph-sheet" role="status" aria-busy="true"><div class="kiban-panel-ph-head"></div><div class="kiban-panel-ph-body"><div class="ds-spinner"></div></div></div>';
-					ph.querySelector('.kiban-panel-ph-bg').addEventListener('click', function () { kibanPanelPhDrop(src, true); });
+					ph.querySelector('.kiban-panel-ph-bg').addEventListener('click', function (ev) { if (kibanPanelBackdropClick(ev)) return; kibanPanelPhDrop(src, true); });
 					ph._kibanPanelSrc = src;
 					src._kibanPanelPh = ph;
 					document.body.appendChild(ph);
@@ -1849,7 +1855,10 @@ templ Base(cfg Config) {
 						if (form.requestSubmit) form.requestSubmit(); else form.submit();
 						return;
 					}
-					if (t.closest('[data-kiban-panel-close]')) kibanPanelClose(root, false);
+					var closer = t.closest('[data-kiban-panel-close]');
+					if (!closer) return;
+					if (closer.tagName !== 'BUTTON' && kibanPanelBackdropClick(e)) return;
+					kibanPanelClose(root, false);
 				});
 				document.addEventListener('keydown', function (e) {
 					if (e.key !== 'Escape') return;
