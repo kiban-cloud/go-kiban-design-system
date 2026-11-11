@@ -11,6 +11,8 @@ package filterbar
 
 import (
 	"encoding/hex"
+	"strconv"
+	"strings"
 
 	"github.com/a-h/templ"
 )
@@ -60,6 +62,52 @@ type Filter struct {
 	// Search pone un buscador arriba del menú, para filtros con muchas
 	// opciones (etiquetas). Filtra en el navegador por el texto de la opción.
 	Search MenuSearch
+	// Note es una aclaración en gris arriba de las opciones («Sólo aplica a
+	// Buró de Crédito»). Empty se ve en lugar de las opciones cuando no hay
+	// ninguna (un filtro que depende de otro: «Elige primero un servicio»).
+	Note  string
+	Empty string
+	// Numeric cambia las opciones por un número tecleado con su condición
+	// (Requests, Éxito, Latencia). Con Numeric, Options y Multi no aplican.
+	Numeric *Numeric
+}
+
+// Numeric es un filtro de número: igual a, mayor que, menor que o entre dos
+// valores, más atajos («Más de 1,000»). Lo tecleado no pide la lista hasta
+// «Aplicar» (o Enter); un atajo aplica al momento. Viajan tres campos
+// ocultos (OpName, Name, Name2) y sólo cuando hay valor, así la URL no
+// lleva filtros vacíos.
+type Numeric struct {
+	OpName string // la condición: eq, gt, lt o bt
+	Name   string // el valor
+	Name2  string // el segundo valor de «entre»
+
+	Op, Value, Value2 string // lo aplicado; Value vacío, sin filtro
+
+	Unit string // «%», «ms» o vacío
+	Step string
+	Max  string // vacío, sin máximo
+
+	Ops     []NumericOp
+	Presets []NumericPreset
+
+	// Textos de la ventana. And separa los dos valores de «entre» («y»);
+	// ErrMax lleva {max}.
+	Placeholder, From, To, And string
+	PresetsLabel, Apply        string
+	ErrNumber, ErrRange        string
+	ErrMax                     string
+}
+
+// NumericOp es una condición del filtro numérico: Value (eq, gt, lt, bt),
+// Label en el botón («Mayor que») y Symbol en la píldora («>», «entre»).
+type NumericOp struct {
+	Value, Label, Symbol string
+}
+
+// NumericPreset es un atajo que aplica una condición de un clic.
+type NumericPreset struct {
+	Op, Value, Label string
 }
 
 // MenuSearch es el buscador del menú de un filtro. Sin Placeholder no hay.
@@ -80,6 +128,9 @@ type Option struct {
 	// Icon va antes del texto de la opción: el logo de un SIC, el punto de
 	// color de un estado. Nil, nada.
 	Icon templ.Component
+	// Hint va en gris junto al texto: de qué servicio es una funcionalidad
+	// cuando el menú mezcla varios.
+	Hint string
 }
 
 type Field struct {
@@ -108,16 +159,41 @@ func (f Filter) selected() []Option {
 	return out
 }
 
+// on dice si el filtro está aplicado.
+func (f Filter) on() bool {
+	if f.Numeric != nil {
+		return f.Numeric.Value != ""
+	}
+	return len(f.selected()) > 0
+}
+
 func (c Config) active() bool {
 	if c.Search.Value != "" {
 		return true
 	}
 	for _, f := range c.Filters {
-		if len(f.selected()) > 0 {
+		if f.on() {
 			return true
 		}
 	}
 	return false
+}
+
+// op es la condición marcada en la ventana: la aplicada o, sin filtro, la
+// primera que no sea «igual a» (mayor que, como el proto).
+func (n Numeric) op() string {
+	if n.Value != "" && n.Op != "" {
+		return n.Op
+	}
+	for _, o := range n.Ops {
+		if o.Value != "eq" {
+			return o.Value
+		}
+	}
+	if len(n.Ops) > 0 {
+		return n.Ops[0].Value
+	}
+	return ""
 }
 
 func (f Filter) inputType() string {
@@ -125,4 +201,85 @@ func (f Filter) inputType() string {
 		return "checkbox"
 	}
 	return "radio"
+}
+
+// placeholder1 es el del primer valor: «Desde» con «entre», si no el normal.
+func (n Numeric) placeholder1() string {
+	if n.op() == "bt" && n.From != "" {
+		return n.From
+	}
+	return n.Placeholder
+}
+
+func boolAttr(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
+// text es lo que dice la píldora con el filtro aplicado: «> 1,000»,
+// «= 100%», «entre 1,000 y 2,000 ms». base.templ lo arma igual en el
+// navegador (kibanNumText).
+func (n Numeric) text() string {
+	sym := n.Op
+	for _, o := range n.Ops {
+		if o.Value == n.Op {
+			sym = o.Symbol
+		}
+	}
+	unit := n.Unit
+	if unit != "" && unit != "%" {
+		unit = " " + unit
+	}
+	if n.Op == "bt" {
+		a, b := n.Value, n.Value2
+		if fa, fb := parseNum(a), parseNum(b); fb < fa {
+			a, b = b, a
+		}
+		return sym + " " + groupNum(a) + " " + n.And + " " + groupNum(b) + unit
+	}
+	return sym + " " + groupNum(n.Value) + unit
+}
+
+func parseNum(s string) float64 {
+	f, _ := strconv.ParseFloat(s, 64)
+	return f
+}
+
+// groupNum pone separador de miles («1,000»; «99.5» queda igual), como
+// toLocaleString("es-MX") en el navegador.
+func groupNum(s string) string {
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return s
+	}
+	neg := f < 0
+	if neg {
+		f = -f
+	}
+	str := strconv.FormatFloat(f, 'f', -1, 64)
+	if i := strings.IndexByte(str, '.'); i >= 0 {
+		dec := str[i+1:]
+		if len(dec) > 2 {
+			str = strconv.FormatFloat(f, 'f', 2, 64)
+			str = strings.TrimRight(strings.TrimRight(str, "0"), ".")
+		}
+	}
+	intPart, frac := str, ""
+	if i := strings.IndexByte(str, '.'); i >= 0 {
+		intPart, frac = str[:i], str[i:]
+	}
+	var b strings.Builder
+	for i, r := range intPart {
+		if i > 0 && (len(intPart)-i)%3 == 0 {
+			b.WriteByte(',')
+		}
+		b.WriteRune(r)
+	}
+	out := b.String() + frac
+	if neg {
+		out = "-" + out
+	}
+	return out
 }

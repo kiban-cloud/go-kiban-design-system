@@ -209,6 +209,18 @@ func TestRowWith_AtributosEtiquetaYCursor(t *testing.T) {
 	assert.NotContains(t, body, "data-href")
 }
 
+// Una fila que no se puede elegir conserva su celda con la casilla
+// deshabilitada y el motivo, para que las columnas no se corran.
+func TestRowWith_CasillaDeshabilitada(t *testing.T) {
+	body := render(t, withChild(flam, `<td>Caso</td>`), table.RowWith(table.RowOptions{BulkDisabled: "Los casos de kiban no se pueden eliminar"}))
+	assert.Contains(t, body, `title="Los casos de kiban no se pueden eliminar"`)
+	assert.Contains(t, body, " disabled")
+	assert.NotContains(t, body, `name="ids"`, "no viaja con la selección")
+
+	body = render(t, withChild(flam, `<td>Caso</td>`), table.RowWith(table.RowOptions{}))
+	assert.NotContains(t, body, "<td class=\"w-11", "sin selección, sin celda")
+}
+
 // La casilla de «seleccionar todo» se alinea con las de las filas: celda a la
 // izquierda (un <th> centra por defecto) y etiqueta de bloque, que no cuelga
 // de la línea base del texto y queda centrada en la altura de la fila.

@@ -70,5 +70,9 @@ type RowOptions struct {
 	BulkValue string
 	// BulkLabel es el nombre de la fila en la confirmación de borrado.
 	BulkLabel string
+	// BulkDisabled, con BulkValue vacío, pinta la casilla deshabilitada con
+	// este texto de ayuda (por qué esa fila no se puede elegir: «Los casos
+	// de kiban no se pueden eliminar»), así la columna no se corre.
+	BulkDisabled string
 	Attrs     templ.Attributes
 }

@@ -43,6 +43,10 @@ type FormPanelConfig struct {
 	SummaryPending string
 	SummaryReady   string
 	Actions        button.Group
+	// PrimarySplit reemplaza a Actions.PrimaryAction por un botón dividido
+	// con variantes de la misma acción («Crear», «Crear y cerrar», «Crear y
+	// nuevo»). Nil: el botón de Actions.
+	PrimarySplit *button.SplitOptions
 
 	// Guard pide confirmación al cerrar con cambios sin guardar. nil: cierra
 	// sin preguntar.
