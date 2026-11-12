@@ -2016,6 +2016,32 @@ templ Base(cfg Config) {
 					if (!b) return;
 					kibanFilterSet(b.closest('[data-kiban-filter]'), b.hasAttribute('data-kiban-filter-all'));
 				});
+				// El menú de un filtro se abre alineado a la izquierda de su píldora;
+				// cerca del borde derecho se saldría de la pantalla (el numérico mide
+				// 340 px). Al abrir se mide y se corre lo que haga falta para que quede
+				// dentro, y se abre hacia arriba si abajo no cabe y arriba sí. Se
+				// recalcula al cambiar el tamaño de la ventana.
+				function kibanFilterPlace(d) {
+					var m = d.querySelector('[data-kiban-filter-menu]');
+					if (!m) return;
+					m.style.left = ''; m.style.top = ''; m.style.bottom = '';
+					var margin = 16, r = m.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+					var shift = r.right - (vw - margin);
+					if (shift > r.left - margin) shift = r.left - margin;
+					if (shift > 0) m.style.left = (-shift) + 'px';
+					var pill = d.querySelector('summary') || d;
+					var t = pill.getBoundingClientRect();
+					if (r.bottom > window.innerHeight - margin && t.top - 6 - r.height >= margin) {
+						m.style.top = 'auto'; m.style.bottom = 'calc(100% + 6px)';
+					}
+				}
+				document.addEventListener('toggle', function (e) {
+					var d = e.target;
+					if (d.matches && d.matches('details[data-kiban-filter]') && d.open) kibanFilterPlace(d);
+				}, true);
+				window.addEventListener('resize', function () {
+					document.querySelectorAll('details[data-kiban-filter][open]').forEach(kibanFilterPlace);
+				});
 				// Al cerrar un menú, su buscador vuelve a vacío (como el proto).
 				document.addEventListener('toggle', function (e) {
 					var d = e.target;

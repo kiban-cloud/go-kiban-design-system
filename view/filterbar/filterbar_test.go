@@ -196,3 +196,11 @@ func TestBar_NotaVacioYPista(t *testing.T) {
 	assert.Contains(t, body, `Elige primero un servicio</div>`)
 	assert.Contains(t, body, `CFDI<span class="ml-1 text-[11px] font-normal text-[#9096A3] [&[hidden]]:hidden">SAT</span>`)
 }
+
+// Los dos menús (opciones y numérico) llevan data-kiban-filter-menu: es lo que
+// base.templ mide al abrir para correrlo dentro de la pantalla. Sin la marca,
+// el menú de una píldora cerca del borde derecho se sale del viewport.
+func TestBar_LosMenusSeMarcanParaAcomodarseEnLaPantalla(t *testing.T) {
+	assert.Contains(t, render(t, filterbar.Bar(cfg())), `<div data-kiban-filter-menu class="absolute left-0`)
+	assert.Contains(t, render(t, filterbar.Bar(numCfg("", "", ""))), `data-kiban-filter-menu class="absolute left-0`)
+}
