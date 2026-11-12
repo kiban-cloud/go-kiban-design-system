@@ -118,7 +118,7 @@ templ flamboyantRow(o RowOptions) {
 			</td>
 		} else if o.BulkDisabled != "" {
 			<td class="w-11 !pl-4 !pr-0" data-kiban-bulk-cell>
-				<span class="-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5 opacity-40" title={ o.BulkDisabled }>
+				<span class="-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5" title={ o.BulkDisabled }>
 					@input.SquareCheckbox(templ.Attributes{"disabled": true, "aria-label": o.BulkDisabled})
 				</span>
 			</td>

@@ -216,6 +216,9 @@ func TestRowWith_CasillaDeshabilitada(t *testing.T) {
 	assert.Contains(t, body, `title="Los casos de kiban no se pueden eliminar"`)
 	assert.Contains(t, body, " disabled")
 	assert.NotContains(t, body, `name="ids"`, "no viaja con la selección")
+	assert.Contains(t, body, "disabled:border-[#E2E5EC] disabled:bg-[#F2F4F8]", "un cuadro gris, como el proto (.lt-cb input:disabled)")
+	assert.Contains(t, body, "disabled:hover:shadow-none", "sin el hover azul")
+	assert.NotContains(t, body, "opacity-40", "gris sólido, no una casilla blanca desvanecida")
 
 	body = render(t, withChild(flam, `<td>Caso</td>`), table.RowWith(table.RowOptions{}))
 	assert.NotContains(t, body, "<td class=\"w-11", "sin selección, sin celda")

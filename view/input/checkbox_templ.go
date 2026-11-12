@@ -254,8 +254,9 @@ func Checkbox(name, label string, value, enabled bool, attrs templ.Attributes, d
 // squareCheckboxClass es el checkbox cuadrado de kiban cloud flamboyant: 18 px,
 // borde gris de 1.5 px, azul kiban al marcar y también en estado parcial
 // (input.indeterminate, el «seleccionar todo» a medias). La palomita y la raya
-// las pinta squareCheckMarks encima del input.
-const squareCheckboxClass = "peer m-0 h-[18px] w-[18px] cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-[#CDD3DF] bg-white transition hover:border-kiban-primary hover:shadow-[0_0_0_3px_rgba(0,71,255,0.1)] checked:border-kiban-primary checked:bg-kiban-primary indeterminate:border-kiban-primary indeterminate:bg-kiban-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary disabled:cursor-not-allowed"
+// las pinta squareCheckMarks encima del input. Deshabilitado es un cuadro gris
+// sin hover (.lt-cb input:disabled del proto).
+const squareCheckboxClass = "peer m-0 h-[18px] w-[18px] cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-[#CDD3DF] bg-white transition hover:border-kiban-primary hover:shadow-[0_0_0_3px_rgba(0,71,255,0.1)] checked:border-kiban-primary checked:bg-kiban-primary indeterminate:border-kiban-primary indeterminate:bg-kiban-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary disabled:cursor-not-allowed disabled:border-[#E2E5EC] disabled:bg-[#F2F4F8] disabled:hover:border-[#E2E5EC] disabled:hover:shadow-none"
 
 func squareCheckMarks() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
