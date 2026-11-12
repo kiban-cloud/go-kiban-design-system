@@ -256,3 +256,12 @@ func TestTable_SinSortAttrsLosEnlacesNoLlevanHxGet(t *testing.T) {
 	assert.Contains(t, body, `href="/c?sort=created_asc"`)
 	assert.NotContains(t, body, "hx-get")
 }
+
+func TestRowWith_CasillaDeshabilitadaSinPanel(t *testing.T) {
+	body := render(t, flam, table.RowWith(table.RowOptions{BulkDisabled: "La dueña no se puede eliminar"}))
+	assert.Contains(t, body, `title="La dueña no se puede eliminar"`)
+	assert.Contains(t, body, " disabled")
+	assert.NotContains(t, body, `name="ids"`, "no viaja con la acción en bloque")
+	assert.Contains(t, body, "w-11", "la columna queda alineada")
+	assert.Contains(t, body, "data-kiban-bulk-cell", "su clic tampoco abre el panel de la fila")
+}

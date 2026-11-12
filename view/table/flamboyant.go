@@ -74,5 +74,5 @@ type RowOptions struct {
 	// este texto de ayuda (por qué esa fila no se puede elegir: «Los casos
 	// de kiban no se pueden eliminar»), así la columna no se corre.
 	BulkDisabled string
-	Attrs     templ.Attributes
+	Attrs        templ.Attributes
 }
