@@ -1712,6 +1712,29 @@ templ Base(cfg Config) {
 						return el.type !== 'hidden' && el.type !== 'button' && !el.disabled && kibanFieldFilled(el);
 					});
 				}
+				// Pie pendiente con lo que falta (drawer.SummaryMissing, data-missing):
+				// cuenta por parte los campos obligatorios vacíos que estén en el form
+				// y arma «Faltan la URL del proceso y 4 capturas». Sin nada que
+				// contar devuelve '' y queda data-pending.
+				function kibanPanelMissing(form, sum) {
+					var raw = sum.getAttribute('data-missing');
+					if (!raw) return '';
+					var cfg; try { cfg = JSON.parse(raw); } catch (e) { return ''; }
+					var total = 0, out = [];
+					(cfg.parts || []).forEach(function (p) {
+						var n = 0;
+						(p.names || []).forEach(function (name) {
+							var el = form.querySelector('[name="' + name + '"]');
+							if (!el || el.disabled) return;
+							if (el.type === 'file' ? !(el.files && el.files.length) : !String(el.value || '').trim()) n++;
+						});
+						if (!n) return;
+						total += n;
+						out.push((n === 1 ? p.one : p.many).replace('{n}', n));
+					});
+					if (!out.length) return '';
+					return (total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ');
+				}
 				function kibanPanelRefresh(root) {
 					var n = 0;
 					root.querySelectorAll('[data-kiban-step]').forEach(function (card) {
@@ -1737,7 +1760,7 @@ templ Base(cfg Config) {
 					if (sum && form) {
 						var ok = form.checkValidity();
 						var ready = sum.getAttribute('data-clean') && !root.hasAttribute('data-dirty') ? sum.getAttribute('data-clean') : sum.getAttribute('data-ready');
-						sum.textContent = (ok ? ready : sum.getAttribute('data-pending')) || '';
+						sum.textContent = (ok ? ready : kibanPanelMissing(form, sum) || sum.getAttribute('data-pending')) || '';
 					}
 				}
 				function kibanPanelInit() {

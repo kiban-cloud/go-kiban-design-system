@@ -1,6 +1,7 @@
 package drawer
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -47,6 +48,12 @@ type FormPanelConfig struct {
 	// SummaryClean, si viene, reemplaza a SummaryReady mientras no se haya
 	// tocado nada («Sin cambios» en una edición).
 	SummaryPending string
+	// SummaryMissing, si viene, cambia SummaryPending por lo que falta de
+	// verdad, contando los campos obligatorios vacíos de cada parte, y se
+	// actualiza mientras se llena el form: «Faltan la URL del proceso y 4
+	// capturas», «Falta 1 captura» (el pie de la certificación del proto).
+	// Sin nada vacío que contar, queda SummaryPending.
+	SummaryMissing *SummaryMissing
 	SummaryReady   string
 	SummaryClean   string
 	Actions        button.Group
@@ -151,3 +158,40 @@ func (c ViewPanelConfig) header() panelHead {
 // drawer.ClosePanelEvent). Lo atiende base.templ. Sirve cuando la respuesta
 // cambia otra parte de la página (la lista tras borrar) y el panel sobra.
 const ClosePanelEvent = "kiban-panel-close"
+
+// SummaryMissing arma el pie pendiente con lo que falta: One y Many son el
+// verbo según falte uno o más («Falta», «Faltan»), y And une las partes («y»).
+type SummaryMissing struct {
+	One, Many, And string
+	Parts          []MissingPart
+}
+
+// MissingPart es una parte del pie pendiente: los name de sus campos y el
+// texto según falte uno o más («1 captura», «{n} capturas»; {n} es cuántos).
+type MissingPart struct {
+	Names     []string
+	One, Many string
+}
+
+func (c FormPanelConfig) missingJSON() string {
+	if c.SummaryMissing == nil {
+		return ""
+	}
+	m := c.SummaryMissing
+	type part struct {
+		Names []string `json:"names"`
+		One   string   `json:"one"`
+		Many  string   `json:"many"`
+	}
+	out := struct {
+		One   string `json:"one"`
+		Many  string `json:"many"`
+		And   string `json:"and"`
+		Parts []part `json:"parts"`
+	}{One: m.One, Many: m.Many, And: m.And}
+	for _, p := range m.Parts {
+		out.Parts = append(out.Parts, part{Names: p.Names, One: p.One, Many: p.Many})
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}

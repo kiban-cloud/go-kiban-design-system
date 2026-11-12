@@ -163,3 +163,18 @@ func TestFormPanel_AvisoComoElProto(t *testing.T) {
 	assert.Contains(t, html, `<circle cx="12" cy="12" r="10"></circle>`, "ícono de alerta en círculo (ICO_ALERT)")
 	assert.Contains(t, html, "ml-12 mt-5", "las acciones empiezan bajo el texto, no bajo el ícono")
 }
+
+// El pie pendiente con lo que falta (como el proto): las partes viajan en
+// data-missing y base.templ cuenta los obligatorios vacíos de cada una.
+func TestFormPanel_PieConLoQueFalta(t *testing.T) {
+	assert.NotContains(t, renderPanel(t, panelCfg()), "data-missing", "sin SummaryMissing, el pie de siempre")
+
+	cfg := panelCfg()
+	cfg.SummaryMissing = &drawer.SummaryMissing{One: "Falta", Many: "Faltan", And: "y", Parts: []drawer.MissingPart{
+		{Names: []string{"urlProcess"}, One: "la URL del proceso", Many: "la URL del proceso"},
+		{Names: []string{"a", "b"}, One: "1 captura", Many: "{n} capturas"},
+	}}
+	body := renderPanel(t, cfg)
+	assert.Contains(t, body, `data-missing="{&#34;one&#34;:&#34;Falta&#34;,&#34;many&#34;:&#34;Faltan&#34;,&#34;and&#34;:&#34;y&#34;,&#34;parts&#34;:[{&#34;names&#34;:[&#34;urlProcess&#34;],&#34;one&#34;:&#34;la URL del proceso&#34;`)
+	assert.Contains(t, body, `{&#34;names&#34;:[&#34;a&#34;,&#34;b&#34;],&#34;one&#34;:&#34;1 captura&#34;,&#34;many&#34;:&#34;{n} capturas&#34;}`)
+}
