@@ -4,7 +4,8 @@ import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 
 // Step es una sección de formulario con título. En kiban cloud flamboyant es
 // la tarjeta numerada de los paneles: el número lo pone el navegador según
-// los pasos visibles y se pinta azul cuando el paso está completo
+// los pasos visibles y se pinta azul cuando el paso está completo (salvo
+// NoProgress)
 // (base.templ, [data-kiban-step]). Con el diseño de siempre es un Card con el
 // mismo encabezado que usaban las secciones a mano: sólo título, título con
 // ayuda debajo o título con algo a la derecha.
@@ -14,7 +15,13 @@ templ Step(o StepOptions) {
 			<div class="flex items-center gap-2">
 				<h3 class="m-0 flex items-center gap-2 text-[15px] font-medium leading-[22px] text-kiban-ink">
 					if !o.NoNumber {
-						<span class="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border border-[#CDD3DF] bg-[#F4F7FF] text-[11px] font-semibold text-[#474F66] transition-colors data-[ok]:border-kiban-primary data-[ok]:bg-kiban-primary data-[ok]:text-white" data-kiban-step-n>·</span>
+						<span
+							class={
+								"grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border border-[#CDD3DF] bg-[#F4F7FF] text-[11px] font-semibold leading-none text-[#474F66] transition-colors",
+								templ.KV("data-[ok]:border-kiban-primary data-[ok]:bg-kiban-primary data-[ok]:text-white", !o.NoProgress),
+							}
+							data-kiban-step-n
+						>·</span>
 					}
 					{ o.Title }
 				</h3>

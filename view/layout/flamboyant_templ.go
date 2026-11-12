@@ -181,7 +181,7 @@ func flamboyantLayout(cfg Config) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><div class=\"fs-backdrop\" data-fs-close-mobile aria-hidden=\"true\"></div><main class=\"fs-main\"><div class=\"p-4 md:p-8 w-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><div class=\"fs-backdrop\" data-fs-close-mobile aria-hidden=\"true\"></div><main class=\"fs-main\"><div class=\"px-4 md:px-8 py-6 w-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

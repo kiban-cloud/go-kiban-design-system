@@ -1,0 +1,20 @@
+package card
+
+// Strip es la franja gris de cifras arriba de una lista flamboyant («7
+// activas · 1 con invitación pendiente», «3 sesiones abiertas ahora»), la
+// .b-strip de kiban-proto. Componente de flamboyant, sin versión de siempre.
+// Sin cifras no pinta nada.
+templ Strip(items []StripItem) {
+	if len(items) > 0 {
+		<div class="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[10px] bg-[#F4F7FF] px-3.5 py-2.5 text-[13px] text-[#474F66]">
+			for _, it := range items {
+				<span>
+					<b class={ stripValueClass(it.Tone) }>{ it.Value }</b> { it.Label }
+					if it.Extra != nil {
+						@it.Extra
+					}
+				</span>
+			}
+		</div>
+	}
+}

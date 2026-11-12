@@ -37,9 +37,6 @@ type FormPanelConfig struct {
 	Subtitle      templ.Component
 	HeaderActions templ.Component
 	CloseLabel    string
-	// DirtyLabel se ve en el encabezado, junto al cierre, en cuanto se
-	// toca el form («● Cambios sin guardar», como el proto). Vacío, nada.
-	DirtyLabel string
 
 	// FormAttrs van en el <form>: method, action, hx-post, hx-target…
 	FormAttrs templ.Attributes
@@ -85,14 +82,18 @@ type TitleInput struct {
 type FormPanelGuard struct {
 	Title, Text              string
 	Discard, Stay, SaveClose string
+	// Dirty es el aviso del encabezado, junto a cerrar, en cuanto hay un
+	// cambio («Cambios sin guardar», el .fsp-dirty del proto). Vacío: sin
+	// aviso.
+	Dirty string
 }
 
 // panelHead es lo que pinta panelHeader, común a FormPanel y ViewPanel.
 type panelHead struct {
-	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel, DirtyLabel string
-	TitleFrom                                        []string
-	TitleInput                                       *TitleInput
-	Tile, Subtitle, HeaderActions                    templ.Component
+	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel, Dirty string
+	TitleFrom                                               []string
+	TitleInput                                              *TitleInput
+	Tile, Subtitle, HeaderActions                           templ.Component
 }
 
 func (h panelHead) titleFrom() string { return strings.Join(h.TitleFrom, " ") }
@@ -112,8 +113,15 @@ func (c FormPanelConfig) summaryInitial() string {
 }
 
 func (c FormPanelConfig) header() panelHead {
-	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel, DirtyLabel: c.DirtyLabel,
-		TitleFrom: c.TitleFrom, TitleInput: c.TitleInput, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
+	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel,
+		TitleFrom: c.TitleFrom, TitleInput: c.TitleInput, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions, Dirty: c.dirtyLabel()}
+}
+
+func (c FormPanelConfig) dirtyLabel() string {
+	if c.Guard == nil {
+		return ""
+	}
+	return c.Guard.Dirty
 }
 
 // ViewPanelConfig describe el panel de consulta (ViewPanel). Sin Half es el

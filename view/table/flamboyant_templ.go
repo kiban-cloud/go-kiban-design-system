@@ -534,7 +534,7 @@ func flamboyantRow(o RowOptions) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if o.BulkValue != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<td class=\"w-11 !pl-4 !pr-0\"><label class=\"-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<td class=\"w-11 !pl-4 !pr-0\" data-kiban-bulk-cell><label class=\"-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -547,7 +547,7 @@ func flamboyantRow(o RowOptions) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else if o.BulkDisabled != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<td class=\"w-11 !pl-4 !pr-0\"><span class=\"-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5 opacity-40\" title=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<td class=\"w-11 !pl-4 !pr-0\" data-kiban-bulk-cell><span class=\"-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5 opacity-40\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -111,13 +111,13 @@ templ flamboyantRow(o RowOptions) {
 		{ o.Attrs... }
 	>
 		if o.BulkValue != "" {
-			<td class="w-11 !pl-4 !pr-0">
+			<td class="w-11 !pl-4 !pr-0" data-kiban-bulk-cell>
 				<label class="-m-1.5 flex w-fit cursor-pointer items-center justify-center p-1.5">
 					@input.SquareCheckbox(templ.Attributes{"name": "ids", "value": o.BulkValue, "aria-label": catalog.T(ctx, "table.select_row"), "data-label": o.BulkLabel})
 				</label>
 			</td>
 		} else if o.BulkDisabled != "" {
-			<td class="w-11 !pl-4 !pr-0">
+			<td class="w-11 !pl-4 !pr-0" data-kiban-bulk-cell>
 				<span class="-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5 opacity-40" title={ o.BulkDisabled }>
 					@input.SquareCheckbox(templ.Attributes{"disabled": true, "aria-label": o.BulkDisabled})
 				</span>

@@ -24,6 +24,9 @@ type StepOptions struct {
 	// NoNumber quita el número en flamboyant: la tarjeta única de un panel
 	// de edición, donde no hay pasos que contar.
 	NoNumber bool
+	// NoProgress deja el número siempre gris, aunque el paso esté completo:
+	// los paneles de kiban cloud en el proto no marcan avance.
+	NoProgress bool
 }
 
 func (o StepOptions) hasHint() bool { return o.Hint != nil || o.HintText != "" }

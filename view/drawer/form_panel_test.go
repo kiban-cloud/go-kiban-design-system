@@ -148,12 +148,18 @@ func TestFormPanel_SinCambiosMientrasNoSeToque(t *testing.T) {
 	assert.Contains(t, body, ">Sin cambios</div>")
 }
 
-// «● Cambios sin guardar» junto al cierre, como el proto: el CSS de base.templ
-// lo oculta mientras el panel no tenga data-dirty.
-func TestFormPanel_AvisoDeCambiosSinGuardar(t *testing.T) {
-	assert.NotContains(t, renderPanel(t, panelCfg()), "data-kiban-panel-dirty", "sin DirtyLabel, nada")
+func TestFormPanel_AvisoDeCambios(t *testing.T) {
+	con := renderPanel(t, drawer.FormPanelConfig{ID: "p", Guard: &drawer.FormPanelGuard{Dirty: "Cambios sin guardar"}})
+	assert.Contains(t, con, "data-kiban-panel-dirty")
+	assert.Contains(t, con, "Cambios sin guardar")
+	assert.Contains(t, con, "[[data-dirty]_&]:inline", "sólo se ve cuando el panel tiene cambios")
+	assert.NotContains(t, renderPanel(t, drawer.FormPanelConfig{ID: "p", Guard: &drawer.FormPanelGuard{}}), "data-kiban-panel-dirty", "sin texto no hay aviso")
+	assert.NotContains(t, renderPanel(t, drawer.FormPanelConfig{ID: "p"}), "data-kiban-panel-dirty", "sin guard no hay aviso")
+}
 
-	cfg := panelCfg()
-	cfg.DirtyLabel = "● Cambios sin guardar"
-	assert.Contains(t, renderPanel(t, cfg), `<span class="whitespace-nowrap text-xs text-[#6A00D6]" data-kiban-panel-dirty>● Cambios sin guardar</span>`)
+func TestFormPanel_AvisoComoElProto(t *testing.T) {
+	html := renderPanel(t, drawer.FormPanelConfig{ID: "p", Guard: &drawer.FormPanelGuard{Title: "Tienes cambios sin guardar"}})
+	assert.Contains(t, html, "w-[min(540px,calc(100%-32px))]", "ancho de .fsp-guard .box")
+	assert.Contains(t, html, `<circle cx="12" cy="12" r="10"></circle>`, "ícono de alerta en círculo (ICO_ALERT)")
+	assert.Contains(t, html, "ml-12 mt-5", "las acciones empiezan bajo el texto, no bajo el ícono")
 }
