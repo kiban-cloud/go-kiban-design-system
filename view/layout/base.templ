@@ -1387,7 +1387,9 @@ templ Base(cfg Config) {
 					function sincroniza(form) {
 						if (!form || !form.hasAttribute('data-kiban-submit-requiere-completo')) return;
 						var falta = incompleto(form);
-						var botones = form.querySelectorAll('button[type=submit], input[type=submit]');
+						// Los de formnovalidate (guardar otra parte del form con su propio
+						// POST) no esperan a los obligatorios: tampoco los valida el navegador.
+						var botones = form.querySelectorAll('button[type=submit]:not([formnovalidate]), input[type=submit]:not([formnovalidate])');
 						for (var i = 0; i < botones.length; i++) botones[i].disabled = falta;
 					}
 					function sincronizaTodos(raiz) {
@@ -1882,11 +1884,41 @@ templ Base(cfg Config) {
 					kibanPanelClose(root, false);
 				});
 
-				// input.Dropzone: el nombre y el tamaño del archivo elegido.
+				// input.Dropzone: el nombre y el tamaño del archivo elegido. Con
+				// data-change (DropzoneOptions.Change) la zona se pinta en verde, el
+				// nombre reemplaza a la invitación y la ayuda dice data-change; con
+				// miniatura ([data-kiban-dropzone-thumb]) una imagen se ve en lugar del
+				// ícono. Sin archivo, la zona vuelve a lo que decía.
 				document.addEventListener('change', function (e) {
 					var zone = e.target.closest && e.target.closest('[data-kiban-dropzone]');
 					if (!zone || e.target.type !== 'file') return;
 					var f = e.target.files && e.target.files[0];
+					var thumb = zone.querySelector('[data-kiban-dropzone-thumb]');
+					var icon = zone.querySelector('[data-kiban-dropzone-icon]');
+					if (thumb) {
+						var img = f && /^image\//.test(f.type);
+						if (thumb.src && thumb.src.indexOf('blob:') === 0) URL.revokeObjectURL(thumb.src);
+						if (img) thumb.src = URL.createObjectURL(f); else thumb.removeAttribute('src');
+						thumb.classList.toggle('hidden', !img);
+						if (icon) icon.classList.toggle('hidden', !!img);
+					}
+					var change = zone.getAttribute('data-change');
+					if (change) {
+						var title = zone.querySelector('[data-kiban-dropzone-title]');
+						var hint = zone.querySelector('[data-kiban-dropzone-hint]');
+						if (title && !title.hasAttribute('data-orig')) title.setAttribute('data-orig', title.innerHTML);
+						if (hint && !hint.hasAttribute('data-orig')) hint.setAttribute('data-orig', hint.textContent);
+						if (f) {
+							zone.setAttribute('data-has-file', '');
+							if (title) { var b = document.createElement('b'); b.className = 'font-medium'; b.textContent = f.name; title.replaceChildren(b); }
+							if (hint) hint.textContent = change;
+						} else {
+							zone.removeAttribute('data-has-file');
+							if (title) title.innerHTML = title.getAttribute('data-orig');
+							if (hint) hint.textContent = hint.getAttribute('data-orig');
+						}
+						return;
+					}
 					var out = zone.querySelector('[data-kiban-dropzone-file]');
 					if (!out) return;
 					out.textContent = f ? f.name + ' · ' + Math.max(1, Math.round(f.size / 1024)) + ' KB' : '';

@@ -56,6 +56,21 @@ type ToggleOptions struct {
 type DropzoneOptions struct {
 	Name, Accept, Title, Hint string
 	Required                  bool
+	// Pick va después de Title en azul, con Or delante: «Arrastra la
+	// captura o elígela» (Title «Arrastra la captura», Or «o», Pick
+	// «elígela»), como el proto. Con Pick, Title va en negritas.
+	Or, Pick string
+	// Image cambia el ícono por el de imagen y, al elegir una imagen, la
+	// muestra en miniatura en su lugar.
+	Image bool
+	// Tall le da a la zona un alto mínimo de 150 px (las capturas de la
+	// certificación).
+	Tall bool
+	// Change, si viene, es lo que dice la zona debajo del nombre del archivo
+	// elegido («Cambiar archivo»): con él, al elegir, la zona se pinta en
+	// verde y el nombre reemplaza a Title. Sin él, el nombre y el tamaño van
+	// debajo, en azul, como siempre.
+	Change string
 }
 
 // CheckboxCardOptions configura CheckboxCardWith: una opción de una lista de
