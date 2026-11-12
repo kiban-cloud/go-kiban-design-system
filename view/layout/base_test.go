@@ -112,6 +112,10 @@ func TestBase_DropzoneElegido(t *testing.T) {
 	assert.Contains(t, body, "zone.getAttribute('data-change')")
 	assert.Contains(t, body, "zone.setAttribute('data-has-file', '')")
 	assert.Contains(t, body, "thumb.src = URL.createObjectURL(f)")
+	// Pie pendiente con lo que falta (drawer.SummaryMissing).
+	assert.Contains(t, body, "function kibanPanelMissing(form, sum)")
+	assert.Contains(t, body, "kibanPanelMissing(form, sum) || sum.getAttribute('data-pending')")
+	assert.Contains(t, body, "(total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ')")
 	// El submit que espera a los obligatorios no frena a un botón con
 	// formnovalidate (guardar la razón social del RCE con su propio POST).
 	assert.Contains(t, body, "button[type=submit]:not([formnovalidate]), input[type=submit]:not([formnovalidate])")

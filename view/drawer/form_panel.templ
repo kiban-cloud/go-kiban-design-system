@@ -34,7 +34,11 @@ templ FormPanel(cfg FormPanelConfig) {
 				if cfg.FooterLeft != nil {
 					@cfg.FooterLeft
 				}
-				<div class="min-w-0 flex-1 text-[13px] text-[#606875]" data-kiban-panel-sum data-pending={ cfg.SummaryPending } data-ready={ cfg.SummaryReady } data-clean={ cfg.SummaryClean }>{ cfg.summaryInitial() }</div>
+				<div class="min-w-0 flex-1 text-[13px] text-[#606875]" data-kiban-panel-sum data-pending={ cfg.SummaryPending } data-ready={ cfg.SummaryReady } data-clean={ cfg.SummaryClean }
+					if cfg.SummaryMissing != nil {
+						data-missing={ cfg.missingJSON() }
+					}
+				>{ cfg.summaryInitial() }</div>
 				<div class="flex shrink-0 gap-2 max-sm:w-full [&>*]:max-sm:flex-1">
 					for _, a := range cfg.Actions.SecondaryActions {
 						@button.Button(button.WithDefaultVariant(a, "secondary"))
