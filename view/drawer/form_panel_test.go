@@ -147,3 +147,13 @@ func TestFormPanel_SinCambiosMientrasNoSeToque(t *testing.T) {
 	assert.Contains(t, body, `data-clean="Sin cambios"`)
 	assert.Contains(t, body, ">Sin cambios</div>")
 }
+
+// «● Cambios sin guardar» junto al cierre, como el proto: el CSS de base.templ
+// lo oculta mientras el panel no tenga data-dirty.
+func TestFormPanel_AvisoDeCambiosSinGuardar(t *testing.T) {
+	assert.NotContains(t, renderPanel(t, panelCfg()), "data-kiban-panel-dirty", "sin DirtyLabel, nada")
+
+	cfg := panelCfg()
+	cfg.DirtyLabel = "● Cambios sin guardar"
+	assert.Contains(t, renderPanel(t, cfg), `<span class="whitespace-nowrap text-xs text-[#6A00D6]" data-kiban-panel-dirty>● Cambios sin guardar</span>`)
+}

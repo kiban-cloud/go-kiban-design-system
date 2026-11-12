@@ -106,6 +106,19 @@ func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 
 // El menú de un filtro (filterbar) se corre al abrir para no salirse de la
 // pantalla por la derecha, y se abre hacia arriba si abajo no cabe.
+// El aviso de cambios del panel se oculta mientras no se toque el form, y
+// el Dropzone con data-change se pinta elegido y muestra la miniatura.
+func TestBase_AvisoDeCambiosYDropzoneElegido(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "[data-kiban-panel]:not([data-dirty]) [data-kiban-panel-dirty] { display: none; }")
+	assert.Contains(t, body, "zone.getAttribute('data-change')")
+	assert.Contains(t, body, "zone.setAttribute('data-has-file', '')")
+	assert.Contains(t, body, "thumb.src = URL.createObjectURL(f)")
+	// El submit que espera a los obligatorios no frena a un botón con
+	// formnovalidate (guardar la razón social del RCE con su propio POST).
+	assert.Contains(t, body, "button[type=submit]:not([formnovalidate]), input[type=submit]:not([formnovalidate])")
+}
+
 func TestBase_MenuDeFiltroDentroDeLaPantalla(t *testing.T) {
 	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
 	assert.Contains(t, body, "function kibanFilterPlace(d)")

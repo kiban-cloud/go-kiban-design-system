@@ -37,6 +37,9 @@ type FormPanelConfig struct {
 	Subtitle      templ.Component
 	HeaderActions templ.Component
 	CloseLabel    string
+	// DirtyLabel se ve en el encabezado, junto al cierre, en cuanto se
+	// toca el form («● Cambios sin guardar», como el proto). Vacío, nada.
+	DirtyLabel string
 
 	// FormAttrs van en el <form>: method, action, hx-post, hx-target…
 	FormAttrs templ.Attributes
@@ -86,7 +89,7 @@ type FormPanelGuard struct {
 
 // panelHead es lo que pinta panelHeader, común a FormPanel y ViewPanel.
 type panelHead struct {
-	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel string
+	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel, DirtyLabel string
 	TitleFrom                                        []string
 	TitleInput                                       *TitleInput
 	Tile, Subtitle, HeaderActions                    templ.Component
@@ -109,7 +112,7 @@ func (c FormPanelConfig) summaryInitial() string {
 }
 
 func (c FormPanelConfig) header() panelHead {
-	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel,
+	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel, DirtyLabel: c.DirtyLabel,
 		TitleFrom: c.TitleFrom, TitleInput: c.TitleInput, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
 }
 

@@ -115,6 +115,9 @@ templ panelHeader(h panelHead) {
 			</div>
 		</div>
 		<div class="flex items-center gap-2">
+			if h.DirtyLabel != "" {
+				<span class="whitespace-nowrap text-xs text-[#6A00D6]" data-kiban-panel-dirty>{ h.DirtyLabel }</span>
+			}
 			if h.HeaderActions != nil {
 				@h.HeaderActions
 			}
