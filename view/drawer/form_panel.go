@@ -168,9 +168,15 @@ type SummaryMissing struct {
 
 // MissingPart es una parte del pie pendiente: los name de sus campos y el
 // texto según falte uno o más («1 captura», «{n} capturas»; {n} es cuántos).
+// Un grupo de radios falta mientras no haya uno elegido. From, en vez de
+// Names, es el selector de un elemento del form cuyo
+// data-kiban-missing-names (name separados por coma) dice qué contar: para
+// campos que dependen de una elección y se repintan (las credenciales
+// obligatorias del tipo de secret). Si no está en el form, la parte no cuenta.
 type MissingPart struct {
 	Names     []string
 	One, Many string
+	From      string
 }
 
 func (c FormPanelConfig) missingJSON() string {
@@ -182,6 +188,7 @@ func (c FormPanelConfig) missingJSON() string {
 		Names []string `json:"names"`
 		One   string   `json:"one"`
 		Many  string   `json:"many"`
+		From  string   `json:"from,omitempty"`
 	}
 	out := struct {
 		One   string `json:"one"`
@@ -190,7 +197,7 @@ func (c FormPanelConfig) missingJSON() string {
 		Parts []part `json:"parts"`
 	}{One: m.One, Many: m.Many, And: m.And}
 	for _, p := range m.Parts {
-		out.Parts = append(out.Parts, part{Names: p.Names, One: p.One, Many: p.Many})
+		out.Parts = append(out.Parts, part{Names: p.Names, One: p.One, Many: p.Many, From: p.From})
 	}
 	b, _ := json.Marshal(out)
 	return string(b)

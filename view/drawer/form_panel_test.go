@@ -177,4 +177,7 @@ func TestFormPanel_PieConLoQueFalta(t *testing.T) {
 	body := renderPanel(t, cfg)
 	assert.Contains(t, body, `data-missing="{&#34;one&#34;:&#34;Falta&#34;,&#34;many&#34;:&#34;Faltan&#34;,&#34;and&#34;:&#34;y&#34;,&#34;parts&#34;:[{&#34;names&#34;:[&#34;urlProcess&#34;],&#34;one&#34;:&#34;la URL del proceso&#34;`)
 	assert.Contains(t, body, `{&#34;names&#34;:[&#34;a&#34;,&#34;b&#34;],&#34;one&#34;:&#34;1 captura&#34;,&#34;many&#34;:&#34;{n} capturas&#34;}`)
+
+	cfg.SummaryMissing.Parts = []drawer.MissingPart{{From: "[data-vault-required]", One: "1 credencial", Many: "{n} credenciales"}}
+	assert.Contains(t, renderPanel(t, cfg), `&#34;many&#34;:&#34;{n} credenciales&#34;,&#34;from&#34;:&#34;[data-vault-required]&#34;}`, "los campos a contar salen del form")
 }

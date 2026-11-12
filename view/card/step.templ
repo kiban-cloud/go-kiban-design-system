@@ -21,6 +21,7 @@ templ Step(o StepOptions) {
 								templ.KV("data-[ok]:border-kiban-primary data-[ok]:bg-kiban-primary data-[ok]:text-white", !o.NoProgress),
 							}
 							data-kiban-step-n
+							data-progress?={ !o.NoProgress }
 						>·</span>
 					}
 					{ o.Title }

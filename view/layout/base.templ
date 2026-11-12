@@ -1382,6 +1382,17 @@ templ Base(cfg Config) {
 							}
 							if (!String(c.value || '').trim()) return true;
 						}
+						// También los listados en data-kiban-missing-names (los
+						// obligatorios que un campo sin required no declara, como
+						// input.Password).
+						var listas = form.querySelectorAll('[data-kiban-missing-names]');
+						for (var j = 0; j < listas.length; j++) {
+							var names = (listas[j].getAttribute('data-kiban-missing-names') || '').split(',').filter(Boolean);
+							for (var k = 0; k < names.length; k++) {
+								var el = form.querySelector('[name="' + names[k] + '"]');
+								if (el && !el.disabled && !String(el.value || '').trim()) return true;
+							}
+						}
 						return false;
 					}
 					function sincroniza(form) {
@@ -1723,9 +1734,15 @@ templ Base(cfg Config) {
 					var total = 0, out = [];
 					(cfg.parts || []).forEach(function (p) {
 						var n = 0;
-						(p.names || []).forEach(function (name) {
+						var names = p.names || [];
+						if (p.from) {
+							var src = form.querySelector(p.from);
+							names = src ? (src.getAttribute('data-kiban-missing-names') || '').split(',').filter(Boolean) : [];
+						}
+						names.forEach(function (name) {
 							var el = form.querySelector('[name="' + name + '"]');
 							if (!el || el.disabled) return;
+							if (el.type === 'radio') { if (!form.querySelector('[name="' + name + '"]:checked')) n++; return; }
 							if (el.type === 'file' ? !(el.files && el.files.length) : !String(el.value || '').trim()) n++;
 						});
 						if (!n) return;
@@ -1742,8 +1759,12 @@ templ Base(cfg Config) {
 						var num = card.querySelector('[data-kiban-step-n]');
 						if (!num) return;
 						n++;
-						num.textContent = n;
-						num.toggleAttribute('data-ok', kibanStepDone(card));
+						// Completo, el número se vuelve palomita (.n.ok del proto),
+						// salvo en los pasos que no marcan avance.
+						var done = kibanStepDone(card);
+						num.toggleAttribute('data-ok', done);
+						if (done && num.hasAttribute('data-progress')) num.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+						else num.textContent = n;
 					});
 					var form = root.querySelector('form');
 					var title = root.querySelector('[data-kiban-panel-title]');
@@ -1758,9 +1779,12 @@ templ Base(cfg Config) {
 					}
 					var sum = root.querySelector('[data-kiban-panel-sum]');
 					if (sum && form) {
-						var ok = form.checkValidity();
+						// Lo que falta cuenta aunque el navegador dé el form por válido:
+						// los obligatorios sin required (input.Password) vienen en From.
+						var missing = kibanPanelMissing(form, sum);
+						var ok = form.checkValidity() && !missing;
 						var ready = sum.getAttribute('data-clean') && !root.hasAttribute('data-dirty') ? sum.getAttribute('data-clean') : sum.getAttribute('data-ready');
-						sum.textContent = (ok ? ready : kibanPanelMissing(form, sum) || sum.getAttribute('data-pending')) || '';
+						sum.textContent = (ok ? ready : missing || sum.getAttribute('data-pending')) || '';
 					}
 				}
 				function kibanPanelInit() {
