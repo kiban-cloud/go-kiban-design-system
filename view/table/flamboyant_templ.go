@@ -547,14 +547,14 @@ func flamboyantRow(o RowOptions) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else if o.BulkDisabled != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<td class=\"w-11 !pl-4 !pr-0\" data-kiban-bulk-cell><span class=\"-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5 opacity-40\" title=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<td class=\"w-11 !pl-4 !pr-0\" data-kiban-bulk-cell><span class=\"-m-1.5 flex w-fit cursor-not-allowed items-center justify-center p-1.5\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(o.BulkDisabled)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 121, Col: 122}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/table/flamboyant.templ`, Line: 121, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
