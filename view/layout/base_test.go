@@ -104,6 +104,17 @@ func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 	assert.Contains(t, body, "htmx:historyRestore")
 }
 
+// El menú de un filtro (filterbar) se corre al abrir para no salirse de la
+// pantalla por la derecha, y se abre hacia arriba si abajo no cabe.
+func TestBase_MenuDeFiltroDentroDeLaPantalla(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "function kibanFilterPlace(d)")
+	assert.Contains(t, body, "d.querySelector('[data-kiban-filter-menu]')")
+	assert.Contains(t, body, "var shift = r.right - (vw - margin);")
+	assert.Contains(t, body, "m.style.bottom = 'calc(100% + 6px)'")
+	assert.Contains(t, body, "d.open) kibanFilterPlace(d);")
+}
+
 // Non-HTMX navigations (a form submit that posts then redirects, or a
 // [data-block-ui] button) must show a full-screen blocking overlay so the
 // user gets feedback + can't double-submit during the server round-trip.

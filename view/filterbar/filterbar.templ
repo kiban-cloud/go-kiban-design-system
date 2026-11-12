@@ -60,7 +60,7 @@ templ filter(cfg Config, f Filter) {
 }
 
 templ optionsMenu(cfg Config, f Filter) {
-		<div class="absolute left-0 top-[calc(100%+6px)] z-[35] flex max-h-[min(440px,calc(100vh-200px))] w-80 max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-xl bg-white shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]" role="group" aria-label={ f.Label }>
+		<div data-kiban-filter-menu class="absolute left-0 top-[calc(100%+6px)] z-[35] flex max-h-[min(440px,calc(100vh-200px))] w-80 max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-xl bg-white shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]" role="group" aria-label={ f.Label }>
 			if f.Search.Placeholder != "" {
 				<label class="mx-2.5 mb-1 mt-2.5 flex h-[38px] shrink-0 items-center gap-2 rounded-lg border border-[#CDD3DF] px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]">
 					<svg class="h-[15px] w-[15px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
@@ -123,6 +123,7 @@ templ optionsMenu(cfg Config, f Filter) {
 // los ocultos y los deshabilita si no hay valor.
 templ numericMenu(cfg Config, f Filter, n Numeric) {
 	<div
+		data-kiban-filter-menu
 		class="absolute left-0 top-[calc(100%+6px)] z-[35] flex w-[340px] max-w-[calc(100vw-32px)] flex-col gap-2.5 rounded-xl bg-white p-3 shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]"
 		role="dialog"
 		aria-label={ f.Label }
