@@ -86,7 +86,13 @@ func TestBase_GlobalHtmxBusyRule(t *testing.T) {
 	assert.Contains(t, body, "htmx:beforeRequest")
 	assert.Contains(t, body, "htmx:afterRequest")
 	assert.Contains(t, body, "classList.add('kiban-busy')")
-	assert.Contains(t, body, "classList.remove('kiban-busy')")
+	assert.Contains(t, body, "classList.remove('kiban-busy', 'kiban-busy-quiet')")
+
+	// Una petición con su propio hx-indicator (el overlay de carga de una
+	// lista) no se queda además con el spinner de la zona: dos spinners al
+	// paginar. La zona se sigue bloqueando, sólo pierde el ::after.
+	assert.Contains(t, body, "elt.closest('[hx-indicator]')) region.classList.add('kiban-busy-quiet')")
+	assert.Contains(t, body, ".kiban-busy.kiban-busy-quiet::after { content: none; }")
 
 	// History cleanup: pagination/filter controls use hx-push-url, so htmx
 	// snapshots the page into its history cache — with .kiban-busy still on
