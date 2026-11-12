@@ -118,6 +118,8 @@ func TestBase_DropzoneElegido(t *testing.T) {
 	assert.Contains(t, body, "if (el.type === 'radio') { if (!form.querySelector('[name=\"' + name + '\"]:checked')) n++; return; }", "un grupo de radios falta si no hay uno elegido")
 	assert.Contains(t, body, "if (done && num.hasAttribute('data-progress'))", "el paso completo pasa a palomita")
 	assert.Contains(t, body, "var listas = form.querySelectorAll('[data-kiban-missing-names]');", "requiere-completo también espera a los obligatorios listados")
+	assert.Contains(t, body, "(e.target.name && !e.target.hasAttribute('data-nodirty'))", "un buscador sin name no es un cambio")
+	assert.Contains(t, body, "if (save) save.disabled = !!(primary && primary.disabled);", "sin poder guardar, el aviso no ofrece guardar y cerrar")
 	assert.Contains(t, body, "var ok = form.checkValidity() && !missing;", "lo que falta gana aunque el navegador dé el form por válido")
 	assert.Contains(t, body, "missing || sum.getAttribute('data-pending')")
 	assert.Contains(t, body, "(total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ')")

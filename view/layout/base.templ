@@ -1796,6 +1796,11 @@ templ Base(cfg Config) {
 					var guard = root.querySelector('[data-kiban-panel-guard]');
 					if (!force && guard && root.hasAttribute('data-dirty')) {
 						guard.hidden = false;
+						// «Guardar y cerrar» no se ofrece si el botón principal
+						// está deshabilitado (falta algo), como el proto.
+						var save = guard.querySelector('[data-kiban-guard-save]');
+						var primary = root.querySelector('form button[type=submit]:not([formnovalidate])');
+						if (save) save.disabled = !!(primary && primary.disabled);
 						var stay = guard.querySelector('[data-kiban-guard-stay]');
 						if (stay) stay.focus();
 						return;
@@ -1887,7 +1892,9 @@ templ Base(cfg Config) {
 					document.addEventListener(type, function (e) {
 						var root = e.target.closest && e.target.closest('[data-kiban-panel]');
 						if (!root || !(e.target.form || e.target.tagName === 'FORM')) return;
-						root.setAttribute('data-dirty', '');
+						// Un campo sin name (un buscador que sólo filtra) o con
+						// data-nodirty no es un cambio: no viaja con el form.
+						if (e.target.tagName === 'FORM' || (e.target.name && !e.target.hasAttribute('data-nodirty'))) root.setAttribute('data-dirty', '');
 						kibanPanelRefresh(root);
 					});
 				});
