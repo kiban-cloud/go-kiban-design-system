@@ -53,6 +53,10 @@ func TestStep_FlamboyantNumeradoConRequeridos(t *testing.T) {
 	assert.Contains(t, body, "Para facturar")
 	assert.Contains(t, body, "<p>cuerpo</p>")
 	assert.Contains(t, body, "rounded-[10px]")
+	assert.Contains(t, body, "data-kiban-step-n data-progress", "marca avance: al completarse pasa a palomita")
+
+	body = render(t, flam, card.Step(card.StepOptions{Key: "fiscal", Title: "Fiscales", NoProgress: true}))
+	assert.NotContains(t, body, "data-progress", "sin avance, siempre el número")
 }
 
 func TestCard_FlamboyantCambiaBordeYRadio(t *testing.T) {

@@ -114,7 +114,12 @@ func TestBase_DropzoneElegido(t *testing.T) {
 	assert.Contains(t, body, "thumb.src = URL.createObjectURL(f)")
 	// Pie pendiente con lo que falta (drawer.SummaryMissing).
 	assert.Contains(t, body, "function kibanPanelMissing(form, sum)")
-	assert.Contains(t, body, "kibanPanelMissing(form, sum) || sum.getAttribute('data-pending')")
+	assert.Contains(t, body, "names = src ? (src.getAttribute('data-kiban-missing-names') || '').split(',').filter(Boolean) : [];", "From: los campos a contar salen del form")
+	assert.Contains(t, body, "if (el.type === 'radio') { if (!form.querySelector('[name=\"' + name + '\"]:checked')) n++; return; }", "un grupo de radios falta si no hay uno elegido")
+	assert.Contains(t, body, "if (done && num.hasAttribute('data-progress'))", "el paso completo pasa a palomita")
+	assert.Contains(t, body, "var listas = form.querySelectorAll('[data-kiban-missing-names]');", "requiere-completo también espera a los obligatorios listados")
+	assert.Contains(t, body, "var ok = form.checkValidity() && !missing;", "lo que falta gana aunque el navegador dé el form por válido")
+	assert.Contains(t, body, "missing || sum.getAttribute('data-pending')")
 	assert.Contains(t, body, "(total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ')")
 	// El submit que espera a los obligatorios no frena a un botón con
 	// formnovalidate (guardar la razón social del RCE con su propio POST).
