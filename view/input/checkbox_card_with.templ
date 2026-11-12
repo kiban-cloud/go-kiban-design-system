@@ -1,0 +1,60 @@
+package input
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
+// CheckboxCardWith es una opción de una lista de casillas que comparten Name
+// (los grupos o los permisos de una persona): cada una manda su Value. En
+// flamboyant es la tarjeta de kiban-proto (.b-cb): casilla cuadrada, título y
+// ayuda en una línea, borde azul al marcarla. Con el diseño de siempre, la
+// tarjeta de CheckboxCard con el mismo valor.
+templ CheckboxCardWith(o CheckboxCardOptions) {
+	if flamboyant.On(ctx) {
+		<label
+			class={
+				"grid grid-cols-[22px_minmax(0,1fr)] items-center gap-2.5 rounded-lg border border-[#E2E5EC] bg-white px-2.5 py-2 has-[:checked]:border-kiban-primary has-[:checked]:bg-[#F4F7FF]",
+				templ.KV("cursor-pointer hover:border-[#B8CBFF]", !o.Disabled),
+				templ.KV("cursor-default opacity-80", o.Disabled),
+			}
+		>
+			<span class="inline-flex">
+				@SquareCheckbox(checkboxCardAttrs(o))
+			</span>
+			<span class="min-w-0">
+				<b class="block text-[13px] font-medium text-kiban-ink">{ o.Title }</b>
+				if o.Help != "" {
+					<small class="block truncate text-[11px] text-[#606875]">{ o.Help }</small>
+				}
+			</span>
+		</label>
+	} else {
+		<label
+			class={
+				"flex items-start gap-3 p-3 border border-kiban-border rounded-md",
+				templ.KV("hover:border-kiban-ink3 cursor-pointer", !o.Disabled),
+				templ.KV("cursor-not-allowed opacity-60", o.Disabled),
+			}
+		>
+			<input type="checkbox" class="mt-1 h-4 w-4 rounded border-kiban-border text-kiban-primary focus:ring-kiban-primary" { checkboxCardAttrs(o)... }/>
+			<div class="min-w-0">
+				<div class="text-sm font-medium text-kiban-ink">{ o.Title }</div>
+				if o.Help != "" {
+					<div class="text-xs text-kiban-ink3 mt-0.5">{ o.Help }</div>
+				}
+			</div>
+		</label>
+	}
+}
+
+func checkboxCardAttrs(o CheckboxCardOptions) templ.Attributes {
+	attrs := templ.Attributes{"name": o.Name, "value": o.Value}
+	if o.Checked {
+		attrs["checked"] = true
+	}
+	if o.Disabled {
+		attrs["disabled"] = true
+	}
+	for k, v := range o.Attrs {
+		attrs[k] = v
+	}
+	return attrs
+}

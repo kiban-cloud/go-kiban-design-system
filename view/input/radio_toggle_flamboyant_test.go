@@ -72,3 +72,22 @@ func TestToggleWith_FlamboyantConAyudaYDeshabilitado(t *testing.T) {
 	assert.Contains(t, body, "cursor-not-allowed")
 	assert.Contains(t, body, `value="true"`)
 }
+
+func TestCheckboxCardWith(t *testing.T) {
+	o := input.CheckboxCardOptions{Name: "groups", Value: "g1", Title: "Analistas", Help: "workfloo 3", Checked: true}
+	flam := renderIn(t, flamCtx, input.CheckboxCardWith(o))
+	assert.Contains(t, flam, `name="groups"`)
+	assert.Contains(t, flam, `value="g1"`)
+	assert.Contains(t, flam, `checked name="groups"`)
+	assert.Contains(t, flam, "has-[:checked]:border-kiban-primary")
+	assert.Contains(t, flam, ">Analistas</b>")
+	assert.Contains(t, flam, "workfloo 3")
+
+	dis := renderIn(t, flamCtx, input.CheckboxCardWith(input.CheckboxCardOptions{Name: "rights", Value: "X", Title: "Ver", Disabled: true}))
+	assert.Contains(t, dis, `disabled name="rights"`)
+	assert.NotContains(t, dis, "checked disabled")
+
+	clasico := renderIn(t, context.Background(), input.CheckboxCardWith(o))
+	assert.Contains(t, clasico, `value="g1"`, "el diseño de siempre también manda su valor")
+	assert.Contains(t, clasico, "border-kiban-border rounded-md")
+}

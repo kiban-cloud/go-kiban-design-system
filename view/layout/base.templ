@@ -2186,7 +2186,7 @@ templ Base(cfg Config) {
 					return all && all.value === '1' ? parseInt(all.getAttribute('data-total'), 10) || 0 : 0;
 				}
 				function kibanBulkSync(form) {
-					var boxes = form.querySelectorAll('input[name=ids]'), n = 0;
+					var boxes = form.querySelectorAll('input[name=ids]:not(:disabled)'), n = 0;
 					boxes.forEach(function (b) { if (b.checked) n++; });
 					var allField = form.querySelector('[data-kiban-bulk-all]');
 					if (allField && allField.value === '1' && n < boxes.length) allField.value = '';
@@ -2211,13 +2211,61 @@ templ Base(cfg Config) {
 						el.append(tpl.slice(0, i), b, tpl.slice(i + 3));
 					});
 				}
+				// Chips de correos: un contenedor [data-kiban-email-chips] con un
+				// <textarea> y un [data-kiban-email-chips-out] muestra, al
+				// escribir, un chip por correo (separados por renglón, coma,
+				// punto y coma o espacio): gris si es nuevo, azul si ya está en
+				// data-known (JSON con los correos que ya existen) y rojo tachado
+				// si no tiene forma de correo.
+				function kibanEmailChips(box) {
+					var area = box.querySelector('textarea');
+					var out = box.querySelector('[data-kiban-email-chips-out]');
+					if (!area || !out) return;
+					var known = box._kibanKnown;
+					if (!known) {
+						try { known = JSON.parse(box.getAttribute('data-known') || '[]'); } catch (e) { known = []; }
+						known = known.map(function (k) { return String(k).toLowerCase(); });
+						box._kibanKnown = known;
+					}
+					var seen = {};
+					out.textContent = '';
+					area.value.split(/[\s,;]+/).forEach(function (raw) {
+						var e = raw.trim().toLowerCase();
+						if (!e || seen[e]) return;
+						seen[e] = true;
+						var chip = document.createElement('span');
+						var tone = !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e) ? 'bg-[#FDECEC] text-[#B42318] line-through' :
+							known.indexOf(e) !== -1 ? 'bg-[#EAF0FF] text-[#0036C4]' : 'bg-[#F2F4F8] text-[#33406B]';
+						chip.className = 'inline-flex items-center whitespace-nowrap rounded-full px-2 text-xs leading-5 ' + tone;
+						chip.textContent = e;
+						out.appendChild(chip);
+					});
+					out.hidden = !out.childElementCount;
+				}
+				document.addEventListener('input', function (e) {
+					var box = e.target.closest && e.target.closest('[data-kiban-email-chips]');
+					if (box && e.target.matches('textarea')) kibanEmailChips(box);
+				});
+				function kibanEmailChipsInit(root) {
+					(root || document).querySelectorAll('[data-kiban-email-chips]').forEach(kibanEmailChips);
+				}
+				document.addEventListener('DOMContentLoaded', function () { kibanEmailChipsInit(); });
+				document.addEventListener('htmx:afterSettle', function (e) { kibanEmailChipsInit(e.detail && e.detail.elt && e.detail.elt.parentNode); });
+				// La casilla de una fila sólo selecciona: el clic en su celda
+				// ([data-kiban-bulk-cell]) no dispara el hx-get de la fila
+				// (abrir el panel), aunque burbujee hasta el <tr>.
+				document.addEventListener('htmx:confirm', function (e) {
+					var ev = e.detail && e.detail.triggeringEvent;
+					var t = ev && ev.target;
+					if (t && t.closest && t.closest('[data-kiban-bulk-cell]') && e.detail.elt && e.detail.elt.matches && e.detail.elt.matches('tr')) e.preventDefault();
+				});
 				document.addEventListener('change', function (e) {
 					var t = e.target;
 					if (!t.closest) return;
 					var form = t.closest('form');
 					if (!form) return;
 					if (t.matches('[data-kiban-select-all]')) {
-						form.querySelectorAll('input[name=ids]').forEach(function (b) { b.checked = t.checked; });
+						form.querySelectorAll('input[name=ids]:not(:disabled)').forEach(function (b) { b.checked = t.checked; });
 						kibanBulkSync(form);
 					} else if (t.matches('input[name=ids]')) {
 						kibanBulkSync(form);
@@ -2238,7 +2286,7 @@ templ Base(cfg Config) {
 					if (!b) return;
 					var form = b.closest('form');
 					if (!form) return;
-					form.querySelectorAll('input[name=ids]').forEach(function (x) { x.checked = true; });
+					form.querySelectorAll('input[name=ids]:not(:disabled)').forEach(function (x) { x.checked = true; });
 					form.querySelector('[data-kiban-bulk-all]').value = '1';
 					kibanBulkSync(form);
 				});

@@ -57,3 +57,11 @@ type DropzoneOptions struct {
 	Name, Accept, Title, Hint string
 	Required                  bool
 }
+
+// CheckboxCardOptions configura CheckboxCardWith: una opción de una lista de
+// casillas con el mismo Name (grupos, permisos), cada una con su Value.
+type CheckboxCardOptions struct {
+	Name, Value, Title, Help string
+	Checked, Disabled        bool
+	Attrs                    templ.Attributes
+}
