@@ -1,0 +1,30 @@
+package input
+
+import "github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+
+// Chips es una sola opción entre pocas, en píldoras (el mes a reportar, la
+// base de una entrega, los atajos de un periodo). En flamboyant cada opción
+// es una píldora que se pinta azul al marcarla; con el diseño de siempre, una
+// fila de radios con su texto. Error pinta las píldoras en rojo; Disabled
+// las deja a la vista sin poder cambiarlas (y sin que viajen en el form).
+templ Chips(o ChipsOptions) {
+	if flamboyant.On(ctx) {
+		<div class={ "flex flex-wrap gap-2", templ.KV("[&_span]:border-[#F3A6A6]", o.Error) } role="radiogroup" aria-label={ o.Label } data-kiban-chips>
+			for _, c := range o.Options {
+				<label class={ "relative", templ.KV("cursor-pointer", !o.Disabled), templ.KV("cursor-not-allowed", o.Disabled) }>
+					<input type="radio" name={ o.Name } value={ c.Value } checked?={ c.Value == o.Selected && o.Selected != "" } required?={ o.Required } disabled?={ o.Disabled } class="peer pointer-events-none absolute opacity-0" { c.Attrs... }/>
+					<span class="inline-block rounded-full border border-[#CDD3DF] bg-white px-3 py-1.5 text-[13px] text-kiban-ink hover:bg-[#F4F7FF] peer-checked:border-kiban-primary peer-checked:bg-[rgba(0,71,255,0.08)] peer-checked:font-medium peer-checked:text-[#0036C4] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-1 peer-focus-visible:outline-kiban-primary peer-disabled:bg-[#F7F8FA] peer-disabled:text-[#9096A3] peer-disabled:hover:bg-[#F7F8FA] peer-disabled:peer-checked:border-[#CDD3DF] peer-disabled:peer-checked:bg-[#EEF1F6] peer-disabled:peer-checked:text-[#474F66]">{ c.Label }</span>
+				</label>
+			}
+		</div>
+	} else {
+		<div class="flex flex-wrap gap-4" role="radiogroup" aria-label={ o.Label } data-kiban-chips>
+			for _, c := range o.Options {
+				<label class="inline-flex items-center gap-2 text-sm text-kiban-ink">
+					<input type="radio" name={ o.Name } value={ c.Value } checked?={ c.Value == o.Selected && o.Selected != "" } required?={ o.Required } disabled?={ o.Disabled } class="cursor-pointer" { c.Attrs... }/>
+					{ c.Label }
+				</label>
+			}
+		</div>
+	}
+}
