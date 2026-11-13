@@ -52,25 +52,34 @@ templ FormPanel(cfg FormPanelConfig) {
 			</div>
 		</form>
 		if cfg.Guard != nil {
-			<div class="absolute inset-0 z-[5] flex items-center justify-center bg-[rgba(26,32,53,0.3)] p-4 [&[hidden]]:hidden" data-kiban-panel-guard hidden>
-				<div class="w-[min(540px,calc(100%-32px))] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true" aria-labelledby={ cfg.ID + "-guard-title" }>
-					<div class="flex items-start gap-3">
-						<span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#F3EAFF] text-[#6A00D6]">
-							<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-						</span>
-						<div>
-							<h2 id={ cfg.ID + "-guard-title" } class="mb-1.5 mt-[7px] text-base font-medium leading-[22px]">{ cfg.Guard.Title }</h2>
-							<p class="m-0 text-[13px] leading-normal text-[#606875]">{ cfg.Guard.Text }</p>
-						</div>
-					</div>
-					<div class="ml-12 mt-5 flex items-center justify-end gap-2 border-t border-[#E2E5EC] pt-4 max-[520px]:ml-0 max-[520px]:flex-wrap">
-						@button.Button(button.Options{Label: cfg.Guard.Discard, Variant: "danger-outline", ExtraClass: "mr-auto max-[520px]:order-3 max-[520px]:mr-0 max-[520px]:w-full", Attrs: templ.Attributes{"data-kiban-guard-discard": ""}})
-						@button.Button(button.Options{Label: cfg.Guard.Stay, Variant: "secondary", ExtraClass: "max-[520px]:w-full", Attrs: templ.Attributes{"data-kiban-guard-stay": ""}})
-						@button.Button(button.Options{Label: cfg.Guard.SaveClose, Variant: "primary", ExtraClass: "max-[520px]:w-full", Attrs: templ.Attributes{"data-kiban-guard-save": ""}})
-					</div>
+			@panelGuard(cfg.ID, *cfg.Guard)
+		}
+	</div>
+}
+
+// panelGuard es el aviso de cambios sin guardar de FormPanel y ViewPanel:
+// descartar, seguir editando y, si viene SaveClose, guardar y cerrar (envía
+// el form del panel).
+templ panelGuard(id string, g FormPanelGuard) {
+	<div class="absolute inset-0 z-[5] flex items-center justify-center bg-[rgba(26,32,53,0.3)] p-4 [&[hidden]]:hidden" data-kiban-panel-guard hidden>
+		<div class="w-[min(540px,calc(100%-32px))] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true" aria-labelledby={ id + "-guard-title" }>
+			<div class="flex items-start gap-3">
+				<span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#F3EAFF] text-[#6A00D6]">
+					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+				</span>
+				<div>
+					<h2 id={ id + "-guard-title" } class="mb-1.5 mt-[7px] text-base font-medium leading-[22px]">{ g.Title }</h2>
+					<p class="m-0 text-[13px] leading-normal text-[#606875]">{ g.Text }</p>
 				</div>
 			</div>
-		}
+			<div class="ml-12 mt-5 flex items-center justify-end gap-2 border-t border-[#E2E5EC] pt-4 max-[520px]:ml-0 max-[520px]:flex-wrap">
+				@button.Button(button.Options{Label: g.Discard, Variant: "danger-outline", ExtraClass: "mr-auto max-[520px]:order-3 max-[520px]:mr-0 max-[520px]:w-full", Attrs: templ.Attributes{"data-kiban-guard-discard": ""}})
+				@button.Button(button.Options{Label: g.Stay, Variant: "secondary", ExtraClass: "max-[520px]:w-full", Attrs: templ.Attributes{"data-kiban-guard-stay": ""}})
+				if g.SaveClose != "" {
+					@button.Button(button.Options{Label: g.SaveClose, Variant: "primary", ExtraClass: "max-[520px]:w-full", Attrs: templ.Attributes{"data-kiban-guard-save": ""}})
+				}
+			</div>
+		</div>
 	</div>
 }
 
@@ -131,8 +140,10 @@ templ panelHeader(h panelHead) {
 }
 
 // ViewPanel es el panel de consulta flamboyant (la ficha del cliente): mismo
-// encabezado y comportamiento de cierre que FormPanel, sin form ni pie. Se
-// pinta abierto; children es el cuerpo.
+// encabezado y comportamiento de cierre que FormPanel, sin ser un form. Se
+// pinta abierto; children es el cuerpo. Footer (opcional) es el pie; Guard
+// (opcional) pregunta antes de cerrar si se escribió en algún form del
+// cuerpo (un comentario a medias).
 templ ViewPanel(cfg ViewPanelConfig) {
 	<div
 		id={ cfg.ID }
@@ -158,6 +169,14 @@ templ ViewPanel(cfg ViewPanelConfig) {
 			<div class="flex-1 overflow-auto bg-[#F4F7FF] px-6 pb-7 pt-5 max-sm:p-4">
 				{ children... }
 			</div>
+			if cfg.Footer != nil {
+				<div class="flex min-h-[60px] flex-wrap items-center gap-3 border-t border-kiban-border bg-white px-5 py-3">
+					@cfg.Footer
+				</div>
+			}
 		</div>
+		if cfg.Guard != nil {
+			@panelGuard(cfg.ID, *cfg.Guard)
+		}
 	</div>
 }

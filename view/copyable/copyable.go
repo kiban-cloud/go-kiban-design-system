@@ -4,7 +4,8 @@
 //
 // El clic lo atiende base.templ ([data-kiban-copy]): copia al portapapeles y
 // marca el botón con data-copied un momento, que cambia el ícono por una
-// palomita.
+// palomita. Con IDWith{Toast} también muestra el aviso flotante
+// (window.kibanToast, en base.templ).
 package copyable
 
 import (
@@ -19,3 +20,10 @@ import (
 var localesFS embed.FS
 
 var catalog = fsi18n.NewCatalog(localesFS, "locales", language.Spanish, language.English)
+
+// Options configura IDWith. Value es lo que se ve y se copia; Toast, si
+// viene, es el aviso flotante que confirma la copia.
+type Options struct {
+	Value string
+	Toast string
+}

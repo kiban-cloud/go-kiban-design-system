@@ -5,11 +5,13 @@
 package layout
 
 import (
+	"context"
 	"strings"
 
 	"github.com/a-h/templ"
 
 	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 )
 
 // DefaultLogoHref is the destination of the topbar kiban logo in BOTH shells
@@ -367,4 +369,22 @@ func adminUserMenuLabel(u User) string {
 		return u.Name
 	}
 	return u.Email
+}
+
+// adminSwitchTarget es el diseño al que lleva el switch del menú de
+// AdminLayout: al nuevo si hoy se ve el de siempre, y al revés. AdminLayout
+// es el mismo en los dos diseños (lo que cambia son las pantallas), así que
+// el switch sirve para ir y para volver.
+func adminSwitchTarget(ctx context.Context) string {
+	if flamboyant.On(ctx) {
+		return UIClasico
+	}
+	return UIFlamboyant
+}
+
+func adminSwitchLabelKey(ctx context.Context) string {
+	if flamboyant.On(ctx) {
+		return "shell.switch.back"
+	}
+	return "shell.switch.try"
 }

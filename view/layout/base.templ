@@ -113,6 +113,8 @@ templ Base(cfg Config) {
 				   quitarlo (kibanPanelClose pone data-closing). */
 				@keyframes kiban-panel-out { to { transform: translateX(24px); opacity: 0; } }
 				@keyframes kiban-fade-out { to { opacity: 0; } }
+				.kiban-toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 70; max-width: calc(100% - 32px); transform: translate(-50%, 8px); opacity: 0; pointer-events: none; background: #1A2035; color: #fff; font-size: 14px; line-height: 20px; padding: 10px 16px; border-radius: 6px; box-shadow: 0 10px 30px -10px rgba(26,32,53,.5); transition: opacity .15s, transform .15s; }
+				.kiban-toast[data-show] { opacity: 1; transform: translate(-50%, 0); }
 				[data-kiban-panel][data-closing] { pointer-events: none; }
 				[data-kiban-panel][data-closing] > [role=dialog] { animation: kiban-panel-out .16s ease-in forwards; }
 				[data-kiban-panel][data-closing] > [data-kiban-panel-close] { animation: kiban-fade-out .16s ease-in forwards; }
@@ -1790,6 +1792,9 @@ templ Base(cfg Config) {
 				function kibanPanelInit() {
 					var any = false;
 					document.querySelectorAll('[data-kiban-panel]').forEach(function (root) { any = true; kibanPanelRefresh(root); });
+					// Los pasos de una página (sin panel) se numeran igual dentro
+					// de un contenedor [data-kiban-steps].
+					document.querySelectorAll('[data-kiban-steps]').forEach(kibanPanelRefresh);
 					document.documentElement.style.overflow = any ? 'hidden' : '';
 				}
 				function kibanPanelClose(root, force) {
@@ -1890,6 +1895,8 @@ templ Base(cfg Config) {
 				document.addEventListener('htmx:afterSettle', kibanPanelInit);
 				['input', 'change'].forEach(function (type) {
 					document.addEventListener(type, function (e) {
+						var steps = e.target.closest && !e.target.closest('[data-kiban-panel]') && e.target.closest('[data-kiban-steps]');
+						if (steps) { kibanPanelRefresh(steps); return; }
 						var root = e.target.closest && e.target.closest('[data-kiban-panel]');
 						if (!root || !(e.target.form || e.target.tagName === 'FORM')) return;
 						// Un campo sin name (un buscador que sólo filtra) o con
@@ -1938,7 +1945,8 @@ templ Base(cfg Config) {
 					kibanPanelClose(root, false);
 				});
 
-				// input.Dropzone: el nombre y el tamaño del archivo elegido. Con
+				// input.Dropzone: el nombre y el tamaño del archivo elegido (con
+				// varios, cuántos son y sus nombres). Con
 				// data-change (DropzoneOptions.Change) la zona se pinta en verde, el
 				// nombre reemplaza a la invitación y la ayuda dice data-change; con
 				// miniatura ([data-kiban-dropzone-thumb]) una imagen se ve en lugar del
@@ -1973,10 +1981,13 @@ templ Base(cfg Config) {
 						}
 						return;
 					}
+					var files = Array.prototype.slice.call(e.target.files || []);
 					var out = zone.querySelector('[data-kiban-dropzone-file]');
 					if (!out) return;
-					out.textContent = f ? f.name + ' · ' + Math.max(1, Math.round(f.size / 1024)) + ' KB' : '';
-					out.classList.toggle('hidden', !f);
+					var size = function (f) { return f.size >= 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB'; };
+					out.textContent = files.length === 1 ? files[0].name + ' · ' + size(files[0])
+						: files.length > 1 ? files.length + ' · ' + files.map(function (f) { return f.name; }).join(', ') : '';
+					out.classList.toggle('hidden', !files.length);
 				});
 
 				// Confirmación flamboyant de una acción htmx: un botón con
@@ -2399,10 +2410,29 @@ templ Base(cfg Config) {
 					if (!navigator.clipboard) return legacy();
 					return navigator.clipboard.writeText(text).catch(legacy);
 				}
+				// kibanToast: aviso flotante breve abajo al centro, encima de
+				// paneles y diálogos (z 70). Uno a la vez: un aviso nuevo
+				// reemplaza al anterior y reinicia el tiempo.
+				window.kibanToast = function (msg, ms) {
+					var t = document.getElementById('kiban-toast');
+					if (!t) {
+						t = document.createElement('div');
+						t.id = 'kiban-toast';
+						t.className = 'kiban-toast';
+						t.setAttribute('role', 'status');
+						t.setAttribute('aria-live', 'polite');
+						document.body.appendChild(t);
+					}
+					t.textContent = msg;
+					t.setAttribute('data-show', '');
+					clearTimeout(t._kibanHide);
+					t._kibanHide = setTimeout(function () { t.removeAttribute('data-show'); }, ms || 2500);
+				};
 				document.addEventListener('click', function (e) {
 					var btn = e.target.closest && e.target.closest('[data-kiban-copy]');
 					if (!btn) return;
 					kibanCopyText(btn.getAttribute('data-kiban-copy')).then(function () {
+						if (btn.hasAttribute('data-kiban-copy-toast')) window.kibanToast(btn.getAttribute('data-kiban-copy-toast'));
 						if (!btn.hasAttribute('data-copied')) btn._kibanTitle = btn.getAttribute('title');
 						btn.setAttribute('data-copied', '');
 						btn.setAttribute('title', btn.getAttribute('data-kiban-copied-label') || btn._kibanTitle);

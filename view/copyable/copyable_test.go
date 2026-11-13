@@ -54,3 +54,15 @@ func TestLocales_MismasClaves(t *testing.T) {
 	}
 	assert.Equal(t, keys("locales/es.toml"), keys("locales/en.toml"))
 }
+
+func TestIDWith_ToastOpcional(t *testing.T) {
+	var buf bytes.Buffer
+	require.NoError(t, copyable.IDWith(copyable.Options{Value: "abc", Toast: "ID copiado"}).Render(context.Background(), &buf))
+	body := buf.String()
+	assert.Contains(t, body, `data-kiban-copy="abc"`)
+	assert.Contains(t, body, `data-kiban-copy-toast="ID copiado"`)
+
+	buf.Reset()
+	require.NoError(t, copyable.ID("abc").Render(context.Background(), &buf))
+	assert.NotContains(t, buf.String(), "data-kiban-copy-toast", "ID solo no lleva aviso")
+}

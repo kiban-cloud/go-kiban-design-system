@@ -100,6 +100,27 @@ func TestViewPanel_MismoEncabezadoSinFormNiPie(t *testing.T) {
 	assert.Contains(t, body, `data-close-href="/crm/customers"`)
 	assert.NotContains(t, body, "<form")
 	assert.NotContains(t, body, "data-kiban-panel-sum")
+	assert.NotContains(t, body, "data-kiban-panel-guard", "sin Guard no hay aviso")
+	assert.NotContains(t, body, "border-t border-kiban-border bg-white px-5 py-3", "sin Footer no hay pie")
+}
+
+func TestViewPanel_PieYAvisoSinGuardar(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := drawer.ViewPanelConfig{
+		ID: "entrega", Title: "Entrega", Footer: templ.Raw(`<span>Sin pendientes</span>`),
+		Guard: &drawer.FormPanelGuard{Title: "Tienes cambios sin guardar", Text: "Se pierde el comentario.", Discard: "Descartar cambios", Stay: "Seguir editando"},
+	}
+	require.NoError(t, drawer.ViewPanel(cfg).Render(templ.WithChildren(context.Background(), templ.Raw(`<form><textarea></textarea></form>`)), &buf))
+	body := buf.String()
+
+	assert.Contains(t, body, "<span>Sin pendientes</span>")
+	assert.Contains(t, body, "data-kiban-panel-guard")
+	assert.Contains(t, body, `id="entrega-guard-title"`)
+	assert.Contains(t, body, "Tienes cambios sin guardar")
+	assert.Contains(t, body, "Se pierde el comentario.")
+	assert.Contains(t, body, "data-kiban-guard-discard")
+	assert.Contains(t, body, "data-kiban-guard-stay")
+	assert.NotContains(t, body, "data-kiban-guard-save", "sin SaveClose no hay guardar y cerrar")
 }
 
 func TestViewPanel_StandaloneYStatic(t *testing.T) {

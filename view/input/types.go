@@ -32,7 +32,9 @@ type RadioCardOptions struct {
 	Checked                      bool
 	Attrs                        templ.Attributes
 	// Icon y Tone sólo se ven en flamboyant: el ícono va en un cuadro azul
-	// (Tone vacío), verde (Tone "success") o gris (Tone "neutral").
+	// (Tone vacío), verde (Tone "success"), gris (Tone "neutral"), morado
+	// (Tone "purple") o, con Tone "plate", en una placa blanca con borde para
+	// un logo (el de un SIC).
 	Icon templ.Component
 	Tone string
 	// Tags son etiquetas bajo el subtítulo (lo que incluye una plantilla) y
@@ -71,6 +73,8 @@ type DropzoneOptions struct {
 	// verde y el nombre reemplaza a Title. Sin él, el nombre y el tamaño van
 	// debajo, en azul, como siempre.
 	Change string
+	// Multiple deja elegir varios archivos; la zona lista cuántos y cuáles.
+	Multiple bool
 }
 
 // CheckboxCardOptions configura CheckboxCardWith: una opción de una lista de
@@ -79,4 +83,36 @@ type CheckboxCardOptions struct {
 	Name, Value, Title, Help string
 	Checked, Disabled        bool
 	Attrs                    templ.Attributes
+}
+
+// radioCardToneClass es el cuadro del ícono de RadioCardWith según su Tone.
+func radioCardToneClass(tone string) string {
+	switch tone {
+	case "success":
+		return "bg-[#E3FBF5] text-[#007A63]"
+	case "neutral":
+		return "bg-[#F2F2F2] text-[#474747]"
+	case "purple":
+		return "bg-[#F3EAFF] text-[#6A00D6]"
+	case "plate":
+		return "overflow-hidden border border-[#E2E5EC] bg-white p-1 [&_img]:h-full [&_img]:w-full [&_img]:object-contain"
+	}
+	return "bg-[#EAF0FF] text-[#0036C4]"
+}
+
+// ChipsOptions configura Chips. Selected es el Value marcado; Label es el
+// aria-label del grupo. Attrs de cada opción van en su <input>.
+type ChipsOptions struct {
+	Name     string
+	Label    string
+	Options  []ChipOption
+	Selected string
+	Required bool
+	Error    bool
+	Disabled bool
+}
+
+type ChipOption struct {
+	Value, Label string
+	Attrs        templ.Attributes
 }
