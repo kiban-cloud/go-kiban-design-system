@@ -1,0 +1,45 @@
+package card
+
+// PanelSection es una tarjeta blanca con su título dentro del cuerpo de un
+// panel lateral flamboyant (el fondo del panel es gris; cada bloque de datos
+// va en su tarjeta, el .fsp-card del proto). Sin título sólo pinta la
+// tarjeta. Un detail_row.Grid justo debajo del título lleva la línea que los
+// separa. A diferencia de Section, que divide un Card, cada PanelSection es
+// su propia superficie. La estrenaron los paneles de detalle de rekon
+// flamboyant en kiban-proto.
+templ PanelSection(title string) {
+	<section class="rounded-[10px] border border-[#CDD3DF] bg-white p-5 max-sm:p-4" data-kiban-panel-section>
+		if title != "" {
+			<h3 class="m-0 mb-3.5 text-[15px] font-medium leading-5 text-kiban-ink">{ title }</h3>
+		}
+		{ children... }
+	</section>
+}
+
+// Note es un aviso corto dentro de una tarjeta, debajo de sus datos: tone
+// "warning" en ámbar; cualquier otro, informativo en azul. No se cierra (a
+// diferencia de flash.Banner, que va arriba de la pantalla). La estrenaron
+// los paneles de rekon flamboyant en kiban-proto («Se retira todo el saldo»).
+templ Note(tone, text string) {
+	<div class={ "mt-3 rounded-md px-3 py-2 text-xs leading-5", templ.KV("bg-[#EAF0FF] text-[#1A3FA6]", tone != "warning"), templ.KV("bg-[#FFF4E5] text-[#7A3E00]", tone == "warning") } data-kiban-note={ noteTone(tone) }>{ text }</div>
+}
+
+// Callout es el resultado o la aclaración con ícono de una tarjeta de panel
+// (el .fsp-res del proto): «Llegó a tu cuenta principal», «Timbrado el…»,
+// «El timbrado falló». Va debajo de los datos de la tarjeta, o suelto
+// arriba del cuerpo del panel. A diferencia de Note, lleva ícono y cuatro
+// tonos (ver CalloutOptions).
+templ Callout(o CalloutOptions) {
+	<div
+		class={ "flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px] leading-[18px] [[data-kiban-panel-section]_&]:mt-3.5", calloutToneClass(o.Tone) }
+		data-kiban-callout={ calloutTone(o.Tone) }
+		{ o.Attrs... }
+	>
+		if o.Check {
+			<svg class="mt-px h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+		} else {
+			<svg class="mt-px h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+		}
+		<span class="min-w-0">{ o.Text }</span>
+	</div>
+}

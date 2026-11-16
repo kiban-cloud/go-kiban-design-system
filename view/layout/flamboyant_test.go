@@ -15,9 +15,9 @@ import (
 
 	fsi18n "github.com/kiban-cloud/go-kiban-fullstack/pkg/i18n"
 
+	"github.com/kiban-cloud/go-kiban-design-system/view/drawer"
 	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
-	"github.com/kiban-cloud/go-kiban-design-system/view/drawer"
 	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 )
 

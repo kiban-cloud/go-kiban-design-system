@@ -13,9 +13,9 @@ package input
 // HTML). Avoid using this for large multi-line secrets — use a domain-specific
 // wrapper that can also drive autocomplete="off" + placeholder behaviour.
 templ Textarea(name, label, value, errMsg, hint string, required bool, rows int, placeholder string, mono bool) {
-	<div class="space-y-1">
+	<div class={ fieldWrapClass(ctx) }>
 		if label != "" {
-			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+			<label for={ "f-" + name } class={ fieldLabelClass(ctx) }>
 				{ label }
 				if required {
 					<span class="text-red-500 ml-0.5">*</span>
@@ -29,7 +29,7 @@ templ Textarea(name, label, value, errMsg, hint string, required bool, rows int,
 			rows={ rowsAttr(rows) }
 			placeholder={ placeholder }
 			class={
-				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
+				fieldControlClass(ctx),
 				templ.KV("font-mono", mono),
 				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
 				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),

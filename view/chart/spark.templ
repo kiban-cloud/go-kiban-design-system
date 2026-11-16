@@ -1,0 +1,18 @@
+package chart
+
+// Spark es la tendencia chica de una tarjeta: línea con el área tenue debajo
+// y un punto en el último valor, en el color de la pieza. A diferencia de
+// Line, es SVG del servidor, sin Chart.js ni JS: no tiene ejes, leyenda ni
+// tooltip (el eje, si hace falta, lo pone quien la usa). Se estira al ancho
+// de su contenedor; Class da la altura. La estrenó el resumen de rekon
+// flamboyant en kiban-proto (la tendencia de 7 días de cada tarjeta).
+templ Spark(o SparkOptions) {
+	{{ g := sparkPoints(o.Values, o.Width, o.Height) }}
+	if g.Line != "" {
+		<svg class={ "block w-full", o.Class } viewBox={ g.ViewBox } preserveAspectRatio="none" aria-hidden="true" data-kiban-spark>
+			<path d={ g.Area } fill={ o.Color } fill-opacity=".10"></path>
+			<path d={ g.Line } fill="none" stroke={ o.Color } stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+			<circle cx={ g.LastX } cy={ g.LastY } r="3.5" fill={ o.Color } stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"></circle>
+		</svg>
+	}
+}

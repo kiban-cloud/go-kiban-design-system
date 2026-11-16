@@ -12,9 +12,9 @@ package input
 // section header is more prominent than a standard form-field label). Hint
 // renders below the input in muted ink when non-empty.
 templ File(name, label, accept, hint string, required, multiple bool) {
-	<div class="space-y-1">
+	<div class={ fieldWrapClass(ctx) }>
 		if label != "" {
-			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+			<label for={ "f-" + name } class={ fieldLabelClass(ctx) }>
 				{ label }
 				if required {
 					<span class="text-red-500 ml-0.5">*</span>

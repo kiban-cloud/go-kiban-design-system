@@ -57,10 +57,18 @@ templ Base(cfg Config) {
 			<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js" defer></script>
 			<!-- Be Vietnam Pro es la ÚNICA tipografía del sistema de marca kiban
 			     (brand book). Reemplazó a Inter + Manrope, que no eran de marca.
-			     Pesos: 400/500 para copy y UI; 700 reservado a display y wordmark. -->
+			     Pesos: 400/500 para copy y UI; 700 reservado a display y wordmark.
+			     Flamboyant usa además 600 (font-semibold: títulos de tarjeta,
+			     píldoras, antetítulos): sin cargarlo, el navegador lo pinta con
+			     el 700, más ancho, y un título como «Órdenes de pago» se parte
+			     en dos renglones donde la maqueta lo deja en uno. -->
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-			<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet"/>
+			if ShellFlamboyant(ctx) {
+				<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+			} else {
+				<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet"/>
+			}
 			if cfg.LoadChartJS {
 				<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
 			}
@@ -132,6 +140,16 @@ templ Base(cfg Config) {
 				@media (max-width: 1100px) { .kiban-panel-ph[data-half] .kiban-panel-ph-sheet { width: 100vw; } }
 				@media (max-width: 639px) { .kiban-panel-ph-sheet { width: 100vw; } }
 				@media (prefers-reduced-motion: reduce) { [data-kiban-panel] [role=dialog], [data-kiban-panel] > [data-kiban-panel-close], .kiban-panel-ph-sheet { animation: none !important; } }
+				/* hero.Cycle: cada paso entra escalonado (--i es su posición) y,
+				   con Animated, tres destellos recorren la línea del ciclo. Sin
+				   movimiento si el sistema lo pide. */
+				@keyframes kiban-cy-in { from { opacity: 0; transform: translateY(6px) scale(.92); } to { opacity: 1; transform: none; } }
+				@keyframes kiban-cy-flow { from { left: -40px; } to { left: 100%; } }
+				.kiban-cy-in { animation: kiban-cy-in .5s ease-out both; animation-delay: calc(var(--i, 0) * 60ms); }
+				.kiban-cy-flow { position: absolute; top: -1px; width: 40px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, transparent, #00DDB2, #fff); animation: kiban-cy-flow 4.5s linear infinite; }
+				.kiban-cy-flow:nth-child(2) { animation-delay: 1.5s; }
+				.kiban-cy-flow:nth-child(3) { animation-delay: 3s; }
+				@media (prefers-reduced-motion: reduce) { .kiban-cy-in { animation: none; } .kiban-cy-flow { display: none; } }
 				.ds-spinner {
 					width: 32px; height: 32px;
 					border: 3px solid rgba(0, 71, 255, 0.15);
@@ -1393,6 +1411,14 @@ templ Base(cfg Config) {
 								if (el && !el.disabled && !String(el.value || '').trim()) return true;
 							}
 						}
+						// Un campo marcado inválido a propósito (setCustomValidity:
+						// un monto arriba del tope de input.Money, que puede venir de
+						// la opción elegida) tampoco deja enviar.
+						if (typeof kibanMoneySync === 'function') kibanMoneySync(form);
+						var todos = form.elements;
+						for (var m = 0; m < todos.length; m++) {
+							if (!todos[m].disabled && todos[m].validity && todos[m].validity.customError) return true;
+						}
 						return false;
 					}
 					function sincroniza(form) {
@@ -1402,6 +1428,17 @@ templ Base(cfg Config) {
 						// POST) no esperan a los obligatorios: tampoco los valida el navegador.
 						var botones = form.querySelectorAll('button[type=submit]:not([formnovalidate]), input[type=submit]:not([formnovalidate])');
 						for (var i = 0; i < botones.length; i++) botones[i].disabled = falta;
+						// button.Split: la flecha sigue al botón principal; deshabilitada,
+						// su menú se cierra (crear y cerrar, crear y nueva… tampoco se
+						// pueden).
+						var flechas = form.querySelectorAll('[data-kiban-split-trigger]');
+						for (var f = 0; f < flechas.length; f++) {
+							var split = flechas[f].closest('[data-kiban-menu]');
+							var principal = split && split.querySelector('button[type=submit]:not([role=menuitem])');
+							if (!principal) continue;
+							flechas[f].disabled = principal.disabled;
+							if (principal.disabled && flechas[f].getAttribute('aria-expanded') === 'true' && window.kibanCloseMenu) window.kibanCloseMenu(split.getAttribute('data-kiban-menu'));
+						}
 					}
 					function sincronizaTodos(raiz) {
 						var forms = (raiz || document).querySelectorAll('form[data-kiban-submit-requiere-completo]');
@@ -1708,7 +1745,21 @@ templ Base(cfg Config) {
 				// con la página (data-standalone), navega a data-close-href.
 				function kibanFieldFilled(el) {
 					if (el.type === 'checkbox' || el.type === 'radio') return el.checked;
-					return el.value.trim() !== '' && el.checkValidity();
+					if (el.value.trim() === '') return false;
+					if (el.checkValidity()) return true;
+					// Un monto de input.Money arriba de su tope (data-max) ya está
+					// capturado: el paso cuenta como completo, como el proto. El
+					// pie sigue diciendo el error y el botón sigue deshabilitado
+					// (el tope es un setCustomValidity, que sí revisan los dos).
+					return kibanOnlyOverMax(el);
+				}
+				// kibanOnlyOverMax: el campo es un input.Money con tope y su único
+				// error es ese tope (customError); el formato sí cuenta.
+				function kibanOnlyOverMax(el) {
+					if (!el.matches || !el.matches('[data-kiban-money] input[data-max]')) return false;
+					var v = el.validity;
+					if (!v || !v.customError) return false;
+					return !(v.valueMissing || v.typeMismatch || v.patternMismatch || v.tooLong || v.tooShort || v.rangeUnderflow || v.rangeOverflow || v.stepMismatch || v.badInput);
 				}
 				function kibanStepDone(card) {
 					var req = (card.getAttribute('data-kiban-step-required') || '').split(' ').filter(Boolean);
@@ -1752,6 +1803,18 @@ templ Base(cfg Config) {
 					if (!out.length) return '';
 					return (total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ');
 				}
+				// kibanPanelInvalidMessage es el mensaje del primer campo del form
+				// con un error propio (setCustomValidity) que no esté en blanco.
+				function kibanPanelInvalidMessage(form) {
+					var els = form.elements;
+					for (var i = 0; i < els.length; i++) {
+						var el = els[i];
+						if (el.disabled || !el.validity || !el.validity.customError) continue;
+						var msg = String(el.validationMessage || '').trim();
+						if (msg) return msg;
+					}
+					return '';
+				}
 				function kibanPanelRefresh(root) {
 					var n = 0;
 					root.querySelectorAll('[data-kiban-step]').forEach(function (card) {
@@ -1782,9 +1845,16 @@ templ Base(cfg Config) {
 						// Lo que falta cuenta aunque el navegador dé el form por válido:
 						// los obligatorios sin required (input.Password) vienen en From.
 						var missing = kibanPanelMissing(form, sum);
+						if (typeof kibanMoneySync === 'function') kibanMoneySync(form);
 						var ok = form.checkValidity() && !missing;
 						var ready = sum.getAttribute('data-clean') && !root.hasAttribute('data-dirty') ? sum.getAttribute('data-clean') : sum.getAttribute('data-ready');
-						sum.textContent = (ok ? ready : missing || sum.getAttribute('data-pending')) || '';
+						// Sin nada que falte, un campo marcado inválido a propósito
+						// (setCustomValidity con mensaje: un monto arriba del tope de
+						// input.Money) dice su mensaje en el pie, en rojo, en lugar
+						// de data-pending.
+						var invalid = ok || missing ? '' : kibanPanelInvalidMessage(form);
+						sum.textContent = (ok ? ready : missing || invalid || sum.getAttribute('data-pending')) || '';
+						sum.toggleAttribute('data-error', !!invalid);
 					}
 				}
 				function kibanPanelInit() {
@@ -1989,10 +2059,18 @@ templ Base(cfg Config) {
 				// data-kiban-confirm-ok y -cancel. Con un solo elemento se usan
 				// -title-one y -ok-one si vienen. Más de 5 se resumen con
 				// data-kiban-confirm-more («y {n} más»; por defecto «+{n}»).
+				// Por defecto es la confirmación de borrar (bote de basura,
+				// botón rojo); data-kiban-confirm-tone="info" es la de una
+				// acción que no destruye nada (retirar, generar llaves): ícono
+				// de aviso morado, botón azul y el foco en confirmar.
+				// data-kiban-confirm-strong pone en negritas ese pedazo del
+				// texto (el nombre del medio en «Se transfiere todo el saldo
+				// de SPEI by kiban…»).
 				document.addEventListener('htmx:confirm', function (e) {
 					var btn = e.detail && e.detail.elt;
 					if (!btn || !btn.getAttribute || !btn.getAttribute('data-kiban-confirm-title')) return;
 					e.preventDefault();
+					var info = btn.getAttribute('data-kiban-confirm-tone') === 'info';
 					var names = [];
 					var listName = btn.getAttribute('data-kiban-confirm-list');
 					if (listName && btn.form) {
@@ -2008,11 +2086,24 @@ templ Base(cfg Config) {
 					var wrap = document.createElement('div');
 					wrap.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(26,32,53,0.3)] p-4';
 					wrap.innerHTML = '<div class="w-[min(480px,100%)] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true">' +
-						'<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#FDECEC] text-[#B42318]"><svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></span>' +
+						(info
+							? '<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#F3EAFF] text-[#6A00D6]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>'
+							: '<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#FDECEC] text-[#B42318]"><svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></span>') +
 						'<div class="min-w-0"><h2 class="mb-1.5 mt-[7px] text-base font-medium leading-[22px] text-kiban-ink" data-t></h2><p class="m-0 text-[13px] leading-normal text-[#606875]" data-p></p><ul class="mb-0 mt-2.5 list-disc pl-[18px] text-[13px] text-[#474F66] [&>li]:my-0.5" data-l></ul></div></div>' +
-						'<div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-kiban-border pt-4"><button type="button" class="rounded-md border border-[#CDD3DF] bg-white px-3 py-[7px] text-[13px] font-medium text-kiban-ink hover:bg-[#F4F7FF]" data-no></button><button type="button" class="rounded-md border border-[#D92D20] bg-[#D92D20] px-3 py-[7px] text-[13px] font-medium text-white hover:bg-[#B42318]" data-yes></button></div></div>';
+						'<div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-kiban-border pt-4"><button type="button" class="rounded-md border border-[#CDD3DF] bg-white px-3 py-[7px] text-[13px] font-medium text-kiban-ink hover:bg-[#F4F7FF]" data-no></button><button type="button" class="' + (info ? 'rounded-md border border-kiban-primary bg-kiban-primary px-3 py-[7px] text-[13px] font-medium text-white hover:opacity-90' : 'rounded-md border border-[#D92D20] bg-[#D92D20] px-3 py-[7px] text-[13px] font-medium text-white hover:bg-[#B42318]') + '" data-yes></button></div></div>';
 					wrap.querySelector('[data-t]').textContent = title;
-					wrap.querySelector('[data-p]').textContent = btn.getAttribute('data-kiban-confirm-text') || '';
+					var ptext = btn.getAttribute('data-kiban-confirm-text') || '';
+					var strong = btn.getAttribute('data-kiban-confirm-strong') || '';
+					var pel = wrap.querySelector('[data-p]');
+					var at = strong ? ptext.indexOf(strong) : -1;
+					if (at === -1) {
+						pel.textContent = ptext;
+					} else {
+						var sb = document.createElement('b');
+						sb.className = 'font-semibold text-kiban-ink';
+						sb.textContent = strong;
+						pel.append(ptext.slice(0, at), sb, ptext.slice(at + strong.length));
+					}
 					var ul = wrap.querySelector('[data-l]');
 					names.slice(0, 5).forEach(function (n) { var li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
 					if (count > 5) { var more = document.createElement('li'); more.textContent = (btn.getAttribute('data-kiban-confirm-more') || '+{n}').replace('{n}', count - 5); ul.appendChild(more); }
@@ -2020,7 +2111,7 @@ templ Base(cfg Config) {
 					wrap.querySelector('[data-no]').textContent = btn.getAttribute('data-kiban-confirm-cancel') || 'Cancel';
 					wrap.querySelector('[data-yes]').textContent = ok;
 					document.body.appendChild(wrap);
-					wrap.querySelector('[data-no]').focus();
+					wrap.querySelector(info ? '[data-yes]' : '[data-no]').focus();
 					var close = function () { wrap.remove(); document.removeEventListener('keydown', esc, true); };
 					var esc = function (ev) { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
 					document.addEventListener('keydown', esc, true);
@@ -2032,7 +2123,7 @@ templ Base(cfg Config) {
 
 				// filterbar.Bar: cada [data-kiban-filter] es un <details> con
 				// casillas o radios. Al cambiar, se rearma el texto de su
-				// píldora («Tipo», «Tipo: Moral», «Tipo · 2»), se marca
+				// píldora («Tipo», «Tipo: Moral», «Tipo: 2 seleccionados»), se marca
 				// data-on y se muestra u oculta el enlace de limpiar. Un radio
 				// cierra su menú; un clic fuera o Escape cierra todos.
 				function kibanFilterSync(d) {
@@ -2049,8 +2140,9 @@ templ Base(cfg Config) {
 						} else {
 							var b = document.createElement('b');
 							b.className = 'font-semibold';
-							b.textContent = vals.length === 1 ? vals[0] : '· ' + vals.length;
-							txt.appendChild(document.createTextNode(vals.length === 1 ? label + ': ' : label + ' '));
+							var many = (d.getAttribute('data-many') || '{n} seleccionados').split('{n}').join(vals.length);
+							b.textContent = vals.length === 1 ? vals[0] : many;
+							txt.appendChild(document.createTextNode(label + ': '));
 							txt.appendChild(b);
 						}
 					}
@@ -2413,6 +2505,93 @@ templ Base(cfg Config) {
 						}, 1500);
 					});
 				});
+
+				// input.Picker: el buscador ([data-kiban-picker-q]) esconde las
+				// tarjetas cuyo data-q no tiene lo escrito (sin mayúsculas ni
+				// acentos), nunca la elegida, y muestra [data-kiban-picker-empty]
+				// si no queda ninguna. Enter en el buscador no envía el form. Una
+				// lista recién pintada (al abrir, o repintada por htmx) se
+				// desplaza hasta la elegida, como el proto.
+				// input.Money con tope (data-max): un monto mayor deja el campo
+				// inválido con data-max-error, así el pie de un FormPanel lo
+				// cuenta y no deja enviar. Corre en captura, antes que el pie.
+				function kibanPickerNorm(s) {
+					return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+				}
+				function kibanPickerFilter(box) {
+					var q = box.querySelector('[data-kiban-picker-q]');
+					var term = q ? kibanPickerNorm(q.value.trim()) : '';
+					var any = false;
+					box.querySelectorAll('[data-kiban-picker-item]').forEach(function (it) {
+						var radio = it.querySelector('input');
+						var show = !term || kibanPickerNorm(it.getAttribute('data-q')).indexOf(term) !== -1 || (radio && radio.checked);
+						it.hidden = !show;
+						if (show) any = true;
+					});
+					var empty = box.querySelector('[data-kiban-picker-empty]');
+					if (empty) empty.hidden = any;
+				}
+				function kibanMoneyCheck(el) {
+					var max = parseFloat(el.getAttribute('data-max'));
+					var n = parseFloat(String(el.value).replace(/,/g, ''));
+					el.setCustomValidity(!isNaN(max) && n > max ? (el.getAttribute('data-max-error') || ' ') : '');
+				}
+				// Tope del monto según la opción elegida: un radio con
+				// data-kiban-money-max-for (el name del input.Money),
+				// data-kiban-money-max y data-kiban-money-max-error le pone ese
+				// tope al monto mientras está marcado (OXXO Pay, hasta $10,000).
+				// Marcar otra opción lo quita y vuelve el tope propio del campo
+				// (MoneyOptions.Max), si tenía. Luego revisa cada monto con tope.
+				// La llaman el pie del FormPanel y el botón de enviar antes de
+				// leer la validez, así no dependen del orden de los listeners.
+				function kibanMoneySync(scope) {
+					scope = scope || document;
+					var radios = scope.querySelectorAll('input[type=radio][data-kiban-money-max-for]');
+					var names = {};
+					radios.forEach(function (r) { names[r.getAttribute('data-kiban-money-max-for')] = true; });
+					Object.keys(names).forEach(function (name) {
+						var el = scope.querySelector('[data-kiban-money] input[name="' + name + '"]');
+						if (!el) return;
+						if (!el._kibanMoneyBase) el._kibanMoneyBase = { max: el.getAttribute('data-max'), err: el.getAttribute('data-max-error') };
+						var on = null;
+						radios.forEach(function (r) { if (r.checked && !r.disabled && r.getAttribute('data-kiban-money-max-for') === name) on = r; });
+						var max = on ? on.getAttribute('data-kiban-money-max') : el._kibanMoneyBase.max;
+						var err = on ? on.getAttribute('data-kiban-money-max-error') : el._kibanMoneyBase.err;
+						if (max) el.setAttribute('data-max', max); else el.removeAttribute('data-max');
+						if (err) el.setAttribute('data-max-error', err); else el.removeAttribute('data-max-error');
+						if (!max) el.setCustomValidity('');
+					});
+					scope.querySelectorAll('[data-kiban-money] input[data-max]').forEach(kibanMoneyCheck);
+				}
+				function kibanPickerInit() {
+					document.querySelectorAll('[data-kiban-picker-list]').forEach(function (list) {
+						if (list._kibanSeen) return;
+						list._kibanSeen = true;
+						var on = list.querySelector('input:checked');
+						var item = on && on.closest('[data-kiban-picker-item]');
+						if (item && (item.offsetTop < list.scrollTop || item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight)) list.scrollTop = item.offsetTop - 4;
+					});
+					kibanMoneySync(document);
+				}
+				document.addEventListener('input', function (e) {
+					if (!e.target.closest) return;
+					var q = e.target.closest('[data-kiban-picker-q]');
+					if (q) kibanPickerFilter(q.closest('[data-kiban-picker]'));
+					if (e.target.matches('[data-kiban-money] input[data-max]')) kibanMoneyCheck(e.target);
+				}, true);
+				// Un radio que cambia puede poner o quitar el tope de un monto:
+				// también en captura, antes que el pie y el botón de enviar.
+				['input', 'change'].forEach(function (type) {
+					document.addEventListener(type, function (e) {
+						var t = e.target;
+						if (t && t.type === 'radio' && t.form && t.form.querySelector('input[type=radio][data-kiban-money-max-for]')) kibanMoneySync(t.form);
+					}, true);
+				});
+				document.addEventListener('keydown', function (e) {
+					if (e.key === 'Enter' && e.target.closest && e.target.closest('[data-kiban-picker-q]')) e.preventDefault();
+				});
+				document.addEventListener('DOMContentLoaded', kibanPickerInit);
+				document.addEventListener('htmx:afterSettle', kibanPickerInit);
 
 				// flash.Banner — click-to-dismiss. Each banner carries
 				// [data-kiban-flash] and its × button carries
@@ -3137,6 +3316,124 @@ templ Base(cfg Config) {
 						send(r);
 					});
 				})();
+			</script>
+			<script>
+				// ---- input.Chips ([data-kiban-chips]) ----------------------------
+				// Bloque propio: una lista de valores (correos) como chips con ×
+				// y un campo en la misma caja para agregar otro. Enter, coma,
+				// punto y coma o salir del campo agregan lo escrito (pegar varios
+				// separados también); × o Retroceso con el campo vacío quitan.
+				// Los valores viajan en el hidden [data-kiban-chips-value], uno
+				// por renglón, y cada cambio le dispara un input para que el form
+				// se entere (data-kiban-dirty-form). Con data-kiban-chips="email"
+				// el chip sin forma de correo se pinta rojo (data-bad); la
+				// validación de verdad la hace el servidor.
+				(function () {
+					var reEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+					function chipsValues(box) {
+						return Array.prototype.map.call(box.querySelectorAll('[data-kiban-chips-box] [data-kiban-chip]'), function (c) { return c.getAttribute('data-kiban-chip'); });
+					}
+					function chipsSync(box) {
+						var vals = chipsValues(box);
+						var hidden = box.querySelector('[data-kiban-chips-value]');
+						var input = box.querySelector('[data-kiban-chips-input]');
+						if (input) input.placeholder = (vals.length ? box.getAttribute('data-add-placeholder') : box.getAttribute('data-placeholder')) || '';
+						if (!hidden || hidden.value === vals.join('\n')) return;
+						hidden.value = vals.join('\n');
+						hidden.dispatchEvent(new Event('input', { bubbles: true }));
+						hidden.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+					function chipsAdd(box, text) {
+						var input = box.querySelector('[data-kiban-chips-input]');
+						var tpl = box.querySelector('template[data-kiban-chips-tpl]');
+						if (!input || !tpl) return;
+						var have = chipsValues(box).map(function (v) { return v.toLowerCase(); });
+						text.split(/[\s,;]+/).forEach(function (raw) {
+							var v = raw.trim();
+							if (!v || have.indexOf(v.toLowerCase()) !== -1) return;
+							have.push(v.toLowerCase());
+							var chip = tpl.content.firstElementChild.cloneNode(true);
+							chip.setAttribute('data-kiban-chip', v);
+							chip.querySelector('[data-kiban-chip-label]').textContent = v;
+							var rm = chip.querySelector('[data-kiban-chips-remove]');
+							if (rm) rm.setAttribute('aria-label', (box.getAttribute('data-remove-label') || 'Quitar') + ' ' + v);
+							if (box.getAttribute('data-kiban-chips') === 'email' && !reEmail.test(v)) {
+								chip.setAttribute('data-bad', '');
+								if (box.getAttribute('data-invalid-title')) chip.title = box.getAttribute('data-invalid-title');
+							}
+							input.parentNode.insertBefore(chip, input);
+						});
+						input.value = '';
+						chipsSync(box);
+					}
+					document.addEventListener('keydown', function (e) {
+						var input = e.target.closest && e.target.closest('[data-kiban-chips-input]');
+						if (!input) return;
+						var box = input.closest('[data-kiban-chips]');
+						if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+							if (e.key === 'Enter' && !input.value.trim()) return;
+							e.preventDefault();
+							chipsAdd(box, input.value);
+						} else if (e.key === 'Backspace' && !input.value) {
+							var all = box.querySelectorAll('[data-kiban-chips-box] [data-kiban-chip]');
+							if (all.length) { all[all.length - 1].remove(); chipsSync(box); }
+						}
+					});
+					document.addEventListener('input', function (e) {
+						var input = e.target.closest && e.target.closest('[data-kiban-chips-input]');
+						if (!input || !/[\s,;]/.test(input.value)) return;
+						var parts = input.value.split(/[\s,;]+/);
+						var rest = /[\s,;]$/.test(input.value) ? '' : parts.pop();
+						chipsAdd(input.closest('[data-kiban-chips]'), parts.join(' '));
+						input.value = rest;
+					});
+					document.addEventListener('focusout', function (e) {
+						var input = e.target.closest && e.target.closest('[data-kiban-chips-input]');
+						if (input && input.value.trim()) chipsAdd(input.closest('[data-kiban-chips]'), input.value);
+					});
+					document.addEventListener('click', function (e) {
+						var rm = e.target.closest && e.target.closest('[data-kiban-chips-remove]');
+						if (!rm) return;
+						var box = rm.closest('[data-kiban-chips]');
+						var chip = rm.closest('[data-kiban-chip]');
+						if (!box || !chip) return;
+						e.preventDefault();
+						chip.remove();
+						chipsSync(box);
+						var input = box.querySelector('[data-kiban-chips-input]');
+						if (input) input.focus();
+					});
+				})();
+				// ---- fin input.Chips ---------------------------------------------
+
+				// ---- Ubicación (data-kiban-geo) ---------------------------------
+				// Un botón o form htmx con data-kiban-geo manda la ubicación del
+				// navegador (latitude, longitude; otros nombres con
+				// data-kiban-geo-lat / -lng), que piden algunos movimientos de
+				// dinero (retiros, dispersiones). Se pide al cargar la página
+				// (o al llegar por htmx) para tenerla antes del clic; si el
+				// usuario no la da, el request sale sin ella y el servidor dice
+				// qué falta.
+				(function () {
+					var pos = null, asked = false;
+					function ask() {
+						if (asked || pos || !navigator.geolocation || !document.querySelector('[data-kiban-geo]')) return;
+						asked = true;
+						navigator.geolocation.getCurrentPosition(function (p) {
+							pos = { lat: String(p.coords.latitude), lng: String(p.coords.longitude) };
+						}, function () { asked = false; }, { timeout: 10000, maximumAge: 600000 });
+					}
+					document.addEventListener('DOMContentLoaded', ask);
+					document.body.addEventListener('htmx:afterSettle', ask);
+					document.body.addEventListener('htmx:configRequest', function (evt) {
+						var elt = evt.detail && evt.detail.elt;
+						var geo = elt && elt.closest && elt.closest('[data-kiban-geo]');
+						if (!geo || !pos) return;
+						evt.detail.parameters[geo.getAttribute('data-kiban-geo-lat') || 'latitude'] = pos.lat;
+						evt.detail.parameters[geo.getAttribute('data-kiban-geo-lng') || 'longitude'] = pos.lng;
+					});
+				})();
+				// ---- fin ubicación ----------------------------------------------
 			</script>
 			if cfg.LoadChartJS {
 				@chart.Init()

@@ -130,6 +130,11 @@ var fsIcons = map[string]string{
 	"arrow-up-right":   `<path d="M7 7h10v10"/><path d="M7 17 17 7"/>`,
 	"settings":         `<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>`,
 	"file-text":        `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>`,
+	// Los del resumen de rekon flamboyant (ciclo del dinero y tarjetas).
+	"clock":         `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+	"download":      `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>`,
+	"send":          `<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`,
+	"chevron-right": `<polyline points="9 18 15 12 9 6"/>`,
 }
 
 // FlamboyantIcon devuelve el ícono Lucide del shell (trazo 1.5) por su nombre
@@ -204,6 +209,12 @@ func moduleTileStyle(key string, size int, dim bool) string {
 		bg = fg + "1F"
 	}
 	return "width:" + px + ";height:" + px + ";background:" + bg + ";color:" + fg
+}
+
+// iconTileStyle es el tamaño del cuadro de IconTile.
+func iconTileStyle(size int) string {
+	px := strconv.Itoa(size) + "px"
+	return "width:" + px + ";height:" + px
 }
 
 func moduleIcon(key string) string {
@@ -401,4 +412,24 @@ func FlamboyantFecha(ctx context.Context, t time.Time, conHora bool) string {
 		s += " " + t.Format("15:04")
 	}
 	return s
+}
+
+// InboxToggleAttrs son los atributos que abren y cierran el panel
+// «Pendientes» del shell flamboyant desde cualquier botón de la página (el
+// «27 por revisar» del hero de un inicio), igual que el botón de la campana
+// del menú: lo atiende flamboyant/shell.js y htmx carga la lista.
+// notificationsBaseURL vacío usa DefaultNotificationsBaseURL.
+func InboxToggleAttrs(notificationsBaseURL string) templ.Attributes {
+	base := notificationsBaseURL
+	if base == "" {
+		base = DefaultNotificationsBaseURL
+	}
+	return templ.Attributes{
+		"data-fs-inbox-toggle": "",
+		"aria-controls":        "fs-inbox",
+		"hx-get":               base + "/dropdown",
+		"hx-target":            "#fs-inbox-list",
+		"hx-swap":              "innerHTML",
+		"hx-trigger":           "click",
+	}
 }

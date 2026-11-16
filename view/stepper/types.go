@@ -6,9 +6,9 @@
 //
 // Visual contract:
 //   - dot variant by status:
-//       "complete"   → emerald background, checkmark icon
-//       "active"     → kiban-primary tinted background, kiban-primary border + number
-//       "incomplete" → surface background, ink-4 border + number
+//     "complete"   → emerald background, checkmark icon
+//     "active"     → kiban-primary tinted background, kiban-primary border + number
+//     "incomplete" → surface background, ink-4 border + number
 //   - connector colour matches the *preceding* stage's status, so
 //     "complete → incomplete" draws the line in emerald and
 //     "incomplete → anything" draws it in border-grey.

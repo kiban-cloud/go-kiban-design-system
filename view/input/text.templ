@@ -8,9 +8,9 @@ package input
 // errMsg is non-empty, so the error state is visible both at rest and on
 // focus. Pass hint="" to omit the helper text entirely.
 templ Text(name, label, value, errMsg, hint string, required bool) {
-	<div class="space-y-1">
+	<div class={ fieldWrapClass(ctx) }>
 		if label != "" {
-			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+			<label for={ "f-" + name } class={ fieldLabelClass(ctx) }>
 				{ label }
 				if required {
 					<span class="text-red-500 ml-0.5">*</span>
@@ -24,7 +24,7 @@ templ Text(name, label, value, errMsg, hint string, required bool) {
 			value={ value }
 			required?={ required }
 			class={
-				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
+				fieldControlClass(ctx),
 				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
 				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
 			}

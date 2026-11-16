@@ -1,0 +1,57 @@
+package detail_row
+
+// Grid son los datos de un panel flamboyant en tres columnas (una en móvil):
+// la etiqueta chica en mayúsculas grises arriba y el valor abajo, Mono en
+// monoespaciado. Los datos sin valor no se muestran. A diferencia de List
+// (etiqueta a la izquierda) y Columns (columnas con antetítulo a todo el
+// ancho), va dentro de una tarjeta (card.PanelSection): si sigue al título
+// de la tarjeta, lleva una línea arriba que lo separa (el .fsp-meta del
+// proto). La estrenaron los paneles de detalle de rekon flamboyant en
+// kiban-proto (pago, orden, retiro, dispersión). Es GridWith con sus valores
+// por omisión.
+templ Grid(items []GridItem) {
+	@GridWith(GridOptions{Items: items})
+}
+
+// GridWith es Grid con opciones (ver GridOptions): dos columnas, la
+// etiqueta como la de un campo de formulario y una raya en los datos sin
+// valor, para los datos de sólo lectura que van entre formularios (los
+// centros de costo de STP en el panel del método).
+templ GridWith(o GridOptions) {
+	<dl
+		class={
+			"m-0 grid max-sm:grid-cols-1 [h3+&]:border-t [h3+&]:border-[#E2E5EC] [h3+&]:pt-3.5",
+			templ.KV("grid-cols-2", o.Cols == 2),
+			templ.KV("grid-cols-3", o.Cols != 2),
+			templ.KV("gap-3", !o.FieldLabels),
+			templ.KV("gap-x-3.5 gap-y-3", o.FieldLabels),
+		}
+		data-kiban-detail-grid
+	>
+		for _, it := range o.Items {
+			if it.Value != "" || o.Empty != "" {
+				<div class={ "min-w-0", templ.KV("flex flex-col gap-[5px]", o.FieldLabels) }>
+					if o.FieldLabels {
+						<dt class="text-xs font-medium leading-[18px] text-[#474F66]">{ it.Label }</dt>
+					} else {
+						<dt class="text-[11px] font-semibold uppercase leading-4 tracking-[.05em] text-[#9096A3]">{ it.Label }</dt>
+					}
+					<dd
+						class={
+							"m-0 text-kiban-ink [overflow-wrap:anywhere]",
+							templ.KV("mt-0.5 text-[13px] leading-5", !o.FieldLabels),
+							templ.KV("text-xs leading-5", o.FieldLabels),
+							templ.KV("font-mono text-xs", it.Mono),
+						}
+					>
+						if it.Value != "" {
+							{ it.Value }
+						} else {
+							{ o.Empty }
+						}
+					</dd>
+				</div>
+			}
+		}
+	</dl>
+}

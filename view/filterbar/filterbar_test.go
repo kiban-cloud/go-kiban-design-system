@@ -68,7 +68,7 @@ func TestBar_VariasOpciones(t *testing.T) {
 	c := cfg()
 	c.Filters[0].Options[0].Selected = true
 	c.Filters[0].Options[1].Selected = true
-	assert.Contains(t, render(t, filterbar.Bar(c)), `Tipo <b class="font-semibold">· 2</b>`)
+	assert.Contains(t, render(t, filterbar.Bar(c)), `Tipo: <b class="font-semibold">2 seleccionados</b>`)
 }
 
 func TestBar_BusquedaActivaMuestraLimpiar(t *testing.T) {
@@ -203,4 +203,29 @@ func TestBar_NotaVacioYPista(t *testing.T) {
 func TestBar_LosMenusSeMarcanParaAcomodarseEnLaPantalla(t *testing.T) {
 	assert.Contains(t, render(t, filterbar.Bar(cfg())), `<div data-kiban-filter-menu class="absolute left-0`)
 	assert.Contains(t, render(t, filterbar.Bar(numCfg("", "", ""))), `data-kiban-filter-menu class="absolute left-0`)
+}
+
+// ManySelected cambia el texto de varias opciones marcadas; el navegador lo
+// recibe sin poner el número en data-many.
+func TestBar_VariasOpcionesConTextoPropio(t *testing.T) {
+	c := cfg()
+	c.ManySelected = "{n} tipos"
+	c.Filters[0].Options[0].Selected = true
+	c.Filters[0].Options[1].Selected = true
+	body := render(t, filterbar.Bar(c))
+
+	assert.Contains(t, body, `Tipo: <b class="font-semibold">2 tipos</b>`)
+	assert.Contains(t, body, `data-many="{n} tipos"`)
+}
+
+func TestBar_DataManyPorDefecto(t *testing.T) {
+	body := render(t, filterbar.Bar(cfg()))
+	assert.Contains(t, body, `data-kiban-filter="type" data-label="Tipo" data-many="{n} seleccionados"`)
+}
+
+// Los errores (4xx/5xx) de filtrar se pintan en el mismo destino que la lista.
+func TestBar_ErroresAlMismoDestino(t *testing.T) {
+	body := render(t, filterbar.Bar(cfg()))
+	assert.Contains(t, body, `hx-target-4xx="#lista"`)
+	assert.Contains(t, body, `hx-target-5xx="#lista"`)
 }

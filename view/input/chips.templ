@@ -1,0 +1,85 @@
+package input
+
+// Chips es un campo de lista de valores como chips: cada valor es una
+// píldora azul con su × y, en la misma caja, un campo «Agregar otro correo».
+// Enter, coma, punto y coma o salir del campo agregan lo escrito (pegar una
+// lista también); × o Retroceso con el campo vacío quitan. Lo de
+// interacción vive en el runtime del design system (layout/base.templ,
+// [data-kiban-chips]); sin JS se ven los chips guardados y el campo, pero
+// no se agregan.
+//
+// Al form llega un solo campo, Name, con los valores uno por renglón: el
+// mismo formato que un textarea de correos, así el handler no cambia. El
+// campo de texto no tiene name; si el usuario guarda con algo escrito, al
+// salir del campo se vuelve chip antes de mandar.
+templ Chips(o ChipsOptions) {
+	<div
+		class={ fieldWrapClass(ctx) }
+		data-kiban-chips={ o.Type }
+		data-placeholder={ o.Placeholder }
+		data-add-placeholder={ o.addPlaceholder() }
+		data-remove-label={ o.removeLabel() }
+		data-invalid-title={ o.InvalidTitle }
+	>
+		if o.Label != "" {
+			<label for={ o.id() } class={ fieldLabelClass(ctx) }>
+				{ o.Label }
+				if o.Required {
+					<span class="ml-0.5 text-red-500">*</span>
+				}
+			</label>
+		}
+		<input type="hidden" name={ o.Name } value={ o.joined() } data-kiban-chips-value/>
+		<label
+			for={ o.id() }
+			class={
+				"flex min-h-[44px] cursor-text flex-wrap items-center gap-1.5 rounded-lg border bg-white p-1.5",
+				templ.KV("border-[#CDD3DF] focus-within:border-kiban-primary", o.Error == ""),
+				templ.KV("border-red-400 focus-within:border-red-500", o.Error != ""),
+			}
+			data-kiban-chips-box
+		>
+			for _, v := range o.Values {
+				@chipsItem(o, v)
+			}
+			<input
+				id={ o.id() }
+				type="text"
+				inputmode={ o.inputMode() }
+				autocomplete={ o.autocomplete() }
+				placeholder={ o.placeholder() }
+				if o.ariaLabel() != "" {
+					aria-label={ o.ariaLabel() }
+				}
+				class="min-w-[160px] flex-1 border-0 bg-transparent p-1 text-sm text-kiban-ink outline-none focus:outline-none focus:ring-0"
+				data-kiban-chips-input
+			/>
+		</label>
+		<template data-kiban-chips-tpl>
+			@chipsItem(o, "")
+		</template>
+		if o.Error != "" {
+			<div class="text-xs text-red-600">{ o.Error }</div>
+		} else if o.Hint != "" {
+			<div class="text-xs text-kiban-ink3">{ o.Hint }</div>
+		}
+	</div>
+}
+
+// chipsItem es un chip: azul, o rojo (data-bad) si no es un correo válido.
+// Con v vacío es el molde que clona el navegador.
+templ chipsItem(o ChipsOptions, v string) {
+	<span
+		class="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#EAF0FF] py-1 pl-2.5 pr-1.5 text-[13px] leading-5 text-[#0036C4] data-[bad]:bg-[#FDECEC] data-[bad]:text-[#B42318]"
+		data-kiban-chip={ v }
+		data-bad?={ v != "" && o.bad(v) }
+		if v != "" && o.bad(v) && o.InvalidTitle != "" {
+			title={ o.InvalidTitle }
+		}
+	>
+		<span class="min-w-0 break-all" data-kiban-chip-label>{ v }</span>
+		<button type="button" class="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-current hover:bg-black/[.08]" aria-label={ o.removeLabel() + " " + v } data-kiban-chips-remove>
+			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+		</button>
+	</span>
+}

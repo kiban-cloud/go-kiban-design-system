@@ -42,6 +42,11 @@ type Config struct {
 	// (se ve con algo marcado). Vacíos, el menú no lleva pie.
 	MenuSelectAll string
 	MenuClear     string
+
+	// ManySelected es el texto de la píldora con más de una opción marcada,
+	// con {n} el número: «Estatus: 2 seleccionados». Vacío, «{n}
+	// seleccionados». Con una sola opción la píldora dice cuál.
+	ManySelected string
 }
 
 type Search struct {
@@ -282,4 +287,18 @@ func groupNum(s string) string {
 		out = "-" + out
 	}
 	return out
+}
+
+// manyTemplate es el texto de varias opciones marcadas, con {n} sin poner
+// (lo usa también el navegador, en data-many).
+func (c Config) manyTemplate() string {
+	if c.ManySelected != "" {
+		return c.ManySelected
+	}
+	return "{n} seleccionados"
+}
+
+// manySelected es ese texto con el número: «2 seleccionados».
+func (c Config) manySelected(n int) string {
+	return strings.ReplaceAll(c.manyTemplate(), "{n}", strconv.Itoa(n))
 }
