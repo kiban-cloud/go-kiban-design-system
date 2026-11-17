@@ -91,3 +91,14 @@ func TestCheckboxCardWith(t *testing.T) {
 	assert.Contains(t, clasico, `value="g1"`, "el diseño de siempre también manda su valor")
 	assert.Contains(t, clasico, "border-kiban-border rounded-md")
 }
+
+func TestToggleWith_FlamboyantHabilitadoMarcadoSinAyuda(t *testing.T) {
+	body := renderIn(t, flamCtx, input.ToggleWith(input.ToggleOptions{Name: "isSTP", Label: "STP", Value: true, Enabled: true, Attrs: templ.Attributes{"hx-post": "/x"}}))
+
+	assert.Contains(t, body, `name="isSTP" value="true" checked`)
+	assert.NotContains(t, body, " disabled")
+	assert.Contains(t, body, "cursor-pointer")
+	assert.Contains(t, body, "text-kiban-ink", "el label encendido")
+	assert.NotContains(t, body, "<small", "sin Hint no hay ayuda")
+	assert.Contains(t, body, `hx-post="/x"`)
+}

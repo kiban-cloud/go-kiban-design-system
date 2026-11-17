@@ -41,3 +41,27 @@ type Field struct {
 	Text  string
 	Value templ.Component
 }
+
+// GridItem es un dato de Grid. Mono lo pinta en monoespaciado (CLABE, claves
+// de rastreo, ids). Un Value vacío no se muestra.
+type GridItem struct {
+	Label string
+	Value string
+	Mono  bool
+}
+
+// GridOptions configura GridWith. Sin nada más que Items es Grid.
+type GridOptions struct {
+	Items []GridItem
+	// Cols son las columnas desde sm: 2, o 3 con cualquier otro valor (0
+	// incluido), como Grid. En móvil siempre una.
+	Cols int
+	// FieldLabels pinta la etiqueta como la de un campo de formulario (12 px,
+	// gris oscuro, sin mayúsculas) y el valor a 12 px: datos de sólo lectura
+	// junto a formularios, como el .fsp-fld del proto. Sin él, la etiqueta
+	// chica en mayúsculas grises de Grid.
+	FieldLabels bool
+	// Empty, si viene, se muestra en lugar de un valor vacío (una raya), así
+	// la rejilla no se descuadra. Vacío: los datos sin valor no se muestran.
+	Empty string
+}

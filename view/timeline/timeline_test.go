@@ -64,7 +64,7 @@ func TestTimeline_EmptyDateHidesDateColumn(t *testing.T) {
 // colour table so a refactor doesn't accidentally drop one.
 func TestTimeline_KindToDotClass(t *testing.T) {
 	cases := []struct {
-		kind     string
+		kind      string
 		wantClass string
 	}{
 		{timeline.KindSuccess, "bg-emerald-500"},

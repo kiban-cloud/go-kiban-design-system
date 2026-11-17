@@ -52,7 +52,11 @@ type FormPanelConfig struct {
 	// verdad, contando los campos obligatorios vacíos de cada parte, y se
 	// actualiza mientras se llena el form: «Faltan la URL del proceso y 4
 	// capturas», «Falta 1 captura» (el pie de la certificación del proto).
-	// Sin nada vacío que contar, queda SummaryPending.
+	// Sin nada vacío que contar, queda SummaryPending, salvo que un campo
+	// tenga un error propio con mensaje (setCustomValidity: un monto arriba
+	// del tope de input.Money): entonces el pie dice ese mensaje, en rojo
+	// (data-error), y con data-kiban-submit-requiere-completo el botón de
+	// enviar queda deshabilitado.
 	SummaryMissing *SummaryMissing
 	SummaryReady   string
 	SummaryClean   string
@@ -98,6 +102,7 @@ type FormPanelGuard struct {
 // panelHead es lo que pinta panelHeader, común a FormPanel y ViewPanel.
 type panelHead struct {
 	ID, Eyebrow, Title, TitlePlaceholder, CloseLabel, Dirty string
+	TitleSuffix                                             string
 	TitleFrom                                               []string
 	TitleInput                                              *TitleInput
 	Tile, Subtitle, HeaderActions                           templ.Component
@@ -134,23 +139,41 @@ func (c FormPanelConfig) dirtyLabel() string {
 // ViewPanelConfig describe el panel de consulta (ViewPanel). Sin Half es el
 // de 95 %, el de la ficha del cliente.
 type ViewPanelConfig struct {
-	ID       string
-	Half     bool
-	Tile     templ.Component
-	Eyebrow  string
-	Title    string
-	Subtitle templ.Component
+	ID      string
+	Half    bool
+	Tile    templ.Component
+	Eyebrow string
+	Title   string
+	// TitleSuffix va después del título, chico y gris: la moneda de un
+	// monto («$6,700.00 MXN»).
+	TitleSuffix string
+	Subtitle    templ.Component
 	// HeaderActions va antes del botón de cerrar («Editar»).
 	HeaderActions templ.Component
 	CloseLabel    string
 	CloseHref     string
 	Standalone    bool
 	Static        bool
+
+	// El pie es opcional, como el de FormPanel: FooterLeft a la izquierda
+	// (una acción que destruye, «Cancelar orden»), FooterStatus el texto
+	// gris que ocupa el resto («Banco Donde · 1 nov 2026 11:48») y Actions
+	// los botones a la derecha (secundarios y el principal, «Cerrar»). Sin
+	// ninguno de los tres no hay pie. Un botón con el atributo
+	// data-kiban-panel-close cierra el panel.
+	FooterLeft   templ.Component
+	FooterStatus string
+	Actions      button.Group
 }
 
 func (c ViewPanelConfig) header() panelHead {
-	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, CloseLabel: c.CloseLabel,
+	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitleSuffix: c.TitleSuffix, CloseLabel: c.CloseLabel,
 		Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
+}
+
+// hasFooter dice si el ViewPanel lleva pie.
+func (c ViewPanelConfig) hasFooter() bool {
+	return c.FooterLeft != nil || c.FooterStatus != "" || !c.Actions.IsEmpty()
 }
 
 // ClosePanelEvent es el evento con el que el servidor cierra el panel desde

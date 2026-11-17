@@ -1,0 +1,77 @@
+package input
+
+// Money es el campo de un monto con sus adornos: el signo de pesos adelante
+// y la moneda atrás, dentro de la misma caja («$ 0.00 … MXN», el .rk-amount
+// del proto). Es texto con teclado decimal, no type=number, para que acepte
+// comas de miles («1,500.50») y no cambie el valor con la rueda del ratón.
+// Grande (56 px, cifra de 24 px) para el monto protagonista de un alta;
+// Compact es la caja de 36 px que va en línea con otros campos (.lt-numin).
+// Con Max, un monto mayor deja el campo inválido en el navegador (lo atiende
+// base.templ, [data-kiban-money]): el pie de un FormPanel lo cuenta como
+// pendiente y no deja enviar. Ver MoneyOptions.
+//
+// El tope también puede depender de una opción del form: un radio con
+// data-kiban-money-max-for="<name del monto>", data-kiban-money-max y
+// data-kiban-money-max-error se lo pone mientras está marcado (OXXO Pay,
+// hasta $10,000) y marcar otra opción del grupo lo quita. El pie de un
+// FormPanel dice data-kiban-money-max-error en rojo.
+templ Money(o MoneyOptions) {
+	<div class="space-y-1" data-kiban-money>
+		if o.Label != "" {
+			<label for={ o.id() } class={ fieldLabelClass(ctx) }>
+				{ o.Label }
+				if o.Required {
+					<span class="ml-0.5 text-red-500">*</span>
+				}
+			</label>
+		}
+		<label
+			for={ o.id() }
+			class={
+				"flex items-center bg-white focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]",
+				templ.KV("h-14 gap-2 rounded-lg border px-3.5", !o.Compact),
+				templ.KV("h-9 gap-1.5 rounded-md border px-2.5", o.Compact),
+				templ.KV("border-[#CDD3DF]", o.Error == ""),
+				templ.KV("border-[#F3A6A6]", o.Error != ""),
+			}
+		>
+			<span class={ "text-[#9096A3]", templ.KV("text-[22px] font-medium", !o.Compact), templ.KV("text-xs", o.Compact) } aria-hidden="true">{ o.prefix() }</span>
+			<input
+				id={ o.id() }
+				name={ o.Name }
+				value={ o.Value }
+				inputmode="decimal"
+				pattern="[0-9][0-9,]*(\.[0-9]{1,2})?"
+				autocomplete="off"
+				placeholder={ o.placeholder() }
+				required?={ o.Required }
+				if o.ariaLabel() != "" {
+					aria-label={ o.ariaLabel() }
+				}
+				if o.Max != "" {
+					data-max={ o.Max }
+					data-max-error={ o.MaxError }
+				}
+				if o.Error != "" {
+					aria-invalid="true"
+				}
+				class={
+					"min-w-0 flex-1 border-0 bg-transparent p-0 tabular-nums text-kiban-ink outline-none placeholder:text-[#9096A3] focus:border-0 focus:shadow-none focus:ring-0",
+					templ.KV("text-2xl font-semibold", !o.Compact),
+					templ.KV("text-sm", o.Compact),
+				}
+				{ o.Attrs... }
+			/>
+			if o.Currency != "" {
+				<em class={ "font-semibold not-italic text-[#9096A3]", templ.KV("text-xs tracking-[.04em]", !o.Compact), templ.KV("text-xs", o.Compact) }>{ o.Currency }</em>
+			}
+		</label>
+		if o.Below != nil {
+			@o.Below
+		} else if o.Error != "" {
+			<p class="m-0 text-xs text-[#B42318]">{ o.Error }</p>
+		} else if o.Hint != "" {
+			<p class="m-0 text-xs text-[#9096A3]">{ o.Hint }</p>
+		}
+	</div>
+}

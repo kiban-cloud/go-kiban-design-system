@@ -49,7 +49,7 @@ templ MultiSelect(opts MultiSelectOptions) {
 		data-allow-create={ multiSelectBoolAttr(opts.AllowCreate) }
 	>
 		if opts.Label != "" {
-			<label class="text-xs font-medium text-kiban-ink2">
+			<label class={ fieldLabelClass(ctx) }>
 				{ opts.Label }
 				if opts.Required {
 					<span class="text-red-500 ml-0.5">*</span>

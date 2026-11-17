@@ -181,3 +181,50 @@ func TestFormPanel_PieConLoQueFalta(t *testing.T) {
 	cfg.SummaryMissing.Parts = []drawer.MissingPart{{From: "[data-vault-required]", One: "1 credencial", Many: "{n} credenciales"}}
 	assert.Contains(t, renderPanel(t, cfg), `&#34;many&#34;:&#34;{n} credenciales&#34;,&#34;from&#34;:&#34;[data-vault-required]&#34;}`, "los campos a contar salen del form")
 }
+
+// TitleSuffix va después del título, chico y gris (la moneda de un monto).
+func TestViewPanel_TituloConSufijo(t *testing.T) {
+	var buf bytes.Buffer
+	require.NoError(t, drawer.ViewPanel(drawer.ViewPanelConfig{ID: "pago", Eyebrow: "Pago", Title: "$6,700.00", TitleSuffix: "MXN"}).Render(context.Background(), &buf))
+	body := buf.String()
+
+	assert.Contains(t, body, `id="pago-title"`)
+	assert.Contains(t, body, `$6,700.00 <span class="text-[13px] font-normal text-[#606875]">MXN</span>`)
+	assert.Contains(t, body, ">Pago</div>")
+}
+
+// El pie del ViewPanel es opcional: con FooterLeft, FooterStatus o Actions
+// se pinta, con los botones en su variante por defecto.
+func TestViewPanel_PieOpcional(t *testing.T) {
+	render := func(cfg drawer.ViewPanelConfig) string {
+		var buf bytes.Buffer
+		require.NoError(t, drawer.ViewPanel(cfg).Render(context.Background(), &buf))
+		return buf.String()
+	}
+	cerrar := button.Options{Label: "Cerrar", Attrs: templ.Attributes{"data-kiban-panel-close": ""}}
+	body := render(drawer.ViewPanelConfig{
+		ID:           "pago",
+		FooterLeft:   templ.Raw(`<button id="cancelar">Cancelar orden</button>`),
+		FooterStatus: "Banco Donde · 1 nov 2026 11:48",
+		Actions:      button.Group{SecondaryActions: []button.Options{{Label: "Descargar"}}, PrimaryAction: &cerrar},
+	})
+
+	assert.Contains(t, body, `<button id="cancelar">Cancelar orden</button>`)
+	assert.Contains(t, body, ">Banco Donde · 1 nov 2026 11:48</div>")
+	assert.Contains(t, body, "Descargar")
+	assert.Contains(t, body, "Cerrar")
+	assert.Contains(t, body, "data-kiban-panel-close")
+	assert.Contains(t, body, "min-h-[60px]")
+
+	solo := render(drawer.ViewPanelConfig{ID: "pago", FooterStatus: "Listo"})
+	assert.Contains(t, solo, "min-h-[60px]", "basta con el texto")
+	assert.Contains(t, solo, ">Listo</div>")
+
+	assert.NotContains(t, render(drawer.ViewPanelConfig{ID: "pago"}), "min-h-[60px]", "sin nada no hay pie")
+}
+
+// El pie del FormPanel se pinta en rojo cuando el runtime marca data-error
+// (un campo con error propio: un monto arriba del tope).
+func TestFormPanel_PieEnRojoConError(t *testing.T) {
+	assert.Contains(t, renderPanel(t, panelCfg()), "data-[error]:text-[#B42318]")
+}

@@ -1,0 +1,41 @@
+package card
+
+// Kpis son las cifras de arriba de una pantalla flamboyant (los .kpi de
+// rekon en kiban-proto: Por cobrar, Vencido sin pagar, Cobrado este mes).
+// A diferencia de Stats, que resume el resultado de una acción, Kpis es el
+// estado de la pantalla: etiqueta, valor con unidad y detalle, y a lo sumo
+// una tarjeta destacada. Tres por renglón desde 1000 px; una debajo.
+// Sin cifras no pinta nada.
+templ Kpis(items []KpiOptions) {
+	if len(items) > 0 {
+		<div class="grid grid-cols-1 gap-3 min-[1000px]:grid-cols-3" data-kiban-kpis>
+			for _, k := range items {
+				<div
+					class={ "flex min-w-0 flex-col gap-1.5 rounded-[10px] border px-[18px] py-4",
+						templ.KV("border-kiban-primary bg-kiban-primary", k.Featured),
+						templ.KV("border-[#E2E5EC] bg-white", !k.Featured) }
+					data-kiban-kpi
+				>
+					<span class={ "flex items-center gap-2 text-xs leading-[18px] font-semibold uppercase tracking-[.05em] [&>svg]:h-4 [&>svg]:w-4 [&>svg]:stroke-[1.5]",
+						templ.KV("text-white/75", k.Featured), templ.KV("text-[#9096A3]", !k.Featured) }>
+						if k.Icon != nil {
+							@k.Icon
+						}
+						{ k.Label }
+					</span>
+					<span class={ "text-[26px] font-semibold leading-8 tracking-[-.01em] tabular-nums",
+						templ.KV("text-white", k.Featured), templ.KV("text-kiban-ink", !k.Featured) }>
+						{ k.Value }
+						if k.Unit != "" {
+							<small class={ "ml-1 text-[13px] font-medium tracking-normal",
+								templ.KV("text-white/75", k.Featured), templ.KV("text-[#9096A3]", !k.Featured) }>{ k.Unit }</small>
+						}
+					</span>
+					if k.Detail != "" {
+						<span class={ "text-xs leading-[18px]", templ.KV("text-white/75", k.Featured), templ.KV("text-[#606875]", !k.Featured) }>{ k.Detail }</span>
+					}
+				</div>
+			}
+		</div>
+	}
+}

@@ -80,6 +80,10 @@ func splitTriggerAttrs(id string) templ.Attributes {
 		"aria-expanded": "false",
 		"aria-controls": id + "-panel",
 		"onclick":       "window.kibanToggleMenu('" + id + "')",
+		// data-kiban-split-trigger: el runtime (base.templ) deshabilita la
+		// flecha junto con el botón principal cuando el form no se puede
+		// enviar (data-kiban-submit-requiere-completo).
+		"data-kiban-split-trigger": "",
 	}
 }
 

@@ -1,0 +1,73 @@
+package input
+
+// Picker es elegir una opción de una lista larga con un buscador arriba: el
+// cliente de una orden de pago, el banco de una transferencia (las .fsp-type
+// del proto con su .fsp-search). Cada opción es una tarjeta con su placa
+// (Tile), título y una línea debajo; la elegida se pinta azul. Son radios
+// con el mismo Name, así que funciona y se envía sin JS; el buscador sólo
+// filtra lo que se ve (lo atiende base.templ, [data-kiban-picker]): busca en
+// el título, la línea de abajo y PickerOption.Search, sin importar mayúsculas
+// ni acentos, y nunca esconde la opción elegida. El buscador no tiene name:
+// no viaja con el form ni cuenta como cambio en un FormPanel. Ver
+// PickerOptions.
+templ Picker(o PickerOptions) {
+	<div
+		class="flex flex-col gap-3"
+		data-kiban-picker
+		if o.ID != "" {
+			id={ o.ID }
+		}
+	>
+		if o.Search != "" {
+			<label class="flex items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary">
+				<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+				<input
+					type="search"
+					placeholder={ o.Search }
+					aria-label={ o.Search }
+					autocomplete="off"
+					data-kiban-picker-q
+					data-nodirty
+					class="min-w-0 flex-1 border-0 bg-transparent px-0 py-2 text-sm text-kiban-ink outline-none placeholder:text-[#9096A3] focus:border-0 focus:shadow-none focus:ring-0"
+				/>
+			</label>
+		}
+		<div
+			class={ "relative grid max-h-[360px] gap-2 overflow-auto p-0.5", templ.KV("grid-cols-2 max-sm:grid-cols-1", o.Columns == 2) }
+			role="radiogroup"
+			if o.Label != "" {
+				aria-label={ o.Label }
+			}
+			data-kiban-picker-list
+		>
+			for _, opt := range o.Options {
+				<label
+					class={
+						"relative grid cursor-pointer items-center gap-2.5 rounded-lg border border-[#CDD3DF] bg-white px-2.5 py-2 hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary [&[hidden]]:hidden",
+						templ.KV("grid-cols-[40px_minmax(0,1fr)]", opt.Tile != nil),
+						templ.KV("grid-cols-[minmax(0,1fr)]", opt.Tile == nil),
+					}
+					data-kiban-picker-item
+					data-q={ opt.searchText() }
+				>
+					<input type="radio" name={ o.Name } value={ opt.Value } checked?={ opt.Value == o.Selected } required?={ o.Required } class="pointer-events-none absolute opacity-0" { o.Attrs... }/>
+					if opt.Tile != nil {
+						@opt.Tile
+					}
+					<span class="min-w-0">
+						<b class="block truncate text-sm font-medium leading-[18px] text-kiban-ink">{ opt.Title }</b>
+						if opt.Sub != "" {
+							<small class="block truncate text-xs leading-4 text-[#606875]">{ opt.Sub }</small>
+						}
+					</span>
+				</label>
+			}
+		</div>
+		if o.Empty != "" {
+			<p class="m-0 rounded-lg border border-dashed border-[#CDD3DF] bg-[#FAFAFB] p-[18px] text-center text-[13px] text-[#606875] [&[hidden]]:hidden" data-kiban-picker-empty hidden>{ o.Empty }</p>
+		}
+		if o.Error != "" {
+			<p class="m-0 text-xs text-[#B42318]">{ o.Error }</p>
+		}
+	</div>
+}

@@ -35,7 +35,7 @@ templ flamboyantLayout(cfg Config) {
 				</div>
 				<div class="fs-backdrop" data-fs-close-mobile aria-hidden="true"></div>
 				<main class="fs-main">
-					<div class="px-4 md:px-8 py-6 w-full">
+					<div class="p-4 md:p-8 w-full">
 						{ children... }
 					</div>
 					@navLoader()
@@ -340,6 +340,16 @@ templ fsInbox(cfg Config) {
 templ ModuleTile(key string, size int, dim bool) {
 	<span class="grid shrink-0 place-items-center rounded-[10px]" style={ moduleTileStyle(key, size, dim) }>
 		@FlamboyantIcon(moduleIcon(key))
+	</span>
+}
+
+// IconTile es un ícono del shell (FlamboyantIcon) en el cuadro azul claro
+// del encabezado de un panel, para lo que no es un medio ni un módulo (la
+// dispersión SPEI: un avión de papel; el .fsp-ico del proto). El ícono ocupa
+// la mitad del cuadro, con trazo 2 como los íconos de los paneles.
+templ IconTile(name string, size int) {
+	<span class="grid shrink-0 place-items-center rounded-lg bg-[#EAF0FF] text-[#0036C4] [&>svg]:h-1/2 [&>svg]:w-1/2 [&>svg]:[stroke-width:2]" style={ iconTileStyle(size) } aria-hidden="true">
+		@FlamboyantIcon(name)
 	</span>
 }
 

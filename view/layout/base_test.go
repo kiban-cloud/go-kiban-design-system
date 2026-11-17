@@ -10,6 +10,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // renderBase runs layout.Base (the HTML shell shared by every kiban module)
@@ -121,7 +122,7 @@ func TestBase_DropzoneElegido(t *testing.T) {
 	assert.Contains(t, body, "(e.target.name && !e.target.hasAttribute('data-nodirty'))", "un buscador sin name no es un cambio")
 	assert.Contains(t, body, "if (save) save.disabled = !!(primary && primary.disabled);", "sin poder guardar, el aviso no ofrece guardar y cerrar")
 	assert.Contains(t, body, "var ok = form.checkValidity() && !missing;", "lo que falta gana aunque el navegador dé el form por válido")
-	assert.Contains(t, body, "missing || sum.getAttribute('data-pending')")
+	assert.Contains(t, body, "missing || invalid || sum.getAttribute('data-pending')")
 	assert.Contains(t, body, "(total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ')")
 	// El submit que espera a los obligatorios no frena a un botón con
 	// formnovalidate (guardar la razón social del RCE con su propio POST).
@@ -229,4 +230,104 @@ func TestBase_DirtyFormEnablesByDefault(t *testing.T) {
 
 	assert.Contains(t, body, "btn.disabled = !dirty")
 	assert.NotContains(t, body, `<button type="submit" disabled`)
+}
+
+// input.Money con tope: el runtime marca inválido el monto arriba de
+// data-max, y un radio con data-kiban-money-max-for le pone o le quita el
+// tope según la opción elegida (OXXO Pay, hasta $10,000).
+func TestBase_TopeDelMonto(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "function kibanMoneyCheck(el)")
+	assert.Contains(t, body, "el.setCustomValidity(!isNaN(max) && n > max ? (el.getAttribute('data-max-error') || ' ') : '');")
+	assert.Contains(t, body, "String(el.value).replace(/,/g, '')", "acepta comas de miles")
+	assert.Contains(t, body, "function kibanMoneySync(scope)")
+	assert.Contains(t, body, "input[type=radio][data-kiban-money-max-for]")
+	assert.Contains(t, body, "on.getAttribute('data-kiban-money-max')")
+	assert.Contains(t, body, "el._kibanMoneyBase.max", "otra opción vuelve al tope propio del campo")
+	// El paso cuenta el monto capturado aunque pase el tope; el envío no.
+	assert.Contains(t, body, "function kibanOnlyOverMax(el)")
+	assert.Contains(t, body, "todos[m].validity.customError) return true;")
+}
+
+// input.Picker: el buscador filtra sin acentos ni mayúsculas, nunca esconde
+// la elegida y Enter no envía el form.
+func TestBase_BuscadorDelPicker(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "function kibanPickerNorm(s)")
+	assert.Contains(t, body, ".normalize('NFD')")
+	assert.Contains(t, body, "function kibanPickerFilter(box)")
+	assert.Contains(t, body, "|| (radio && radio.checked);", "la elegida no se esconde")
+	assert.Contains(t, body, "if (empty) empty.hidden = any;")
+	assert.Contains(t, body, "if (e.key === 'Enter' && e.target.closest && e.target.closest('[data-kiban-picker-q]')) e.preventDefault();")
+	assert.Contains(t, body, "document.addEventListener('htmx:afterSettle', kibanPickerInit);")
+}
+
+// input.Chips: agrega con Enter, coma o punto y coma, sincroniza el hidden
+// (uno por renglón) y avisa al form con un input.
+func TestBase_Chips(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "// ---- input.Chips ([data-kiban-chips])")
+	assert.Contains(t, body, "hidden.value = vals.join('\\n');")
+	assert.Contains(t, body, "hidden.dispatchEvent(new Event('input', { bubbles: true }));")
+	assert.Contains(t, body, "if (e.key === 'Enter' || e.key === ',' || e.key === ';')")
+	assert.Contains(t, body, "box.getAttribute('data-kiban-chips') === 'email' && !reEmail.test(v)")
+	assert.Contains(t, body, "have.indexOf(v.toLowerCase()) !== -1", "no repite valores")
+}
+
+// El diálogo de confirmación con tono info: ícono de aviso, botón azul y el
+// foco en confirmar; data-kiban-confirm-strong pone en negritas un pedazo.
+func TestBase_ConfirmacionConTono(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "var info = btn.getAttribute('data-kiban-confirm-tone') === 'info';")
+	assert.Contains(t, body, "wrap.querySelector(info ? '[data-yes]' : '[data-no]').focus();")
+	assert.Contains(t, body, "btn.getAttribute('data-kiban-confirm-strong')")
+	assert.Contains(t, body, "pel.append(ptext.slice(0, at), sb, ptext.slice(at + strong.length));")
+}
+
+// El pie del FormPanel dice en rojo el mensaje de un campo con error propio
+// (setCustomValidity) cuando no falta nada.
+func TestBase_PieConMensajeDeCampoInvalido(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+
+	assert.Contains(t, body, "function kibanPanelInvalidMessage(form)")
+	assert.Contains(t, body, "var invalid = ok || missing ? '' : kibanPanelInvalidMessage(form);")
+	assert.Contains(t, body, "sum.toggleAttribute('data-error', !!invalid);")
+	// La flecha de un button.Split sigue al botón principal.
+	assert.Contains(t, body, "form.querySelectorAll('[data-kiban-split-trigger]')")
+}
+
+// El texto de varias opciones de un filtro sale de data-many.
+func TestBase_FiltroVariasOpciones(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "(d.getAttribute('data-many') || '{n} seleccionados').split('{n}').join(vals.length)")
+}
+
+// hero.Cycle: animaciones del ciclo, quietas con prefers-reduced-motion.
+func TestBase_AnimacionesDelHero(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "@keyframes kiban-cy-in")
+	assert.Contains(t, body, ".kiban-cy-flow {")
+	assert.Contains(t, body, "@media (prefers-reduced-motion: reduce) { .kiban-cy-in { animation: none; } .kiban-cy-flow { display: none; } }")
+}
+
+// Flamboyant carga además el peso 600 de Be Vietnam Pro.
+func TestBase_PesoSemiboldSoloEnFlamboyant(t *testing.T) {
+	assert.Contains(t, renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"}), "Be+Vietnam+Pro:wght@400;500;700&")
+
+	empty := templ.ComponentFunc(func(_ context.Context, _ io.Writer) error { return nil })
+	var buf bytes.Buffer
+	require.NoError(t, layout.Base(layout.Config{Title: "T", ProjectName: "kiban"}).Render(templ.WithChildren(flags(layout.FlagShellFlamboyant), empty), &buf))
+	assert.Contains(t, buf.String(), "Be+Vietnam+Pro:wght@400;500;600;700&")
+}
+
+// data-kiban-geo: la ubicación del navegador viaja en el request htmx.
+func TestBase_Ubicacion(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "elt.closest('[data-kiban-geo]')")
+	assert.Contains(t, body, "geo.getAttribute('data-kiban-geo-lat') || 'latitude'")
+	assert.Contains(t, body, "navigator.geolocation.getCurrentPosition")
 }

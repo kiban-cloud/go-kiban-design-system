@@ -22,11 +22,11 @@ templ Toggle(name, label string, value, enabled bool, attrs templ.Attributes) {
 // derecha; deshabilitado, el label se apaga y el Hint explica por qué.
 templ ToggleWith(o ToggleOptions) {
 	if flamboyant.On(ctx) {
-		<label class={ "flex items-center justify-between gap-3 py-0.5 text-[13px]", templ.KV("cursor-pointer", o.Enabled), templ.KV("cursor-not-allowed", !o.Enabled) }>
+		<label class={ "flex items-center justify-between gap-3 text-[13px]", templ.KV("cursor-pointer", o.Enabled), templ.KV("cursor-not-allowed", !o.Enabled) }>
 			<span class="min-w-0">
-				<b class={ "block text-sm font-medium", templ.KV("text-kiban-ink", o.Enabled), templ.KV("text-[#9096A3]", !o.Enabled) }>{ o.Label }</b>
+				<b class={ "block text-sm font-medium leading-[21px]", templ.KV("text-kiban-ink", o.Enabled), templ.KV("text-[#9096A3]", !o.Enabled) }>{ o.Label }</b>
 				if o.Hint != "" {
-					<small class="block text-xs leading-4 text-[#9096A3]">{ o.Hint }</small>
+					<small class="block text-xs leading-[18px] text-[#9096A3]">{ o.Hint }</small>
 				}
 			</span>
 			<span class="relative inline-block h-5 w-9 shrink-0">

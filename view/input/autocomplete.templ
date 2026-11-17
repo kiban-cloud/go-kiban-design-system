@@ -39,7 +39,7 @@ type AutocompleteOptions struct {
 templ Autocomplete(opts AutocompleteOptions) {
 	<div class="space-y-1 relative" data-kiban-autocomplete data-allow-create={ autocompleteBoolAttr(opts.AllowCreate) } data-create-label={ autocompleteCreateLabel(opts) }>
 		if opts.Label != "" {
-			<label for={ "f-" + opts.Name } class="text-xs font-medium text-kiban-ink2">
+			<label for={ "f-" + opts.Name } class={ fieldLabelClass(ctx) }>
 				{ opts.Label }
 				if opts.Required {
 					<span class="text-red-500 ml-0.5">*</span>
@@ -54,7 +54,7 @@ templ Autocomplete(opts AutocompleteOptions) {
 			placeholder={ opts.Placeholder }
 			value={ autocompleteLabelForValue(opts) }
 			class={
-				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none bg-white",
+				fieldControlClass(ctx), "bg-white",
 				templ.KV("border-kiban-border focus:border-kiban-primary", opts.ErrMsg == ""),
 				templ.KV("border-red-400 focus:border-red-500", opts.ErrMsg != ""),
 			}
