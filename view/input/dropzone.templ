@@ -1,10 +1,12 @@
 package input
 
-// Dropzone es la zona para soltar un archivo de flamboyant (carga masiva):
+// Dropzone es la zona para soltar archivos de flamboyant (carga masiva, una
+// entrega de klin con Multiple):
 // el input cubre la zona entera, así que arrastrar y soltar o hacer clic
 // eligen el archivo sin JS propio. Al elegirlo, base.templ escribe su nombre
 // y tamaño en la zona ([data-kiban-dropzone]). Con Change, la zona se pinta
-// en verde y el nombre reemplaza a la invitación (las capturas del proto).
+// en verde y el nombre reemplaza a la invitación (las capturas del proto). Con
+// Multiple, cuántos archivos son y sus nombres.
 templ Dropzone(o DropzoneOptions) {
 	<label
 		class={ "relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#9DB4FF] bg-white px-4 py-7 text-center transition-colors hover:bg-[#F4F7FF] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-kiban-primary data-[has-file]:border-solid data-[has-file]:border-[#00B894] data-[has-file]:bg-[#F2FDFA]", templ.KV("min-h-[150px]", o.Tall) }
@@ -13,7 +15,7 @@ templ Dropzone(o DropzoneOptions) {
 			data-change={ o.Change }
 		}
 	>
-		<input type="file" name={ o.Name } accept={ o.Accept } required?={ o.Required } class="absolute inset-0 cursor-pointer opacity-0"/>
+		<input type="file" name={ o.Name } accept={ o.Accept } required?={ o.Required } multiple?={ o.Multiple } class="absolute inset-0 cursor-pointer opacity-0"/>
 		<span class="grid h-10 w-10 place-items-center rounded-full bg-[#EAF0FF] text-[#0036C4]" data-kiban-dropzone-icon>
 			if o.Image {
 				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -32,6 +34,6 @@ templ Dropzone(o DropzoneOptions) {
 		if o.Hint != "" {
 			<span class="text-xs text-kiban-ink3" data-kiban-dropzone-hint>{ o.Hint }</span>
 		}
-		<span class="hidden text-sm font-medium text-kiban-primary" data-kiban-dropzone-file></span>
+		<span class="hidden max-w-full break-words text-sm font-medium text-kiban-primary" data-kiban-dropzone-file></span>
 	</label>
 }

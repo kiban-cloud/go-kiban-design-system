@@ -3,11 +3,21 @@ package copyable
 // ID es el valor en monoespaciado sobre un fondo gris, con el ícono de copiar.
 // value es lo que se ve y lo que se copia.
 templ ID(value string) {
+	@IDWith(Options{Value: value})
+}
+
+// IDWith es ID con opciones: con Toast, al copiar además sale un aviso
+// flotante unos segundos («ID copiado»), para quien no nota la palomita.
+templ IDWith(o Options) {
+	{{ value := o.Value }}
 	<button
 		type="button"
 		class="group inline-flex items-center gap-1 rounded-md border-0 bg-[#F5F6F9] px-1.5 py-px font-mono text-[11px] text-[#606875] transition-colors hover:text-kiban-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary"
 		data-kiban-copy={ value }
 		data-kiban-copied-label={ catalog.T(ctx, "copyable.copied") }
+		if o.Toast != "" {
+			data-kiban-copy-toast={ o.Toast }
+		}
 		title={ catalog.Tf(ctx, "copyable.copy", map[string]any{"Value": value}) }
 		aria-label={ catalog.Tf(ctx, "copyable.copy", map[string]any{"Value": value}) }
 	>

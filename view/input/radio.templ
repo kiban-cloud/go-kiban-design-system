@@ -40,7 +40,7 @@ templ RadioCardWith(o RadioCardOptions) {
 			}
 		>
 			<input type="radio" name={ o.Name } value={ o.Value } checked?={ o.Checked } class="pointer-events-none absolute opacity-0" { o.Attrs... }/>
-			<span class={ "grid h-9 w-9 place-items-center rounded-lg", templ.KV("bg-[#E3FBF5] text-[#007A63]", o.Tone == "success"), templ.KV("bg-[#F2F2F2] text-[#474747]", o.Tone == "neutral"), templ.KV("bg-[#EAF0FF] text-[#0036C4]", o.Tone != "success" && o.Tone != "neutral") }>
+			<span class={ "grid h-9 w-9 place-items-center rounded-lg", radioCardToneClass(o.Tone) }>
 				if o.Icon != nil {
 					@o.Icon
 				}

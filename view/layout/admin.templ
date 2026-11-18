@@ -3,6 +3,7 @@ package layout
 import (
 	"github.com/kiban-cloud/go-kiban-design-system/view/avatar"
 	"github.com/kiban-cloud/go-kiban-design-system/view/breadcrumbs"
+	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
 	"github.com/kiban-cloud/go-kiban-design-system/view/icons"
 	"github.com/kiban-cloud/go-kiban-design-system/view/logo"
 )
@@ -101,6 +102,16 @@ templ adminUserMenu(cfg AdminConfig) {
 					<div class="text-xs text-kiban-ink3 truncate">{ cfg.User.Email }</div>
 				}
 			</div>
+			if feature.Enabled(ctx, FlagShellFlamboyantSwitch) {
+				<button
+					type="button"
+					role="menuitem"
+					class="flex w-full items-center gap-2 px-3 py-2 text-sm text-left text-kiban-primary hover:bg-kiban-surface"
+					data-kiban-ui={ adminSwitchTarget(ctx) }
+				>
+					{ docsCatalog.T(ctx, adminSwitchLabelKey(ctx)) }
+				</button>
+			}
 			if cfg.LogoutAction != "" {
 				<form method="POST" action={ templ.URL(cfg.LogoutAction) } class="m-0">
 					<button

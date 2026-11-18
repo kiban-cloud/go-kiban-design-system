@@ -96,6 +96,8 @@ type TitleInput struct {
 	Required bool
 }
 
+// FormPanelGuard son los textos del aviso de cambios sin guardar. SaveClose
+// vacío quita el botón «Guardar y cerrar» (en ViewPanel no hay qué guardar).
 type FormPanelGuard struct {
 	Title, Text              string
 	Discard, Stay, SaveClose string
@@ -170,11 +172,22 @@ type ViewPanelConfig struct {
 	FooterLeft   templ.Component
 	FooterStatus string
 	Actions      button.Group
+	// Guard pide confirmar al cerrar si se escribió en un form del cuerpo
+	// (data-dirty, como en FormPanel): un comentario a medias. Sin
+	// SaveClose no hay «Guardar y cerrar». nil: cierra sin preguntar.
+	Guard *FormPanelGuard
 }
 
 func (c ViewPanelConfig) header() panelHead {
 	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitleSuffix: c.TitleSuffix, CloseLabel: c.CloseLabel,
-		Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions}
+		Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions, Dirty: c.dirtyLabel()}
+}
+
+func (c ViewPanelConfig) dirtyLabel() string {
+	if c.Guard == nil {
+		return ""
+	}
+	return c.Guard.Dirty
 }
 
 // hasFooter dice si el ViewPanel lleva pie.

@@ -153,7 +153,7 @@ func RadioCardWith(o RadioCardOptions) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 = []any{"grid h-9 w-9 place-items-center rounded-lg", templ.KV("bg-[#E3FBF5] text-[#007A63]", o.Tone == "success"), templ.KV("bg-[#F2F2F2] text-[#474747]", o.Tone == "neutral"), templ.KV("bg-[#EAF0FF] text-[#0036C4]", o.Tone != "success" && o.Tone != "neutral")}
+			var templ_7745c5c3_Var7 = []any{"grid h-9 w-9 place-items-center rounded-lg", radioCardToneClass(o.Tone)}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
