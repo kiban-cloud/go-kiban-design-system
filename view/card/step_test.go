@@ -73,3 +73,33 @@ func TestStep_FlamboyantSinNumero(t *testing.T) {
 	assert.Contains(t, body, "Credenciales")
 	assert.NotContains(t, body, "data-kiban-step-n")
 }
+
+// Number lo pone el servidor fuera de un panel; sin él, «·» hasta que el
+// navegador numere.
+func TestStep_FlamboyantNumeroDelServidor(t *testing.T) {
+	body := render(t, flam, card.Step(card.StepOptions{Key: "a", Title: "Cuenta", Number: 2}))
+	assert.Regexp(t, `data-kiban-step-n[^>]*>2</span>`, body)
+
+	body = render(t, flam, card.Step(card.StepOptions{Key: "a", Title: "Cuenta"}))
+	assert.Regexp(t, `data-kiban-step-n[^>]*>·</span>`, body)
+
+	body = render(t, flam, card.Step(card.StepOptions{Key: "a", Title: "Cuenta", Number: -1}))
+	assert.Regexp(t, `data-kiban-step-n[^>]*>·</span>`, body, "un número negativo es como cero")
+}
+
+// Done pinta la palomita en lugar del número, aunque venga NoNumber.
+func TestStep_FlamboyantCompletoDesdeElServidor(t *testing.T) {
+	body := render(t, flam, card.Step(card.StepOptions{Key: "a", Title: "Cuenta", Done: true, Number: 3}))
+	assert.Contains(t, body, "data-kiban-step-done")
+	assert.Contains(t, body, `points="20 6 9 17 4 12"`)
+	assert.NotContains(t, body, "data-kiban-step-n", "el paso hecho no lleva número")
+
+	body = render(t, flam, card.Step(card.StepOptions{Key: "a", Title: "Cuenta", Done: true, NoNumber: true}))
+	assert.Contains(t, body, "data-kiban-step-done")
+}
+
+func TestStep_ClasicoIgnoraDoneYNumber(t *testing.T) {
+	body := render(t, context.Background(), card.Step(card.StepOptions{Title: "Cuenta", Done: true, Number: 2}))
+	assert.NotContains(t, body, "data-kiban-step-done")
+	assert.NotContains(t, body, ">2<")
+}

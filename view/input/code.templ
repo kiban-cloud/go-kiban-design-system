@@ -10,9 +10,9 @@ package input
 // Layout mirrors Text: optional label (with required asterisk) → input → error
 // message (red) when errMsg is non-empty. The border swaps to red on error.
 templ Code(name, label, value, errMsg string, length int, required bool) {
-	<div class="space-y-1">
+	<div class={ fieldWrapClass(ctx) }>
 		if label != "" {
-			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+			<label for={ "f-" + name } class={ fieldLabelClass(ctx) }>
 				{ label }
 				if required {
 					<span class="text-red-500 ml-0.5">*</span>

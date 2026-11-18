@@ -22,7 +22,7 @@ package input
 templ Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, required bool) {
 	<div class="space-y-1" data-phone-input>
 		if label != "" {
-			<label class="text-xs font-medium text-kiban-ink2">
+			<label class={ fieldLabelClass(ctx) }>
 				{ label }
 				if required {
 					<span class="text-red-500 ml-0.5">*</span>
@@ -37,7 +37,7 @@ templ Phone(label, ccName, ccValue, phoneName, phoneValue, errMsg string, requir
 			data-tel-initial={ initialDial(ccValue, phoneValue) }
 			placeholder="5512345678"
 			class={
-				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none",
+				fieldControlClass(ctx),
 				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
 				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
 			}

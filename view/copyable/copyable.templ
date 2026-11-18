@@ -26,3 +26,51 @@ templ IDWith(o Options) {
 		<svg class="hidden h-[11px] w-[11px] text-[#007A63] group-data-[copied]:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
 	</button>
 }
+
+// Field es un valor largo de sólo lectura en su caja gris, con el ícono de
+// copiar adentro, a la derecha (el link de pago de una orden, una URL de
+// webhook). El valor se parte donde haga falta para no desbordar. Muted lo
+// pinta gris y tachado (un link que ya no acepta pagos); igual se copia.
+templ Field(o FieldOptions) {
+	<div class="flex items-center gap-2 rounded-md border border-[#E2E5EC] bg-[#FAFAFB] px-2.5 py-2 text-[13px] text-kiban-ink" data-kiban-copy-field>
+		<span class={ "min-w-0 flex-1 [overflow-wrap:anywhere]", templ.KV("font-mono text-xs", o.Mono), templ.KV("text-[#9096A3] line-through", o.Muted) }>{ o.Value }</span>
+		<button
+			type="button"
+			class="group grid shrink-0 place-items-center rounded border-0 bg-transparent p-0.5 text-[#9096A3] transition-colors hover:bg-[#EAF0FF] hover:text-kiban-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-kiban-primary"
+			data-kiban-copy={ o.Value }
+			data-kiban-copied-label={ catalog.T(ctx, "copyable.copied") }
+			title={ o.label(ctx) }
+			aria-label={ o.label(ctx) }
+		>
+			<svg class="h-3.5 w-3.5 group-data-[copied]:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+			<svg class="hidden h-3.5 w-3.5 text-[#007A63] group-data-[copied]:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+		</button>
+	</div>
+}
+
+// Inline es un valor en monoespaciado chico, sin caja, con el ícono de copiar
+// al lado: el id en el subtítulo de un panel de detalle («· ID 991ab76c…»,
+// el .fsp-hid del proto). Toma el gris del texto que lo rodea. A diferencia
+// de ID (la píldora gris, que es toda un botón), aquí sólo el ícono copia.
+templ Inline(o InlineOptions) {
+	<span
+		class={
+			"inline-flex min-w-0 items-center gap-1 font-mono text-[11px] [overflow-wrap:anywhere]",
+			templ.KV("before:mr-2 before:inline-block before:h-[3px] before:w-[3px] before:shrink-0 before:rounded-full before:bg-[#C9CDD6] before:content-['']", o.Sep),
+		}
+		data-kiban-copy-inline
+	>
+		{ o.text() }
+		<button
+			type="button"
+			class="group grid shrink-0 place-items-center rounded border-0 bg-transparent p-0.5 text-[#9096A3] transition-colors hover:bg-[#EAF0FF] hover:text-kiban-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-kiban-primary"
+			data-kiban-copy={ o.Value }
+			data-kiban-copied-label={ catalog.T(ctx, "copyable.copied") }
+			title={ o.copyLabel(ctx) }
+			aria-label={ o.copyLabel(ctx) }
+		>
+			<svg class="h-3.5 w-3.5 group-data-[copied]:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+			<svg class="hidden h-3.5 w-3.5 text-[#007A63] group-data-[copied]:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+		</button>
+	</span>
+}

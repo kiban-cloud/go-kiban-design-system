@@ -24,15 +24,15 @@ func TestDropzone_Multiple(t *testing.T) {
 	assert.NotContains(t, renderIn(t, flamCtx, input.Dropzone(input.DropzoneOptions{Name: "file"})), " multiple")
 }
 
-func chipsOpts() input.ChipsOptions {
-	return input.ChipsOptions{Name: "cut", Label: "Base", Selected: "MONTHLY", Required: true, Options: []input.ChipOption{
+func pillsOpts() input.PillsOptions {
+	return input.PillsOptions{Name: "cut", Label: "Base", Selected: "MONTHLY", Required: true, Options: []input.PillOption{
 		{Value: "MONTHLY", Label: "Mensual"},
 		{Value: "PARTIAL", Label: "Parcial", Attrs: templ.Attributes{"data-x": "1"}},
 	}}
 }
 
-func TestChips_Flamboyant(t *testing.T) {
-	html := renderIn(t, flamCtx, input.Chips(chipsOpts()))
+func TestPills_Flamboyant(t *testing.T) {
+	html := renderIn(t, flamCtx, input.Pills(pillsOpts()))
 
 	assert.Contains(t, html, `role="radiogroup"`)
 	assert.Contains(t, html, `aria-label="Base"`)
@@ -43,26 +43,26 @@ func TestChips_Flamboyant(t *testing.T) {
 	assert.Contains(t, html, " required")
 	assert.NotContains(t, html, "border-[#F3A6A6]")
 
-	o := chipsOpts()
+	o := pillsOpts()
 	o.Error = true
-	assert.Contains(t, renderIn(t, flamCtx, input.Chips(o)), "border-[#F3A6A6]")
+	assert.Contains(t, renderIn(t, flamCtx, input.Pills(o)), "border-[#F3A6A6]")
 }
 
-func TestChips_ClasicoYSinSeleccion(t *testing.T) {
-	o := chipsOpts()
+func TestPills_ClasicoYSinSeleccion(t *testing.T) {
+	o := pillsOpts()
 	o.Selected = ""
-	html := renderIn(t, context.Background(), input.Chips(o))
+	html := renderIn(t, context.Background(), input.Pills(o))
 
 	assert.NotContains(t, html, "rounded-full")
 	assert.NotContains(t, html, "checked")
 	assert.Contains(t, html, "Mensual")
 }
 
-func TestChips_Disabled(t *testing.T) {
-	o := chipsOpts()
+func TestPills_Disabled(t *testing.T) {
+	o := pillsOpts()
 	o.Disabled = true
-	html := renderIn(t, flamCtx, input.Chips(o))
+	html := renderIn(t, flamCtx, input.Pills(o))
 	assert.Contains(t, html, "disabled")
 	assert.Contains(t, html, "cursor-not-allowed")
-	assert.Contains(t, renderIn(t, context.Background(), input.Chips(o)), "disabled")
+	assert.Contains(t, renderIn(t, context.Background(), input.Pills(o)), "disabled")
 }

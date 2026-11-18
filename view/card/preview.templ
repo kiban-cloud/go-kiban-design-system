@@ -1,0 +1,34 @@
+package card
+
+// Preview es la caja punteada con el resumen de lo que se va a mandar o a
+// cobrar, como lo verá quien lo recibe (el .rk-preview del proto: «Resumen
+// del envío», «Así la verá tu cliente»). attrs van en la caja: un id y, si
+// el servidor la repinta mientras se llena el form, los hx-* (la respuesta
+// pinta PreviewBody adentro). children es el contenido, casi siempre
+// PreviewBody.
+templ Preview(attrs templ.Attributes) {
+	<div class="flex flex-col gap-2.5 rounded-[10px] border border-dashed border-[#CDD3DF] bg-white p-4" aria-live="polite" data-kiban-preview { attrs... }>
+		{ children... }
+	</div>
+}
+
+// PreviewBody es el contenido de Preview: el antetítulo (quién cobra), el
+// monto grande con su moneda y los renglones etiqueta–valor (ver
+// PreviewOptions).
+templ PreviewBody(o PreviewOptions) {
+	if o.Eyebrow != "" {
+		<span class="block text-[11px] font-semibold uppercase tracking-[.06em] text-[#9096A3]">{ o.Eyebrow }</span>
+	}
+	<span class="text-[28px] font-semibold leading-9 tabular-nums text-kiban-ink">
+		{ o.Amount }
+		if o.Currency != "" {
+			<span class="text-sm font-normal text-[#606875]">{ o.Currency }</span>
+		}
+	</span>
+	for _, r := range o.Rows {
+		<div class="flex items-baseline justify-between gap-3 text-[13px] text-[#606875]">
+			<span class="shrink-0">{ r.Label }</span>
+			<b class={ "min-w-0 text-right font-medium text-kiban-ink [overflow-wrap:anywhere]", templ.KV("font-mono text-xs", r.Mono) }>{ r.Value }</b>
+		</div>
+	}
+}

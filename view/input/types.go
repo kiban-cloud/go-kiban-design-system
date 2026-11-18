@@ -16,7 +16,11 @@
 //     server-side and the label asterisk is the user-facing hint.
 package input
 
-import "github.com/a-h/templ"
+import (
+	"strings"
+
+	"github.com/a-h/templ"
+)
 
 // SelectOption is one row of a `<select>`. Iterated by Select to render
 // `<option value=Value selected=...>Label</option>`. Value is what the form
@@ -100,19 +104,111 @@ func radioCardToneClass(tone string) string {
 	return "bg-[#EAF0FF] text-[#0036C4]"
 }
 
-// ChipsOptions configura Chips. Selected es el Value marcado; Label es el
+// PillsOptions configura Pills. Selected es el Value marcado; Label es el
 // aria-label del grupo. Attrs de cada opción van en su <input>.
-type ChipsOptions struct {
+type PillsOptions struct {
 	Name     string
 	Label    string
-	Options  []ChipOption
+	Options  []PillOption
 	Selected string
 	Required bool
 	Error    bool
 	Disabled bool
 }
 
-type ChipOption struct {
+// PillOption es una píldora de Pills.
+type PillOption struct {
 	Value, Label string
 	Attrs        templ.Attributes
+}
+
+// MoneyOptions configura Money.
+type MoneyOptions struct {
+	// Name es el name del campo; el id es "f-" + Name, como los demás.
+	Name string
+	// Label es la etiqueta visible arriba de la caja; vacía, la caja va sola
+	// (el título de la tarjeta ya dice qué es) y AriaLabel la nombra.
+	Label     string
+	AriaLabel string
+	Value     string
+	// Prefix es el signo de adelante; vacío, «$». Currency es la moneda de
+	// atrás («MXN»); vacía, no se pinta.
+	Prefix   string
+	Currency string
+	// Placeholder vacío es «0.00».
+	Placeholder string
+	// Hint es la ayuda de abajo y Error, el error (gana sobre Hint). Below
+	// reemplaza a los dos: para una ayuda que el servidor repinta (htmx oob)
+	// con su propio id.
+	Hint, Error string
+	Below       templ.Component
+	// Required pone el asterisco en la etiqueta y el required del navegador.
+	Required bool
+	// Max es el monto más alto que acepta («10000», sin comas); MaxError, lo
+	// que dice el navegador si se pasa. Vacío: sin tope.
+	Max, MaxError string
+	// Compact es la caja de 36 px para ir en línea con otros campos.
+	Compact bool
+	Attrs   templ.Attributes
+}
+
+func (o MoneyOptions) id() string { return "f-" + o.Name }
+
+func (o MoneyOptions) prefix() string {
+	if o.Prefix == "" {
+		return "$"
+	}
+	return o.Prefix
+}
+
+func (o MoneyOptions) placeholder() string {
+	if o.Placeholder == "" {
+		return "0.00"
+	}
+	return o.Placeholder
+}
+
+func (o MoneyOptions) ariaLabel() string {
+	if o.AriaLabel != "" {
+		return o.AriaLabel
+	}
+	return ""
+}
+
+// PickerOptions configura Picker.
+type PickerOptions struct {
+	// ID es el id del bloque entero: para repintarlo (htmx oob).
+	ID string
+	// Name es el name de los radios; Selected, el Value elegido.
+	Name     string
+	Selected string
+	Options  []PickerOption
+	// Label nombra el grupo para lectores de pantalla («Cliente»).
+	Label string
+	// Search es el placeholder del buscador («Buscar banco»); vacío, sin
+	// buscador. Empty es lo que se dice cuando nada coincide («Ningún
+	// cliente coincide»); vacío, la lista sólo queda vacía.
+	Search, Empty string
+	// Columns 2 pone las tarjetas en dos columnas (una en móvil); cualquier
+	// otro valor, una.
+	Columns int
+	// Required pide elegir una (el required del navegador en los radios).
+	Required bool
+	// Error va debajo de la lista.
+	Error string
+	// Attrs van en cada radio.
+	Attrs templ.Attributes
+}
+
+// PickerOption es una opción de Picker. Tile es su placa de 40 px (iniciales,
+// logo); nil, sin placa. Search es texto de más para el buscador que no se
+// ve (la clave de un banco, un id).
+type PickerOption struct {
+	Value, Title, Sub string
+	Tile              templ.Component
+	Search            string
+}
+
+func (p PickerOption) searchText() string {
+	return strings.ToLower(strings.Join([]string{p.Title, p.Sub, p.Search}, " "))
 }

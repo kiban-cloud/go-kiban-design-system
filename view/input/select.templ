@@ -9,9 +9,9 @@ package input
 // Same error/hint contract as Text: errMsg renders red under the control
 // when non-empty and suppresses hint; otherwise hint shows in muted ink.
 templ Select(name, label, value, errMsg, hint string, options []SelectOption, required bool) {
-	<div class="space-y-1">
+	<div class={ fieldWrapClass(ctx) }>
 		if label != "" {
-			<label for={ "f-" + name } class="text-xs font-medium text-kiban-ink2">
+			<label for={ "f-" + name } class={ fieldLabelClass(ctx) }>
 				{ label }
 				if required {
 					<span class="text-red-500 ml-0.5">*</span>
@@ -23,7 +23,7 @@ templ Select(name, label, value, errMsg, hint string, options []SelectOption, re
 			name={ name }
 			required?={ required }
 			class={
-				"w-full border rounded-md px-3 py-2 text-sm focus:outline-none bg-white",
+				fieldControlClass(ctx), "bg-white",
 				templ.KV("border-kiban-border focus:border-kiban-primary", errMsg == ""),
 				templ.KV("border-red-400 focus:border-red-500", errMsg != ""),
 			}

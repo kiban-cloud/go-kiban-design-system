@@ -27,6 +27,10 @@ templ classicPagination(cfg PaginationConfig) {
 					type="button"
 					hx-get={ cfg.PageURL(cfg.Page - 1) }
 					hx-target={ cfg.Target }
+					if cfg.Target != "" {
+						hx-target-4xx={ cfg.Target }
+						hx-target-5xx={ cfg.Target }
+					}
 					hx-swap="innerHTML"
 					hx-push-url="true"
 					hx-indicator={ cfg.Indicator }
@@ -43,6 +47,10 @@ templ classicPagination(cfg PaginationConfig) {
 					type="button"
 					hx-get={ cfg.PageURL(cfg.Page + 1) }
 					hx-target={ cfg.Target }
+					if cfg.Target != "" {
+						hx-target-4xx={ cfg.Target }
+						hx-target-5xx={ cfg.Target }
+					}
 					hx-swap="innerHTML"
 					hx-push-url="true"
 					hx-indicator={ cfg.Indicator }

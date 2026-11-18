@@ -10,13 +10,17 @@ templ Bar(cfg Config) {
 		class="flex min-h-9 flex-wrap items-center gap-2"
 		hx-get={ cfg.Action }
 		hx-target={ cfg.Target }
+		if cfg.Target != "" {
+			hx-target-4xx={ cfg.Target }
+			hx-target-5xx={ cfg.Target }
+		}
 		hx-swap="innerHTML"
 		hx-push-url="true"
 		hx-indicator={ cfg.Indicator }
 		hx-trigger="submit, change[!event.target.closest('[data-kiban-filter-q],[data-kiban-filter-manual]')], input changed delay:300ms from:find input[type=search]"
 	>
 		@State(cfg, false)
-		<label class="flex h-9 min-w-[220px] flex-[0_1_340px] items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)] max-sm:flex-[1_1_100%]">
+		<label class="flex h-9 min-w-[200px] flex-[0_1_240px] items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)] max-sm:flex-[1_1_100%]">
 			<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 			<input
 				type="search"
@@ -40,14 +44,14 @@ templ Bar(cfg Config) {
 }
 
 templ filter(cfg Config, f Filter) {
-	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label } data-kiban-filter-numeric?={ f.Numeric != nil }>
+	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label } data-many={ cfg.manyTemplate() } data-kiban-filter-numeric?={ f.Numeric != nil }>
 		<summary
 			class="inline-flex h-9 cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[#CDD3DF] bg-white px-3 text-[13px] font-medium text-[#474F66] hover:bg-[#F4F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary data-[on]:border-kiban-primary data-[on]:bg-[rgba(0,71,255,0.08)] data-[on]:text-[#0036C4] [&::-webkit-details-marker]:hidden"
 			data-kiban-filter-pill
 			data-on?={ f.on() }
 		>
 			<span data-kiban-filter-text>
-				@pillText(f)
+				@pillText(cfg, f)
 			</span>
 			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
 		</summary>
@@ -224,24 +228,24 @@ templ Counts(cfg Config) {
 
 // pillText es el texto inicial de la píldora; después lo mantiene el
 // navegador con la misma regla.
-templ pillText(f Filter) {
+templ pillText(cfg Config, f Filter) {
 	if f.Numeric != nil && f.Numeric.Value != "" {
 		{ f.Label + ": " }<b class="font-semibold">{ f.Numeric.text() }</b>
 	} else if f.Numeric != nil {
 		{ f.Label }
 	} else {
-		@optionsPillText(f)
+		@optionsPillText(cfg, f)
 	}
 }
 
-templ optionsPillText(f Filter) {
+templ optionsPillText(cfg Config, f Filter) {
 	switch sel := f.selected(); len(sel) {
 		case 0:
 			{ f.Label }
 		case 1:
 			{ f.Label + ": " }<b class="font-semibold">{ sel[0].Label }</b>
 		default:
-			{ f.Label + " " }<b class="font-semibold">{ "· " + strconv.Itoa(len(sel)) }</b>
+			{ f.Label + ": " }<b class="font-semibold">{ cfg.manySelected(len(sel)) }</b>
 	}
 }
 
