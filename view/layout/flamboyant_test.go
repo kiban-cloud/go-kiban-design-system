@@ -192,6 +192,8 @@ func TestBase_ConfirmacionComoElProto(t *testing.T) {
 	assert.Contains(t, body, "data-kiban-confirm-item")
 	assert.Contains(t, body, "data-kiban-confirm-more")
 	assert.Contains(t, body, "[&>li]:my-0.5", "renglones separados como kp-dg-list")
+	assert.Contains(t, body, "w-[min(540px,calc(100%-32px))]", "ancho de la caja .fsp-guard")
+	assert.Contains(t, body, `<div class="ml-12 mt-5`, "las acciones empiezan bajo el texto, no bajo el ícono")
 }
 
 // Los paneles se van animados (como entran) y abren al instante: el
