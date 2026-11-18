@@ -119,10 +119,13 @@ func TestBase_DropzoneElegido(t *testing.T) {
 	assert.Contains(t, body, "if (el.type === 'radio') { if (!form.querySelector('[name=\"' + name + '\"]:checked')) n++; return; }", "un grupo de radios falta si no hay uno elegido")
 	assert.Contains(t, body, "if (done && num.hasAttribute('data-progress'))", "el paso completo pasa a palomita")
 	assert.Contains(t, body, "var listas = form.querySelectorAll('[data-kiban-missing-names]');", "requiere-completo también espera a los obligatorios listados")
-	assert.Contains(t, body, "(e.target.name && !e.target.hasAttribute('data-nodirty'))", "un buscador sin name no es un cambio")
+	assert.Contains(t, body, "(!e.target.name || e.target.hasAttribute('data-nodirty'))) return;", "un buscador sin name no es un cambio")
+	assert.Contains(t, body, "kibanPanelSnapshotAll(root) !== root.getAttribute('data-kiban-panel-snapshot')", "es cambio sólo si difiere de la foto al abrir")
+	assert.Contains(t, body, "Array.prototype.map.call(root.querySelectorAll('form'), kibanPanelSnapshot).join('|')", "la foto mira todos los forms del panel, no sólo el primero")
 	assert.Contains(t, body, "if (save) save.disabled = !!(primary && primary.disabled);", "sin poder guardar, el aviso no ofrece guardar y cerrar")
 	assert.Contains(t, body, "var ok = form.checkValidity() && !missing;", "lo que falta gana aunque el navegador dé el form por válido")
-	assert.Contains(t, body, "missing || invalid || sum.getAttribute('data-pending')")
+	assert.Contains(t, body, "missing || invalid || pending")
+	assert.Contains(t, body, "form.querySelectorAll('[data-kiban-require-one]')", "al menos una casilla marcada")
 	assert.Contains(t, body, "(total > 1 ? cfg.many : cfg.one) + ' ' + out.join(' ' + cfg.and + ' ')")
 	// El submit que espera a los obligatorios no frena a un botón con
 	// formnovalidate (guardar la razón social del RCE con su propio POST).
@@ -294,7 +297,8 @@ func TestBase_PieConMensajeDeCampoInvalido(t *testing.T) {
 	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
 
 	assert.Contains(t, body, "function kibanPanelInvalidMessage(form)")
-	assert.Contains(t, body, "var invalid = ok || missing ? '' : kibanPanelInvalidMessage(form);")
+	assert.Contains(t, body, "else if (!missing) invalid = kibanPanelInvalidMessage(form);")
+	assert.Contains(t, body, "if (el.closest && el.closest('[data-kiban-require-one]')) continue;", "la casilla de require-one no sale en rojo")
 	assert.Contains(t, body, "sum.toggleAttribute('data-error', !!invalid);")
 	// La flecha de un button.Split sigue al botón principal.
 	assert.Contains(t, body, "form.querySelectorAll('[data-kiban-split-trigger]')")

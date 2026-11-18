@@ -44,7 +44,11 @@ type FormPanelConfig struct {
 
 	FooterLeft templ.Component
 	// SummaryPending y SummaryReady son el texto del pie según el form pase
-	// o no la validación del navegador (required, type=email…).
+	// o no la validación del navegador (required, type=email…). Un
+	// contenedor con data-kiban-require-one="<name>" exige al menos una
+	// casilla marcada con ese name; con data-kiban-pending, su texto
+	// reemplaza a SummaryPending cuando es lo primero que falta («Elige al
+	// menos un rol»).
 	// SummaryClean, si viene, reemplaza a SummaryReady mientras no se haya
 	// tocado nada («Sin cambios» en una edición).
 	SummaryPending string
@@ -67,7 +71,9 @@ type FormPanelConfig struct {
 	PrimarySplit *button.SplitOptions
 
 	// Guard pide confirmación al cerrar con cambios sin guardar. nil: cierra
-	// sin preguntar.
+	// sin preguntar. «Con cambios» es que el form difiere de como llegó
+	// (desmarcar y volver a marcar no cuenta); un swap de htmx dentro del
+	// form cuenta siempre.
 	Guard *FormPanelGuard
 
 	// CloseHref es la pantalla de atrás. Standalone: el panel llegó con la

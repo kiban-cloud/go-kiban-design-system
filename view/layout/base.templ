@@ -1812,6 +1812,7 @@ templ Base(cfg Config) {
 					for (var i = 0; i < els.length; i++) {
 						var el = els[i];
 						if (el.disabled || !el.validity || !el.validity.customError) continue;
+						if (el.closest && el.closest('[data-kiban-require-one]')) continue;
 						var msg = String(el.validationMessage || '').trim();
 						if (msg) return msg;
 					}
@@ -1844,24 +1845,76 @@ templ Base(cfg Config) {
 					}
 					var sum = root.querySelector('[data-kiban-panel-sum]');
 					if (sum && form) {
+						// [data-kiban-require-one="<name>"]: al menos una casilla
+						// con ese name marcada (los roles de un grupo). Se expresa
+						// como validez del navegador, así cuenta para el pie igual
+						// que un required; kibanPanelInvalidMessage no la muestra en
+						// rojo (el texto va por data-kiban-pending).
+						form.querySelectorAll('[data-kiban-require-one]').forEach(function (box) {
+							var name = box.getAttribute('data-kiban-require-one');
+							var cbs = box.querySelectorAll('input[type="checkbox"]:not(:disabled)');
+							cbs = Array.prototype.filter.call(cbs, function (c) { return c.name === name; });
+							if (!cbs.length) return;
+							var any = cbs.some(function (c) { return c.checked; });
+							cbs.forEach(function (c) { c.setCustomValidity(''); });
+							if (!any) cbs[0].setCustomValidity(box.getAttribute('data-kiban-pending') || 'required');
+						});
 						// Lo que falta cuenta aunque el navegador dé el form por válido:
 						// los obligatorios sin required (input.Password) vienen en From.
 						var missing = kibanPanelMissing(form, sum);
 						if (typeof kibanMoneySync === 'function') kibanMoneySync(form);
 						var ok = form.checkValidity() && !missing;
 						var ready = sum.getAttribute('data-clean') && !root.hasAttribute('data-dirty') ? sum.getAttribute('data-clean') : sum.getAttribute('data-ready');
-						// Sin nada que falte, un campo marcado inválido a propósito
-						// (setCustomValidity con mensaje: un monto arriba del tope de
-						// input.Money) dice su mensaje en el pie, en rojo, en lugar
-						// de data-pending.
-						var invalid = ok || missing ? '' : kibanPanelInvalidMessage(form);
-						sum.textContent = (ok ? ready : missing || invalid || sum.getAttribute('data-pending')) || '';
+						var pending = sum.getAttribute('data-pending');
+						var invalid = '';
+						if (!ok) {
+							// El primer campo que falta dice qué falta, si su
+							// contenedor trae data-kiban-pending («Elige al menos
+							// un rol»). Si no, y sin nada que contar, un campo
+							// marcado inválido a propósito (setCustomValidity con
+							// mensaje: un monto arriba del tope de input.Money) dice
+							// su mensaje en rojo; al final, el SummaryPending.
+							var bad = form.querySelector(':invalid:not(fieldset)');
+							var box = bad && bad.closest('[data-kiban-pending]');
+							if (box && form.contains(box)) pending = box.getAttribute('data-kiban-pending');
+							else if (!missing) invalid = kibanPanelInvalidMessage(form);
+						}
+						sum.textContent = (ok ? ready : missing || invalid || pending) || '';
 						sum.toggleAttribute('data-error', !!invalid);
 					}
 				}
+				// kibanPanelSnapshot es el estado del form del panel: con él se
+				// sabe si lo que hay difiere de lo que llegó (marcar y desmarcar
+				// la misma casilla no es un cambio). Usa form.elements para
+				// incluir los campos asociados con form= (el título editable).
+				function kibanPanelSnapshot(form) {
+					var parts = [];
+					Array.prototype.forEach.call(form.elements, function (el) {
+						if (!el.name || el.disabled || el.hasAttribute('data-nodirty') || el.type === 'file' || el.type === 'submit' || el.type === 'button') return;
+						if (el.type === 'checkbox' || el.type === 'radio') {
+							parts.push(el.name + '=' + el.value + ':' + (el.checked ? '1' : '0'));
+							return;
+						}
+						parts.push(el.name + '=' + el.value);
+					});
+					return parts.join('&');
+				}
+				// kibanPanelSnapshotAll junta la foto de todos los forms del
+				// panel: un ViewPanel puede tener varios (el detalle de una
+				// entrega: datos, fecha, comentario) y el primero puede ni
+				// verse. Con un solo form es lo mismo que kibanPanelSnapshot.
+				function kibanPanelSnapshotAll(root) {
+					return Array.prototype.map.call(root.querySelectorAll('form'), kibanPanelSnapshot).join('|');
+				}
 				function kibanPanelInit() {
 					var any = false;
-					document.querySelectorAll('[data-kiban-panel]').forEach(function (root) { any = true; kibanPanelRefresh(root); });
+					document.querySelectorAll('[data-kiban-panel]').forEach(function (root) {
+						any = true;
+						if (root.querySelector('form') && !root.hasAttribute('data-kiban-panel-snapshot')) {
+							root.setAttribute('data-kiban-panel-snapshot', kibanPanelSnapshotAll(root));
+						}
+						kibanPanelRefresh(root);
+					});
 					// Los pasos de una página (sin panel) se numeran igual dentro
 					// de un contenedor [data-kiban-steps].
 					document.querySelectorAll('[data-kiban-steps]').forEach(kibanPanelRefresh);
@@ -1971,7 +2024,12 @@ templ Base(cfg Config) {
 						if (!root || !(e.target.form || e.target.tagName === 'FORM')) return;
 						// Un campo sin name (un buscador que sólo filtra) o con
 						// data-nodirty no es un cambio: no viaja con el form.
-						if (e.target.tagName === 'FORM' || (e.target.name && !e.target.hasAttribute('data-nodirty'))) root.setAttribute('data-dirty', '');
+						if (e.target.tagName !== 'FORM' && (!e.target.name || e.target.hasAttribute('data-nodirty'))) return;
+						// Es cambio si el form difiere de la foto que se tomó al
+						// abrir (desmarcar y volver a marcar no cuenta).
+						var dirty = root.hasAttribute('data-dirty-forced') || !root.querySelector('form') ||
+							kibanPanelSnapshotAll(root) !== root.getAttribute('data-kiban-panel-snapshot');
+						root.toggleAttribute('data-dirty', dirty);
 						kibanPanelRefresh(root);
 					});
 				});
@@ -1981,7 +2039,12 @@ templ Base(cfg Config) {
 				document.addEventListener('htmx:afterSettle', function (e) {
 					var el = e.detail && e.detail.elt;
 					var root = el && el.closest && el.closest('[data-kiban-panel] form') && el.closest('[data-kiban-panel]');
-					if (root) root.setAttribute('data-dirty', '');
+					if (root) {
+						// Un renglón agregado o una sección repintada cuenta
+						// como cambio aunque sus campos lleguen vacíos.
+						root.setAttribute('data-dirty-forced', '');
+						root.setAttribute('data-dirty', '');
+					}
 				});
 				document.addEventListener('click', function (e) {
 					var t = e.target;
@@ -2096,12 +2159,13 @@ templ Base(cfg Config) {
 					var ok = ((one && btn.getAttribute('data-kiban-confirm-ok-one')) || btn.getAttribute('data-kiban-confirm-ok') || 'OK').replace('{n}', count);
 					var wrap = document.createElement('div');
 					wrap.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(26,32,53,0.3)] p-4';
-					wrap.innerHTML = '<div class="w-[min(480px,100%)] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true">' +
-						(info
-							? '<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#F3EAFF] text-[#6A00D6]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>'
-							: '<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#FDECEC] text-[#B42318]"><svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></span>') +
+					// La caja .fsp-guard del proto: 540 px, el ícono de aviso en su
+					// círculo (morado si no destruye nada, rojo si sí) y las
+					// acciones alineadas con el texto, no con el ícono.
+					wrap.innerHTML = '<div class="w-[min(540px,calc(100%-32px))] rounded-xl bg-white p-6 shadow-[0_24px_60px_-20px_rgba(26,32,53,0.5)]" role="alertdialog" aria-modal="true">' +
+						'<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ' + (info ? 'bg-[#F3EAFF] text-[#6A00D6]' : 'bg-[#FDECEC] text-[#B42318]') + '"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>' +
 						'<div class="min-w-0"><h2 class="mb-1.5 mt-[7px] text-base font-medium leading-[22px] text-kiban-ink" data-t></h2><p class="m-0 text-[13px] leading-normal text-[#606875]" data-p></p><ul class="mb-0 mt-2.5 list-disc pl-[18px] text-[13px] text-[#474F66] [&>li]:my-0.5" data-l></ul></div></div>' +
-						'<div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-kiban-border pt-4"><button type="button" class="rounded-md border border-[#CDD3DF] bg-white px-3 py-[7px] text-[13px] font-medium text-kiban-ink hover:bg-[#F4F7FF]" data-no></button><button type="button" class="' + (info ? 'rounded-md border border-kiban-primary bg-kiban-primary px-3 py-[7px] text-[13px] font-medium text-white hover:opacity-90' : 'rounded-md border border-[#D92D20] bg-[#D92D20] px-3 py-[7px] text-[13px] font-medium text-white hover:bg-[#B42318]') + '" data-yes></button></div></div>';
+						'<div class="ml-12 mt-5 flex items-center justify-end gap-2 border-t border-[#E2E5EC] pt-4 max-[520px]:ml-0 max-[520px]:flex-wrap"><button type="button" class="rounded-md border border-[#CDD3DF] bg-white px-3 py-[7px] text-[13px] font-medium text-kiban-ink hover:bg-[#F4F7FF] max-[520px]:w-full" data-no></button><button type="button" class="' + (info ? 'rounded-md border border-kiban-primary bg-kiban-primary px-3 py-[7px] text-[13px] font-medium text-white hover:opacity-90' : 'rounded-md border border-[#D92D20] bg-[#D92D20] px-3 py-[7px] text-[13px] font-medium text-white hover:bg-[#B42318]') + ' max-[520px]:w-full" data-yes></button></div></div>';
 					wrap.querySelector('[data-t]').textContent = title;
 					var ptext = btn.getAttribute('data-kiban-confirm-text') || '';
 					var strong = btn.getAttribute('data-kiban-confirm-strong') || '';
