@@ -11,6 +11,7 @@ templ FormPanel(cfg FormPanelConfig) {
 		data-kiban-panel
 		data-close-href={ cfg.CloseHref }
 		data-standalone?={ cfg.Standalone }
+		data-half?={ cfg.Half }
 		role="presentation"
 	>
 		<div class="absolute inset-0 bg-[rgba(244,247,255,0.55)] backdrop-blur-[6px] backdrop-saturate-[.6]" data-kiban-panel-close></div>
@@ -158,6 +159,7 @@ templ ViewPanel(cfg ViewPanelConfig) {
 		data-kiban-panel
 		data-close-href={ cfg.CloseHref }
 		data-standalone?={ cfg.Standalone }
+		data-half?={ cfg.Half }
 		role="presentation"
 	>
 		<div class="absolute inset-0 bg-[rgba(244,247,255,0.55)] backdrop-blur-[6px] backdrop-saturate-[.6]" data-kiban-panel-close></div>
