@@ -335,3 +335,16 @@ func TestBase_Ubicacion(t *testing.T) {
 	assert.Contains(t, body, "geo.getAttribute('data-kiban-geo-lat') || 'latitude'")
 	assert.Contains(t, body, "navigator.geolocation.getCurrentPosition")
 }
+
+// Un panel que abre sobre otro no oscurece el fondo y es 5vw más angosto
+// que el de abajo; uno de 50 % sobre uno ancho conserva su ancho.
+func TestBase_PanelesApilados(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "[data-kiban-panel] ~ [data-kiban-panel] > [data-kiban-panel-close]:not(button)", "el de arriba sin velo")
+	assert.Contains(t, body, "[data-kiban-panel] ~ .kiban-panel-ph > .kiban-panel-ph-bg", "la hoja de carga apilada tampoco oscurece")
+	assert.Contains(t, body, "[data-kiban-panel] ~ [data-kiban-panel] > [role=dialog],")
+	assert.Contains(t, body, "> .kiban-panel-ph-sheet { width: 90vw; }")
+	assert.Contains(t, body, "> .kiban-panel-ph-sheet { width: 85vw; }", "un tercer nivel, otros 5vw")
+	assert.Contains(t, body, "[data-kiban-panel]:not([data-half]) ~ [data-kiban-panel][data-half] > [role=dialog]", "el de 50 % sobre uno ancho no crece")
+	assert.Contains(t, body, "> .kiban-panel-ph-sheet { width: 45vw; }", "sobre uno de 50 %, 45vw")
+}

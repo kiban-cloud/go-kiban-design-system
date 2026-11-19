@@ -44,6 +44,7 @@ func TestFormPanel_EsElFormulario(t *testing.T) {
 	assert.Contains(t, body, `action="/crm/customers/new" method="POST"`)
 	assert.Contains(t, body, "<p>campos</p>")
 	assert.Contains(t, body, "w-1/2", "Half es el panel del 50 %")
+	assert.Contains(t, body, "data-half", "el apilado lee el ancho del panel de abajo")
 	assert.Contains(t, body, "animate-[kiban-panel-in")
 	assert.Contains(t, body, `data-close-href="/crm/customers"`)
 	assert.NotContains(t, body, "data-standalone")
@@ -97,6 +98,7 @@ func TestViewPanel_MismoEncabezadoSinFormNiPie(t *testing.T) {
 	assert.Contains(t, body, "<a>Editar</a>")
 	assert.Contains(t, body, "<p>datos</p>")
 	assert.Contains(t, body, "w-[95vw]", "sin Half es el panel del 95 %")
+	assert.NotContains(t, body, "data-half")
 	assert.Contains(t, body, `data-close-href="/crm/customers"`)
 	assert.NotContains(t, body, "<form")
 	assert.NotContains(t, body, "data-kiban-panel-sum")
@@ -130,6 +132,7 @@ func TestViewPanel_StandaloneYStatic(t *testing.T) {
 
 	assert.Contains(t, body, "data-standalone")
 	assert.Contains(t, body, "w-1/2")
+	assert.Contains(t, body, "data-half")
 	assert.NotContains(t, body, "animate-[kiban-panel-in")
 }
 
