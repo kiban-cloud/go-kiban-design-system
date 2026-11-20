@@ -1,6 +1,9 @@
 package drawer
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/button"
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/button"
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+)
 
 // FormPanel es el panel de formulario flamboyant (ver FormPanelConfig).
 // children es el cuerpo: las tarjetas del formulario.
@@ -87,7 +90,7 @@ templ panelGuard(id string, g FormPanelGuard) {
 // panelHeader es el encabezado común de FormPanel y ViewPanel: ícono,
 // antetítulo, título (en vivo si hay TitleFrom), subtítulo, acciones y cerrar.
 templ panelHeader(h panelHead) {
-	<div class="flex min-h-16 items-center gap-3 border-b border-kiban-border px-5 py-3">
+	<div class={ "flex min-h-16 items-center gap-3 border-b border-kiban-border px-5 py-3", templ.KV("max-md:flex-wrap", flamboyant.On(ctx)) }>
 		<div class="flex min-w-0 flex-1 items-center gap-3">
 			if h.Tile != nil {
 				@h.Tile
@@ -134,7 +137,10 @@ templ panelHeader(h panelHead) {
 				}
 			</div>
 		</div>
-		<div class="flex items-center gap-2">
+		if len(h.Tabs) > 0 {
+			@panelTabs(h)
+		}
+		<div class={ "flex items-center gap-2", templ.KV("flex-1 justify-end", len(h.Tabs) > 0) }>
 			if h.Dirty != "" {
 				<span class="hidden whitespace-nowrap text-xs text-[#6A00D6] [[data-dirty]_&]:inline" data-kiban-panel-dirty><span aria-hidden="true">● </span>{ h.Dirty }</span>
 			}
@@ -199,4 +205,43 @@ templ ViewPanel(cfg ViewPanelConfig) {
 			@panelGuard(cfg.ID, *cfg.Guard)
 		}
 	</div>
+}
+
+// panelTabs son las pestañas centradas del encabezado (ver
+// FormPanelConfig.Tabs). El cambio de pestaña es local: muestra el
+// [data-kiban-panel-pane] de la elegida dentro del mismo panel.
+templ panelTabs(h panelHead) {
+	<nav class="flex shrink-0 items-center gap-1 rounded-full bg-[#F1F3F7] p-1 max-md:order-last max-md:w-full max-md:overflow-x-auto" role="tablist" data-kiban-panel-tabs>
+		for i, t := range h.Tabs {
+			<button
+				type="button"
+				role="tab"
+				aria-selected={ panelTabSelected(i) }
+				data-kiban-panel-tab={ t.Key }
+				class="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium text-[#606875] hover:text-kiban-ink aria-selected:bg-white aria-selected:text-kiban-ink aria-selected:shadow-[0_1px_3px_rgba(26,32,53,0.15)]"
+			>
+				{ t.Label }
+				if t.Count != "" {
+					<span class="rounded-full bg-[rgba(0,71,255,.08)] px-1.5 py-px text-[11px] text-[#0047FF]" data-kiban-panel-tab-count>{ t.Count }</span>
+				}
+				if t.Badge != "" {
+					<span class="grid h-4 min-w-4 place-items-center rounded-full bg-[#FFF4E0] px-1 text-[10px] font-semibold text-[#8A5A00]">{ t.Badge }</span>
+				}
+			</button>
+		}
+	</nav>
+	<script>
+		(function () {
+			if (window.__kibanPanelTabs) return;
+			window.__kibanPanelTabs = true;
+			document.addEventListener('click', function (e) {
+				var b = e.target.closest && e.target.closest('[data-kiban-panel-tab]');
+				if (!b) return;
+				var panel = b.closest('[data-kiban-panel]');
+				var key = b.getAttribute('data-kiban-panel-tab');
+				panel.querySelectorAll('[data-kiban-panel-tab]').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+				panel.querySelectorAll('[data-kiban-panel-pane]').forEach(function (p) { p.hidden = p.getAttribute('data-kiban-panel-pane') !== key; });
+			});
+		})();
+	</script>
 }

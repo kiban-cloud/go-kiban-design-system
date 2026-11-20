@@ -1,6 +1,9 @@
 package card
 
-import "github.com/kiban-cloud/go-kiban-design-system/view/chart"
+import (
+	"github.com/kiban-cloud/go-kiban-design-system/view/chart"
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+)
 
 // BentoGrid es la cuadrícula de tarjetas Bento: una columna en móvil, dos
 // desde md y seis desde xl (cada tarjeta dice cuántas ocupa con Cols).
@@ -18,7 +21,7 @@ templ BentoGrid() {
 // Órdenes de pago, Retiros, Dispersión); Base y Monitoreo usan la misma.
 templ Bento(o BentoOptions) {
 	<article
-		class={ "group relative flex min-w-0 flex-col gap-4 overflow-hidden rounded-[18px] border border-[#E2E5EC] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--c)_40%,#E2E5EC)] hover:shadow-[0_18px_40px_-24px_color-mix(in_srgb,var(--c)_70%,transparent)]", bentoCols(o.Cols), templ.KV("md:col-span-2", o.Big) }
+		class={ "group relative flex min-w-0 flex-col gap-4 overflow-hidden rounded-[18px] border border-[#E2E5EC] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--c)_40%,#E2E5EC)] hover:shadow-[0_18px_40px_-24px_color-mix(in_srgb,var(--c)_70%,transparent)]", bentoCols(o.Cols), templ.KV("xl:row-span-2", o.Rows == 2), templ.KV("md:col-span-2", o.Big) }
 		style={ bentoStyle(o) }
 		data-kiban-bento
 	>
@@ -38,21 +41,29 @@ templ Bento(o BentoOptions) {
 			}
 		</header>
 		<div class={ templ.KV("grid items-end gap-5 md:grid-cols-[minmax(0,200px)_minmax(0,1fr)]", o.Big), templ.KV("flex flex-col gap-3", !o.Big) }>
-			<div class={ templ.KV("flex flex-wrap gap-x-7 gap-y-4 md:flex-col md:flex-nowrap", o.Big), templ.KV("grid grid-cols-2 gap-3", !o.Big) }>
-				for _, k := range o.Kpis {
-					@bentoKpi(k, o.Big)
-				}
-			</div>
-			<div class="relative">
-				<div class="absolute left-0 top-0 text-[11px] text-[#9096A3]">{ o.TrendUnit }</div>
-				{{ w, h, class := bentoSpark(o) }}
-				@chart.Spark(chart.SparkOptions{Values: o.Trend, Color: o.Color, Width: w, Height: h, Class: class})
-				<div class="mt-1 flex justify-between text-[11px] text-[#9096A3]">
-					for _, a := range o.Axis {
-						<span>{ a }</span>
+			if len(o.Kpis) > 0 || !flamboyant.On(ctx) {
+				<div class={ templ.KV("flex flex-wrap gap-x-7 gap-y-4 md:flex-col md:flex-nowrap", o.Big), templ.KV("grid grid-cols-2 gap-3", !o.Big) }>
+					for _, k := range o.Kpis {
+						@bentoKpi(k, o.Big)
 					}
 				</div>
-			</div>
+			}
+			if o.Body != nil {
+				<div class="min-w-0">
+					@o.Body
+				</div>
+			} else {
+				<div class="relative">
+					<div class="absolute left-0 top-0 text-[11px] text-[#9096A3]">{ o.TrendUnit }</div>
+					{{ w, h, class := bentoSpark(o) }}
+					@chart.Spark(chart.SparkOptions{Values: o.Trend, Color: o.Color, Width: w, Height: h, Class: class})
+					<div class="mt-1 flex justify-between text-[11px] text-[#9096A3]">
+						for _, a := range o.Axis {
+							<span>{ a }</span>
+						}
+					</div>
+				</div>
+			}
 		</div>
 		if len(o.Live) > 0 {
 			<div class="flex flex-col gap-1 rounded-xl bg-[var(--s)] p-1.5">

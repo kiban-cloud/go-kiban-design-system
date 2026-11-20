@@ -3,6 +3,7 @@ package hero
 import (
 	"strconv"
 
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 )
 
@@ -22,28 +23,35 @@ templ Cycle(o CycleOptions) {
 		<div class="flex flex-wrap items-start justify-between gap-4">
 			<div>
 				if o.Space != "" {
-					<div class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 py-[3px] pl-1 pr-2.5 text-xs font-medium tracking-[.04em] text-white/85">
+					<div class={ spaceClass(o.SpaceTile != nil || !flamboyant.On(ctx)) }>
 						if o.SpaceTile != nil {
 							@o.SpaceTile
 						}
 						{ o.Space }
 					</div>
 				}
-				<h1 class="mb-1 mt-2.5 text-[34px] font-semibold leading-10 tracking-[-.02em] max-[900px]:text-[28px] max-[900px]:leading-[34px]">{ o.Title }</h1>
+				if o.TitleTrend != "" {
+					<h1 class="mb-1 mt-2.5 text-[34px] font-semibold leading-10 tracking-[-.02em] max-[900px]:text-[28px] max-[900px]:leading-[34px]">
+						{ o.Title }
+						<span class={ trendClass(o.TitleTrendDown) }>{ o.TitleTrend }</span>
+					</h1>
+				} else {
+					<h1 class="mb-1 mt-2.5 text-[34px] font-semibold leading-10 tracking-[-.02em] max-[900px]:text-[28px] max-[900px]:leading-[34px]">{ o.Title }</h1>
+				}
 				if o.Text != "" {
 					<p class="m-0 max-w-[52ch] text-[15px] text-white/80">{ o.Text }</p>
 				}
 			</div>
-			if o.PendingCount > 0 {
-				if o.PendingAttrs != nil {
-					<button type="button" class={ pendingClass } { o.PendingAttrs... }>
-						@pendingBody(o)
-					</button>
-				} else {
-					<a href={ templ.SafeURL(o.PendingHref) } class={ pendingClass }>
-						@pendingBody(o)
+			if o.Action != nil {
+				<div class="flex flex-wrap items-center gap-2.5">
+					<a href={ templ.SafeURL(o.Action.Href) } class="inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#0036C4] shadow-[0_8px_24px_-10px_rgba(0,0,0,.45)] hover:bg-[#EEF3FF]" { o.Action.Attrs... }>
+						@layout.FlamboyantIcon("play")
+						{ o.Action.Label }
 					</a>
-				}
+					@pending(o)
+				</div>
+			} else {
+				@pending(o)
 			}
 		</div>
 		if len(o.Steps) > 0 {
@@ -81,9 +89,25 @@ templ Cycle(o CycleOptions) {
 
 const pendingClass = "inline-flex h-11 items-center gap-2.5 rounded-full bg-white pl-3 pr-3.5 text-sm text-[#0036C4] shadow-[0_8px_24px_-10px_rgba(0,0,0,.45)] hover:bg-[#EEF3FF]"
 
+// pending es el botón «N por revisar» (nada sin pendientes). Sin Action va
+// suelto, como siempre; con Action, junto a ella.
+templ pending(o CycleOptions) {
+	if o.PendingCount > 0 {
+		if o.PendingAttrs != nil {
+			<button type="button" class={ pendingClass } { o.PendingAttrs... }>
+				@pendingBody(o)
+			</button>
+		} else {
+			<a href={ templ.SafeURL(o.PendingHref) } class={ pendingClass }>
+				@pendingBody(o)
+			</a>
+		}
+	}
+}
+
 // pendingBody es el contenido del botón «N por revisar».
 templ pendingBody(o CycleOptions) {
-	@layout.FlamboyantIcon("bell")
+	@layout.FlamboyantIcon(pendingIcon(o))
 	<span><b class="font-bold">{ strconv.Itoa(o.PendingCount) }</b> { o.PendingLabel }</span>
 	@layout.FlamboyantIcon("chevron-right")
 }

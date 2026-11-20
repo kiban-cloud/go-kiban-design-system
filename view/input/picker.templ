@@ -33,7 +33,11 @@ templ Picker(o PickerOptions) {
 			</label>
 		}
 		<div
-			class={ "relative grid max-h-[360px] gap-2 overflow-auto p-0.5", templ.KV("grid-cols-2 max-sm:grid-cols-1", o.Columns == 2) }
+			class={
+				templ.KV("relative grid max-h-[360px] gap-2 overflow-auto p-0.5", !o.Dense),
+				templ.KV("grid-cols-2 max-sm:grid-cols-1", o.Columns == 2 && !o.Dense),
+				templ.KV("relative grid p-0.5 grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-1.5", o.Dense),
+			}
 			role="radiogroup"
 			if o.Label != "" {
 				aria-label={ o.Label }
@@ -43,19 +47,33 @@ templ Picker(o PickerOptions) {
 			for _, opt := range o.Options {
 				<label
 					class={
-						"relative grid cursor-pointer items-center gap-2.5 rounded-lg border border-[#CDD3DF] bg-white px-2.5 py-2 hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary [&[hidden]]:hidden",
+						pickerItemClass(o.Dense),
 						templ.KV("grid-cols-[40px_minmax(0,1fr)]", opt.Tile != nil),
-						templ.KV("grid-cols-[minmax(0,1fr)]", opt.Tile == nil),
+						templ.KV("grid-cols-[8px_minmax(0,1fr)]", opt.Tile == nil && opt.Tone != ""),
+						templ.KV("grid-cols-[minmax(0,1fr)]", opt.Tile == nil && opt.Tone == ""),
 					}
 					data-kiban-picker-item
 					data-q={ opt.searchText() }
 				>
-					<input type="radio" name={ o.Name } value={ opt.Value } checked?={ opt.Value == o.Selected } required?={ o.Required } class="pointer-events-none absolute opacity-0" { o.Attrs... }/>
+					<input
+						type="radio"
+						name={ o.Name }
+						value={ opt.Value }
+						checked?={ opt.Value == o.Selected }
+						required?={ o.Required }
+						if opt.Tone != "" {
+							data-tone={ opt.Tone }
+						}
+						class="pointer-events-none absolute opacity-0"
+						{ o.Attrs... }
+					/>
 					if opt.Tile != nil {
 						@opt.Tile
+					} else if opt.Tone != "" {
+						<i class={ "h-2 w-2 rounded-full", opt.toneDot() } aria-hidden="true"></i>
 					}
 					<span class="min-w-0">
-						<b class="block truncate text-sm font-medium leading-[18px] text-kiban-ink">{ opt.Title }</b>
+						<b class={ templ.KV("block truncate text-sm font-medium leading-[18px] text-kiban-ink", !o.Dense), templ.KV("block truncate text-[13px] font-normal leading-[18px] text-kiban-ink", o.Dense) }>{ opt.Title }</b>
 						if opt.Sub != "" {
 							<small class="block truncate text-xs leading-4 text-[#606875]">{ opt.Sub }</small>
 						}

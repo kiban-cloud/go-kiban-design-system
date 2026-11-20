@@ -112,6 +112,15 @@ type SubItem struct {
 	Gap bool
 }
 
+// SubAction is the sub-nav's main action (Config.SubAction): a full-width
+// primary button. It navigates to Href; Attrs lets the hosting project turn
+// it into an htmx trigger (open a panel) instead.
+type SubAction struct {
+	Label string
+	Href  string
+	Attrs templ.Attributes
+}
+
 // Grouped reports whether any sub-nav item carries a Group: the sub-nav
 // then renders the tool header (icon + name) instead of the plain
 // SectionLabel, and the group headings.
@@ -240,6 +249,11 @@ type Config struct {
 	Tools    []Tool // top of the icon rail — kiban tools
 	Docs     []Tool // bottom of the icon rail — see DocsMenu
 	SubItems []SubItem
+	// SubAction, when non-nil, is the module's main action as a button at
+	// the top of the flamboyant sub-nav, above the first item («Nueva
+	// ejecución» in workfloo). Only the flamboyant shell renders it; the
+	// classic SubNav ignores it.
+	SubAction *SubAction
 
 	// SandboxToggle, when non-nil, renders a switch in the topbar (next to
 	// the user menu). Leave nil to omit the control entirely on pages that

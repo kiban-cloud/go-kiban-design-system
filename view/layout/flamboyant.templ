@@ -279,6 +279,9 @@ templ fsSubnav(cfg Config) {
 			</span>
 			{ label }
 		</div>
+		if cfg.SubAction != nil {
+			<a href={ templ.URL(cfg.SubAction.Href) } data-nav-loader?={ cfg.SubAction.Attrs == nil } class="fs-sub-cta" { cfg.SubAction.Attrs... }>{ cfg.SubAction.Label }</a>
+		}
 		for i, item := range cfg.SubItems {
 			if item.Group != "" && (i == 0 || cfg.SubItems[i-1].Group != item.Group) {
 				<div class="fs-sub-group">{ item.Group }</div>

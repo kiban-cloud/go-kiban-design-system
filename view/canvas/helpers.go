@@ -69,3 +69,30 @@ func encodeEdges(edges []EdgeOptions) string {
 	}
 	return string(b)
 }
+
+// flNodeClass es la tarjeta de flamboyant según estado y forma.
+func flNodeClass(o NodeOptions) string {
+	base := "group relative w-[280px] border bg-white transition-[border-color,box-shadow] hover:border-[#0047FF] hover:shadow-[0_4px_14px_-6px_rgba(0,71,255,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0047FF]"
+	if o.Outcome != "" {
+		base += " flex h-10 items-center rounded-full px-3.5"
+	} else {
+		base += " rounded-lg px-3 py-2.5"
+	}
+	switch o.Status {
+	case StatusNotConfigured:
+		return base + " border-dashed border-[#B98CFF]"
+	case StatusError:
+		return base + " border-[#F3A6A6]"
+	}
+	return base + " border-[#CDD3DF]"
+}
+
+func flOutcomeDot(o string) string {
+	switch o {
+	case OutcomeSuccess:
+		return "bg-[#12B76A]"
+	case OutcomeDanger:
+		return "bg-[#E5484D]"
+	}
+	return "bg-[#9096A3]"
+}

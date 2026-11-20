@@ -192,6 +192,11 @@ type PickerOptions struct {
 	// Columns 2 pone las tarjetas en dos columnas (una en móvil); cualquier
 	// otro valor, una.
 	Columns int
+	// Dense son tarjetas chicas, de una línea, en una rejilla que pone tantas
+	// columnas como quepan (200 px mínimo), sin tope de alto: para elegir
+	// entre pocas opciones cortas, varias veces en el mismo form (el caso de
+	// prueba de cada paso de un flujo). Ignora Columns.
+	Dense bool
 	// Required pide elegir una (el required del navegador en los radios).
 	Required bool
 	// Error va debajo de la lista.
@@ -207,6 +212,31 @@ type PickerOption struct {
 	Value, Title, Sub string
 	Tile              templ.Component
 	Search            string
+	// Tone pone un punto de color antes del título: "success" (verde),
+	// "danger" (rojo) o "neutral" (gris); vacío, sin punto. Va también en el
+	// radio como data-tone, para elegir por tono desde el navegador («Todo
+	// exitoso»).
+	Tone string
+}
+
+// pickerItemClass es la tarjeta de una opción de Picker: la de siempre o, con
+// Dense, la chica de una línea.
+func pickerItemClass(dense bool) string {
+	if dense {
+		return "relative grid cursor-pointer items-center gap-2 rounded-lg border border-[#CDD3DF] bg-white px-2.5 py-[7px] hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary [&[hidden]]:hidden"
+	}
+	return "relative grid cursor-pointer items-center gap-2.5 rounded-lg border border-[#CDD3DF] bg-white px-2.5 py-2 hover:bg-[#F4F7FF] has-[:checked]:border-kiban-primary has-[:checked]:bg-[rgba(0,71,255,0.08)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-kiban-primary [&[hidden]]:hidden"
+}
+
+// toneDot es la clase del punto de Tone.
+func (p PickerOption) toneDot() string {
+	switch p.Tone {
+	case "success":
+		return "bg-[#00A884]"
+	case "danger":
+		return "bg-[#E5484D]"
+	}
+	return "bg-[#CDD3DF]"
 }
 
 func (p PickerOption) searchText() string {
