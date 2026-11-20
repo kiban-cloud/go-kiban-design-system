@@ -544,9 +544,9 @@ func fsSpaceCrumb(cfg Config) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var26 templ.SafeURL
-				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(cfg.SwitchSpaceAction))
+				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, cfg.SwitchSpaceAction))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 107, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 107, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func fsSpaceCrumb(cfg Config) templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToLower(s.Name))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 107, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 107, Col: 110}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -855,9 +855,9 @@ func fsModeSeg(t SandboxToggle) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var45 templ.SafeURL
-			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(t.ToggleHref))
+			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, t.ToggleHref))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 146, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 146, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -870,7 +870,7 @@ func fsModeSeg(t SandboxToggle) templ.Component {
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(docsCatalog.T(ctx, "shell.mode.production"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 146, Col: 164}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 146, Col: 165}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
@@ -912,9 +912,9 @@ func fsModeSeg(t SandboxToggle) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var49 templ.SafeURL
-			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(t.ToggleHref))
+			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, t.ToggleHref))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 150, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 150, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
@@ -927,7 +927,7 @@ func fsModeSeg(t SandboxToggle) templ.Component {
 			var templ_7745c5c3_Var50 string
 			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(docsCatalog.T(ctx, "shell.mode.sandbox"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 150, Col: 161}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 150, Col: 162}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
@@ -1065,9 +1065,9 @@ func fsUserMenu(cfg Config) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var58 templ.SafeURL
-			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(item.Href))
+			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, item.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 172, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 172, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 			if templ_7745c5c3_Err != nil {
@@ -1136,9 +1136,9 @@ func fsUserMenu(cfg Config) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var62 templ.SafeURL
-		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(cfg.LogoutAction))
+		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, cfg.LogoutAction))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 185, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 185, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 		if templ_7745c5c3_Err != nil {
@@ -1635,9 +1635,9 @@ func fsSubnav(cfg Config) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var89 templ.SafeURL
-			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(cfg.SubAction.Href))
+			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, cfg.SubAction.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 283, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 283, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 			if templ_7745c5c3_Err != nil {
@@ -1668,7 +1668,7 @@ func fsSubnav(cfg Config) templ.Component {
 			var templ_7745c5c3_Var90 string
 			templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.SubAction.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 283, Col: 160}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 283, Col: 161}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var90))
 			if templ_7745c5c3_Err != nil {
@@ -1718,9 +1718,9 @@ func fsSubnav(cfg Config) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var93 templ.SafeURL
-			templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(item.Href))
+			templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinURLErrs(fsURL(ctx, item.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 291, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 291, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 			if templ_7745c5c3_Err != nil {
@@ -1746,7 +1746,7 @@ func fsSubnav(cfg Config) templ.Component {
 			var templ_7745c5c3_Var95 string
 			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 291, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/layout/flamboyant.templ`, Line: 291, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 			if templ_7745c5c3_Err != nil {

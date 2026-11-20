@@ -104,7 +104,7 @@ templ fsSpaceCrumb(cfg Config) {
 			<div class="sp-list">
 				for _, s := range fsSpaces(cfg) {
 					if cfg.SwitchSpaceAction != "" && s.Id != cfg.SpaceID {
-						<form method="POST" action={ templ.URL(cfg.SwitchSpaceAction) } data-fs-space={ strings.ToLower(s.Name) }>
+						<form method="POST" action={ fsURL(ctx, cfg.SwitchSpaceAction) } data-fs-space={ strings.ToLower(s.Name) }>
 							<input type="hidden" name="spaceId" value={ s.Id }/>
 							<button type="submit" role="menuitemradio" aria-checked="false" class="sp-item">
 								@fsSpaceRow(cfg, s)
@@ -143,11 +143,11 @@ templ fsSpaceRow(cfg Config, s SpaceOption) {
 templ fsModeSeg(t SandboxToggle) {
 	<div class={ "mode-seg", templ.KV("is-sbx", t.Enabled) } role="radiogroup" aria-label={ docsCatalog.T(ctx, "shell.mode.label") }>
 		if t.Enabled {
-			<a href={ templ.URL(t.ToggleHref) } data-nav-loader role="radio" aria-checked="false"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.production") }</a>
+			<a href={ fsURL(ctx, t.ToggleHref) } data-nav-loader role="radio" aria-checked="false"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.production") }</a>
 			<span role="radio" aria-checked="true"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.sandbox") }</span>
 		} else {
 			<span role="radio" aria-checked="true"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.production") }</span>
-			<a href={ templ.URL(t.ToggleHref) } data-nav-loader role="radio" aria-checked="false"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.sandbox") }</a>
+			<a href={ fsURL(ctx, t.ToggleHref) } data-nav-loader role="radio" aria-checked="false"><span class="mode-dot"></span>{ docsCatalog.T(ctx, "shell.mode.sandbox") }</a>
 		}
 	</div>
 }
@@ -169,7 +169,7 @@ templ fsUserMenu(cfg Config) {
 			</div>
 			<div class="usr-list">
 				for _, item := range fsUserItems(ctx, cfg) {
-					<a href={ templ.URL(item.Href) } role="menuitem" class="usr-it">
+					<a href={ fsURL(ctx, item.Href) } role="menuitem" class="usr-it">
 						@FlamboyantIcon("user")
 						{ item.Label }
 					</a>
@@ -182,7 +182,7 @@ templ fsUserMenu(cfg Config) {
 				}
 			</div>
 			<div class="usr-list usr-foot">
-				<form method="POST" action={ templ.URL(cfg.LogoutAction) }>
+				<form method="POST" action={ fsURL(ctx, cfg.LogoutAction) }>
 					<button type="submit" role="menuitem" class="usr-it">
 						@FlamboyantIcon("log-out")
 						{ docsCatalog.T(ctx, "shell.user.logout") }
@@ -280,7 +280,7 @@ templ fsSubnav(cfg Config) {
 			{ label }
 		</div>
 		if cfg.SubAction != nil {
-			<a href={ templ.URL(cfg.SubAction.Href) } data-nav-loader?={ cfg.SubAction.Attrs == nil } class="fs-sub-cta" { cfg.SubAction.Attrs... }>{ cfg.SubAction.Label }</a>
+			<a href={ fsURL(ctx, cfg.SubAction.Href) } data-nav-loader?={ cfg.SubAction.Attrs == nil } class="fs-sub-cta" { cfg.SubAction.Attrs... }>{ cfg.SubAction.Label }</a>
 		}
 		for i, item := range cfg.SubItems {
 			if item.Group != "" && (i == 0 || cfg.SubItems[i-1].Group != item.Group) {
@@ -288,7 +288,7 @@ templ fsSubnav(cfg Config) {
 			} else if item.Gap {
 				<div class="fs-sub-gap"></div>
 			}
-			<a href={ templ.URL(item.Href) } data-nav-loader class={ fsSubItemClass(cfg, item) }>{ item.Label }</a>
+			<a href={ fsURL(ctx, item.Href) } data-nav-loader class={ fsSubItemClass(cfg, item) }>{ item.Label }</a>
 		}
 	</nav>
 }

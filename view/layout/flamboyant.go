@@ -311,12 +311,13 @@ func fsTools(ctx context.Context, cfg Config) ([]fsModulo, []Tool) {
 			continue
 		}
 		m.Label = docsCatalog.T(ctx, "shell.module."+m.Key)
-		m.Href = hrefs[m.Key]
+		m.Href = flamboyant.Ruta(ctx, hrefs[m.Key])
 		out = append(out, m)
 	}
 	var extra []Tool
 	for _, t := range cfg.Tools {
 		if _, _, ok := FlamboyantModulo(ctx, t.Key); !ok {
+			t.Href = flamboyant.Ruta(ctx, t.Href)
 			extra = append(extra, t)
 		}
 	}
@@ -436,6 +437,12 @@ func fsUserItems(ctx context.Context, cfg Config) []UserMenuItem {
 		return cfg.UserMenuItems
 	}
 	return []UserMenuItem{{Label: docsCatalog.T(ctx, "shell.profile"), Href: "/kiban-cloud/profile"}}
+}
+
+// fsURL es un enlace del shell con el nombre de módulo del diseño
+// (flamboyant.Ruta): /workfloo/… sale como /solicitudes/….
+func fsURL(ctx context.Context, path string) templ.SafeURL {
+	return templ.URL(flamboyant.Ruta(ctx, path))
 }
 
 func fsSubItemClass(cfg Config, item SubItem) string {
