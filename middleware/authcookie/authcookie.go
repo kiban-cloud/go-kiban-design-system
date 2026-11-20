@@ -27,10 +27,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kiban-cloud/go-kiban-fullstack/logger"
 
+	"github.com/kiban-cloud/go-kiban-design-system/middleware/rutas"
 	"github.com/kiban-cloud/go-kiban-design-system/view"
 	"github.com/kiban-cloud/go-kiban-design-system/view/accountblocked"
 	"github.com/kiban-cloud/go-kiban-design-system/view/feature"
-	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
 	"github.com/kiban-cloud/go-kiban-design-system/view/ipblocked"
 	"github.com/kiban-cloud/go-kiban-design-system/view/layout"
 	controller_core_middleware "github.com/kiban-cloud/go-kiban/controller_core/middleware"
@@ -142,53 +142,10 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 
 		c.Set(controller_core_model.CONTEXT_KEY_AUTHORIZATION_OBJECT, authorization)
 		c.Request = c.Request.WithContext(shellFlags(c, authorization))
-		if destino, ok := rutaDelDiseno(c); ok {
-			c.Redirect(http.StatusPermanentRedirect, destino)
-			c.Abort()
-			return
-		}
-		ctx := c.Request.Context()
-		if !flamboyant.AceptaNombresNuevos(ctx) || !flamboyant.On(ctx) {
-			c.Next()
-			return
-		}
-		w := &rutasWriter{ResponseWriter: c.Writer}
-		c.Writer = w
-		c.Next()
-		w.terminar()
+		// En lugar de c.Next(): con los nombres nuevos de los módulos, el 308
+		// al nombre del diseño y la reescritura de la respuesta flamboyant.
+		rutas.Aplicar(c)
 	}
-}
-
-// rutaDelDiseno es a dónde se manda un request cuyo nombre de módulo no
-// corresponde a su diseño: flamboyant con el nombre viejo (un enlace de una
-// notificación, un marcador, una pantalla de siempre) va al nuevo, y sin
-// flamboyant con el nombre nuevo (un enlace compartido) vuelve al viejo. El
-// 308 conserva el método y el cuerpo, y htmx lo sigue solo. Sólo en módulos
-// que sirven los dos nombres (middleware/rutas).
-func rutaDelDiseno(c *gin.Context) (string, bool) {
-	ctx := c.Request.Context()
-	if !flamboyant.AceptaNombresNuevos(ctx) {
-		return "", false
-	}
-	path := c.Request.URL.Path
-	on := flamboyant.On(ctx)
-	porNuevo := flamboyant.PorNombreNuevo(ctx)
-	switch {
-	case on && !porNuevo:
-		nuevo, ok := flamboyant.ConNombreNuevo(path)
-		if !ok {
-			return "", false
-		}
-		path = nuevo
-	case !on && porNuevo:
-		// path ya llega traducido al nombre viejo.
-	default:
-		return "", false
-	}
-	if q := c.Request.URL.RawQuery; q != "" {
-		path += "?" + q
-	}
-	return path, true
 }
 
 // FeatureShellFlamboyant es el feature flag de kiban-cloud (colección

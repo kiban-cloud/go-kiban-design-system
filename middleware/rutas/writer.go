@@ -1,4 +1,4 @@
-package authcookie
+package rutas
 
 import (
 	"bytes"
@@ -19,14 +19,14 @@ var headersDeRuta = []string{"Location", "HX-Redirect", "HX-Location", "HX-Push-
 // que lee el JS. Grupo 1 es el atributo con la comilla, grupo 2 el path.
 var atributoDeRuta = regexp.MustCompile(`(\s(?:href|action|formaction|src|hx-(?:get|post|put|patch|delete|push-url|replace-url)|data-[a-z0-9-]*?(?:href|url|action|path|src))=["'])(/[^"'\s>]*)`)
 
-// rutasWriter lleva al nombre nuevo del módulo (flamboyant.ConNombreNuevo) lo
+// writer lleva al nombre nuevo del módulo (flamboyant.ConNombreNuevo) lo
 // que una respuesta flamboyant manda al navegador: los headers de redirección
 // y, si es HTML, los atributos con URL. Así las vistas y los controllers no
 // cambian: un enlace o un redirect hacia /workfloo/… sale hacia
 // /solicitudes/…. El HTML se junta en memoria y se reescribe al final; lo que
 // no es HTML pasa tal cual. Las URLs dentro de JS no se tocan (llegan por el
 // 308), ni las absolutas, ni un HX-Location en JSON.
-type rutasWriter struct {
+type writer struct {
 	gin.ResponseWriter
 	html     bool
 	buf      bytes.Buffer
@@ -36,7 +36,7 @@ type rutasWriter struct {
 
 // fixHeaders corre en cada escritura mientras los headers no se hayan
 // mandado: un header puesto después de c.Status también se corrige.
-func (w *rutasWriter) fixHeaders() {
+func (w *writer) fixHeaders() {
 	if w.ResponseWriter.Written() {
 		return
 	}
@@ -50,7 +50,7 @@ func (w *rutasWriter) fixHeaders() {
 	}
 }
 
-func (w *rutasWriter) esHTML() bool {
+func (w *writer) esHTML() bool {
 	if !w.decidido {
 		w.decidido = true
 		w.html = strings.HasPrefix(w.Header().Get("Content-Type"), "text/html")
@@ -58,17 +58,17 @@ func (w *rutasWriter) esHTML() bool {
 	return w.html
 }
 
-func (w *rutasWriter) WriteHeader(code int) {
+func (w *writer) WriteHeader(code int) {
 	w.fixHeaders()
 	w.ResponseWriter.WriteHeader(code)
 }
 
-func (w *rutasWriter) WriteHeaderNow() {
+func (w *writer) WriteHeaderNow() {
 	w.fixHeaders()
 	w.ResponseWriter.WriteHeaderNow()
 }
 
-func (w *rutasWriter) Write(b []byte) (int, error) {
+func (w *writer) Write(b []byte) (int, error) {
 	if !w.enviado && w.esHTML() {
 		return w.buf.Write(b)
 	}
@@ -76,17 +76,17 @@ func (w *rutasWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-func (w *rutasWriter) WriteString(s string) (int, error) {
+func (w *writer) WriteString(s string) (int, error) {
 	return w.Write([]byte(s))
 }
 
-func (w *rutasWriter) Written() bool {
+func (w *writer) Written() bool {
 	return w.buf.Len() > 0 || w.ResponseWriter.Written()
 }
 
 // Flush manda lo juntado antes de vaciar: quien hace streaming de HTML lo ve
 // salir, ya reescrito, y lo que siga pasa tal cual.
-func (w *rutasWriter) Flush() {
+func (w *writer) Flush() {
 	w.terminar()
 	w.ResponseWriter.Flush()
 }
@@ -94,7 +94,7 @@ func (w *rutasWriter) Flush() {
 // terminar escribe el HTML juntado con las URLs reescritas y corrige los
 // headers de una respuesta sin cuerpo (gin los escribe después de los
 // middlewares, sin pasar por aquí).
-func (w *rutasWriter) terminar() {
+func (w *writer) terminar() {
 	if w.enviado {
 		return
 	}
