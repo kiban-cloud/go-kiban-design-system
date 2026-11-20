@@ -51,7 +51,24 @@ type NodeOptions struct {
 	Href       string
 	Attrs      templ.Attributes
 	ActionMenu templ.Component
+	// Sólo en flamboyant (kiban cloud flamboyant):
+	// Tile es el cuadro de 36 px a la izquierda (el logo del proveedor o el
+	// ícono del tipo sobre su tono); sin Tile, Icon en el cuadro azul.
+	Tile templ.Component
+	// Outcome hace de la tarjeta una píldora de resultado de una rama (un
+	// punto de color y «Resultado»): OutcomeSuccess, OutcomeDanger o
+	// OutcomeNeutral. Vacío: tarjeta normal.
+	Outcome string
+	// OutcomeLabel es el texto de la derecha de la píldora («Resultado»).
+	OutcomeLabel string
 }
+
+// Colores del punto de Outcome.
+const (
+	OutcomeSuccess = "success"
+	OutcomeDanger  = "danger"
+	OutcomeNeutral = "neutral"
+)
 
 // EdgeOptions is one straight-line connection between two nodes. From/To are
 // the NodeOptions.ID values of the source and destination cards. Label is

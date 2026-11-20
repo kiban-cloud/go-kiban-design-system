@@ -13,6 +13,10 @@ type BentoOptions struct {
 	// Cols son las columnas que ocupa en la cuadrícula de 6 de BentoGrid en
 	// pantalla ancha (xl): 2, 3, 4 o 6. Cero: 2.
 	Cols int
+	// Rows son las filas que ocupa en pantalla ancha (xl): 2 alarga la
+	// tarjeta grande junto a dos chicas apiladas, y su tendencia crece.
+	// Cero: 1.
+	Rows int
 	// Color es el de la pieza: la franja de arriba, el ícono, la tendencia,
 	// la lista y el botón. Soft es su tinte claro: el fondo del ícono y de
 	// la lista («#8000FF» y «#F3E8FF»).
@@ -34,6 +38,10 @@ type BentoOptions struct {
 	Trend     []float64
 	TrendUnit string
 	Axis      []string
+	// Body, si viene, ocupa el lugar de la tendencia: una barra apilada
+	// (chart.Stack), un ranking (chart.Rank) o un aviso de «sin datos».
+	// Trend, TrendUnit y Axis se ignoran.
+	Body templ.Component
 	// LiveTitle y Live son la lista de lo que hay que revisar, con un punto
 	// que late junto al título. Sin renglones no se pinta.
 	LiveTitle string
@@ -87,8 +95,12 @@ func bentoCols(n int) string {
 	return "xl:col-span-2"
 }
 
-// bentoSpark es el lienzo de la tendencia: más ancho y alto en la grande.
+// bentoSpark es el lienzo de la tendencia: más ancho y alto en la grande, y
+// más alto todavía si ocupa dos filas.
 func bentoSpark(o BentoOptions) (w, h int, class string) {
+	if o.Big && o.Rows == 2 {
+		return 420, 180, "h-[110px] xl:h-[210px]"
+	}
 	if o.Big {
 		return 420, 96, "h-[110px]"
 	}

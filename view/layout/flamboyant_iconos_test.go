@@ -59,3 +59,10 @@ func TestInboxToggleAttrs_BasePorDefectoYPropia(t *testing.T) {
 
 	assert.Equal(t, "/crm/notifications/dropdown", layout.InboxToggleAttrs("/crm/notifications")["hx-get"])
 }
+
+// Los íconos de workfloo flamboyant (kiban-proto) existen.
+func TestFlamboyantIcon_NuevosDeWorkfloo(t *testing.T) {
+	for _, name := range []string{"play", "circle-check", "circle-x", "workflow", "git-branch", "plug", "history", "plus", "copy", "eye", "eye-off", "trash-2", "zap", "split", "trophy", "external-link", "git-fork", "list-checks", "grip-vertical"} {
+		assert.Contains(t, renderComp(t, layout.FlamboyantIcon(name)), "<svg", name)
+	}
+}

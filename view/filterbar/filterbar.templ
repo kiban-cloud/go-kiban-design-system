@@ -1,6 +1,10 @@
 package filterbar
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/kiban-cloud/go-kiban-design-system/view/flamboyant"
+)
 
 // Bar es la barra completa. children van a la derecha (los botones de la
 // pantalla: «Carga masiva», «Nuevo cliente»).
@@ -17,9 +21,13 @@ templ Bar(cfg Config) {
 		hx-swap="innerHTML"
 		hx-push-url="true"
 		hx-indicator={ cfg.Indicator }
+		if flamboyant.On(ctx) {
+			hx-sync="this:queue last"
+		}
 		hx-trigger="submit, change[!event.target.closest('[data-kiban-filter-q],[data-kiban-filter-manual]')], input changed delay:300ms from:find input[type=search]"
 	>
 		@State(cfg, false)
+		if cfg.Search.Name != "" || !flamboyant.On(ctx) {
 		<label class="flex h-9 min-w-[200px] flex-[0_1_240px] items-center gap-2 rounded-md border border-[#CDD3DF] bg-white px-2.5 text-[#9096A3] focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)] max-sm:flex-[1_1_100%]">
 			<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 			<input
@@ -32,6 +40,7 @@ templ Bar(cfg Config) {
 				class="h-full min-w-0 flex-1 border-0 bg-transparent text-sm text-kiban-ink outline-none placeholder:text-[#9096A3]"
 			/>
 		</label>
+		}
 		for _, f := range cfg.Filters {
 			@filter(cfg, f)
 		}
@@ -44,7 +53,7 @@ templ Bar(cfg Config) {
 }
 
 templ filter(cfg Config, f Filter) {
-	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label } data-many={ cfg.manyTemplate() } data-kiban-filter-numeric?={ f.Numeric != nil }>
+	<details class="relative" data-kiban-filter={ f.Name } data-label={ f.Label } data-many={ cfg.manyTemplate() } data-kiban-filter-numeric?={ f.Numeric != nil } data-kiban-filter-free?={ f.Text != nil }>
 		<summary
 			class="inline-flex h-9 cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[#CDD3DF] bg-white px-3 text-[13px] font-medium text-[#474F66] hover:bg-[#F4F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kiban-primary data-[on]:border-kiban-primary data-[on]:bg-[rgba(0,71,255,0.08)] data-[on]:text-[#0036C4] [&::-webkit-details-marker]:hidden"
 			data-kiban-filter-pill
@@ -55,7 +64,9 @@ templ filter(cfg Config, f Filter) {
 			</span>
 			<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
 		</summary>
-		if f.Numeric != nil {
+		if f.Text != nil {
+			@textMenu(cfg, f, *f.Text)
+		} else if f.Numeric != nil {
 			@numericMenu(cfg, f, *f.Numeric)
 		} else {
 			@optionsMenu(cfg, f)
@@ -185,6 +196,41 @@ templ numericMenu(cfg Config, f Filter, n Numeric) {
 	</div>
 }
 
+// textMenu es la ventana del filtro de texto libre: el campo y el pie con
+// «Quitar filtro» y «Aplicar». Lo tecleado no viaja: base.templ copia lo
+// aplicado al oculto y lo deshabilita si no hay valor.
+templ textMenu(cfg Config, f Filter, x Text) {
+	<div
+		data-kiban-filter-menu
+		class="absolute left-0 top-[calc(100%+6px)] z-[35] flex w-[300px] max-w-[calc(100vw-32px)] flex-col gap-2.5 rounded-xl bg-white p-3 shadow-[0_20px_48px_-18px_rgba(26,32,53,0.35),0_0_0_1px_rgba(26,32,53,0.06)]"
+		role="dialog"
+		aria-label={ f.Label }
+		data-kiban-filter-manual
+		data-kiban-txt
+	>
+		<input type="hidden" name={ x.Name } value={ x.Value } disabled?={ x.Value == "" } data-kiban-txt-v/>
+		<span class="flex h-9 items-center rounded-md border border-[#CDD3DF] bg-white px-2.5 focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]">
+			<input
+				type="text"
+				value={ x.Value }
+				placeholder={ x.Placeholder }
+				aria-label={ x.Placeholder }
+				autocomplete="off"
+				spellcheck="false"
+				class={ "min-w-0 flex-1 border-0 bg-transparent text-sm text-kiban-ink outline-none placeholder:text-[#9096A3]", templ.KV("font-mono", x.Mono) }
+				data-kiban-txt-in
+			/>
+		</span>
+		<div class="-mx-3 -mb-3 flex justify-between gap-2 rounded-b-xl border-t border-[#E2E5EC] bg-[#FAFBFF] px-2.5 py-2">
+			if cfg.MenuClear != "" {
+				<button type="button" class="p-1 text-xs font-medium text-[#B42318] hover:underline" data-kiban-txt-clear hidden?={ x.Value == "" }>{ cfg.MenuClear }</button>
+			}
+			<span class="flex-1"></span>
+			<button type="button" class="rounded-md bg-kiban-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0036C4]" data-kiban-txt-apply>{ x.Apply }</button>
+		</div>
+	</div>
+}
+
 templ numInput(n Numeric, value, placeholder, marker string) {
 	<span class="flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-[#CDD3DF] bg-white px-2.5 focus-within:border-kiban-primary focus-within:shadow-[0_0_0_3px_rgba(0,71,255,0.12)]">
 		<input
@@ -229,7 +275,11 @@ templ Counts(cfg Config) {
 // pillText es el texto inicial de la píldora; después lo mantiene el
 // navegador con la misma regla.
 templ pillText(cfg Config, f Filter) {
-	if f.Numeric != nil && f.Numeric.Value != "" {
+	if f.Text != nil && f.Text.Value != "" {
+		{ f.Label + ": " }<b class="font-semibold">{ f.Text.Value }</b>
+	} else if f.Text != nil {
+		{ f.Label }
+	} else if f.Numeric != nil && f.Numeric.Value != "" {
 		{ f.Label + ": " }<b class="font-semibold">{ f.Numeric.text() }</b>
 	} else if f.Numeric != nil {
 		{ f.Label }

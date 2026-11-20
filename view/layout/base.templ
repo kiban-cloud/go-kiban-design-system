@@ -2328,7 +2328,7 @@ templ Base(cfg Config) {
 				function kibanFilterClear(form) {
 					var clear = form && form.querySelector('[data-kiban-filter-clear]');
 					if (!clear) return;
-					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""]), [data-kiban-num-v]:not([disabled])');
+					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""]), [data-kiban-num-v]:not([disabled]), [data-kiban-txt-v]:not([disabled])');
 					var q = form.querySelector('input[type=search]');
 					clear.hidden = !(on || (q && q.value.trim() !== ''));
 				}
@@ -2381,7 +2381,7 @@ templ Base(cfg Config) {
 					}
 					var pill = d.querySelector('[data-kiban-filter-pill]');
 					if (pill) pill.toggleAttribute('data-on', !!text);
-					var clr = d.querySelector('[data-kiban-num-clear]');
+					var clr = d.querySelector('[data-kiban-num-clear], [data-kiban-txt-clear]');
 					if (clr) clr.hidden = !text;
 					d.open = false;
 					kibanFilterClear(form);
@@ -2431,9 +2431,37 @@ templ Base(cfg Config) {
 					e.preventDefault();
 					kibanNumApply(e.target.closest('[data-kiban-num]'));
 				});
+				// filterbar.Text: el texto viaja sólo al aplicar (botón o Enter),
+				// copiado al oculto; vacío, el oculto se deshabilita y el filtro
+				// se quita. Usa la misma salida que el numérico (kibanNumSubmit).
+				function kibanTxtApply(box, value) {
+					var v = box.querySelector('[data-kiban-txt-v]');
+					value = (value || '').trim();
+					v.value = value; v.disabled = value === '';
+					box.querySelector('[data-kiban-txt-in]').value = value;
+					kibanNumSubmit(box.closest('[data-kiban-filter]'), value);
+				}
+				document.addEventListener('click', function (e) {
+					var t = e.target.closest && e.target.closest('[data-kiban-txt-apply], [data-kiban-txt-clear]');
+					if (!t) return;
+					var box = t.closest('[data-kiban-txt]');
+					kibanTxtApply(box, t.hasAttribute('data-kiban-txt-clear') ? '' : box.querySelector('[data-kiban-txt-in]').value);
+				});
+				// Al abrir el menú, el cursor va directo al campo.
+				document.addEventListener('toggle', function (e) {
+					var d = e.target;
+					if (!d.open || !d.matches || !d.matches('details[data-kiban-filter-free]')) return;
+					var i = d.querySelector('[data-kiban-txt-in]');
+					if (i) { i.focus(); i.select(); }
+				}, true);
+				document.addEventListener('keydown', function (e) {
+					if (e.key !== 'Enter' || !e.target.hasAttribute || !e.target.hasAttribute('data-kiban-txt-in')) return;
+					e.preventDefault();
+					kibanTxtApply(e.target.closest('[data-kiban-txt]'), e.target.value);
+				});
 				document.addEventListener('change', function (e) {
 					var d = e.target.closest && e.target.closest('[data-kiban-filter]');
-					if (!d || d.hasAttribute('data-kiban-filter-numeric')) return;
+					if (!d || d.hasAttribute('data-kiban-filter-numeric') || d.hasAttribute('data-kiban-filter-free')) return;
 					kibanFilterSync(d);
 					if (e.target.type === 'radio') d.open = false;
 				});

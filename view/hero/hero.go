@@ -19,6 +19,11 @@ type CycleOptions struct {
 	// Title es el saludo grande («Buenas tardes») y Text la línea debajo.
 	Title string
 	Text  string
+	// TitleTrend, si viene, es la píldora junto al título con la variación
+	// contra el periodo anterior, ya formateada («▲ 12.4 %»). TitleTrendDown
+	// la pinta en rojo (baja); si no, en aqua (sube).
+	TitleTrend     string
+	TitleTrendDown bool
 	// PendingCount > 0 pinta a la derecha el botón blanco con campana:
 	// «<b>3</b> por revisar», que lleva a PendingHref.
 	PendingCount int
@@ -29,6 +34,13 @@ type CycleOptions struct {
 	// layout.InboxToggleAttrs abre el panel «Pendientes» del shell, como en
 	// la maqueta.
 	PendingAttrs templ.Attributes
+	// Action, si viene, es un botón blanco a la izquierda del de pendientes:
+	// la acción principal del módulo («Nueva ejecución»). Attrs puede abrir un
+	// panel con htmx en vez de navegar.
+	Action *CycleAction
+	// PendingIcon es el ícono del botón (un nombre de layout.FlamboyantIcon).
+	// Vacío: la campana.
+	PendingIcon string
 	// StepsLabel es el aria-label de la lista de pasos («Ciclo del dinero»).
 	StepsLabel string
 	// Steps son los pasos del ciclo, de izquierda a derecha, unidos por una
@@ -39,6 +51,13 @@ type CycleOptions struct {
 	// línea queda quieta (Base). Con prefers-reduced-motion no se mueven
 	// nunca. Los estilos viven en layout/base.templ (.kiban-cy-flow).
 	Animated bool
+}
+
+// CycleAction es la acción del hero (CycleOptions.Action).
+type CycleAction struct {
+	Label string
+	Href  string
+	Attrs templ.Attributes
 }
 
 // CycleStep es un paso del ciclo: el ícono en su cuadro blanco (con un
@@ -82,6 +101,33 @@ const (
 	meshBottomStyle = templ.SafeCSS("left:0;bottom:0;width:59%;height:48%;border-top-right-radius:77% 100%;background:linear-gradient(135deg,#14CDB4 0%,#5B8DEF 55%,#8B5CF6 100%)")
 	meshRightStyle  = templ.SafeCSS("right:0;top:0;width:49%;height:100%;border-radius:100% 0 0 100% / 50% 0 0 50%;background:linear-gradient(200deg,#3A8BF2 0%,#7C6CF6 50%,#9B55FF 100%)")
 )
+
+// spaceClass es el chip del espacio. Con placa (SpaceTile) el texto va
+// pegado a ella (pl-1); sin placa, en flamboyant, lleva el mismo margen a los
+// dos lados. Apagado flamboyant queda la clase de siempre.
+func spaceClass(tight bool) string {
+	if tight {
+		return "inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 py-[3px] pl-1 pr-2.5 text-xs font-medium tracking-[.04em] text-white/85"
+	}
+	return "inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 py-[3px] pl-2.5 pr-2.5 text-xs font-medium tracking-[.04em] text-white/85"
+}
+
+// trendClass es la píldora de TitleTrend: aqua si sube, roja si baja.
+func trendClass(down bool) string {
+	base := "ml-2 inline-flex translate-y-[-4px] items-center rounded-full px-2 py-px align-middle text-[13px] font-semibold leading-5 tracking-normal "
+	if down {
+		return base + "bg-[rgba(229,72,77,.22)] text-[#FFD6D7]"
+	}
+	return base + "bg-[rgba(0,221,178,.18)] text-[#B8FFF0]"
+}
+
+// pendingIcon es el ícono del botón de pendientes.
+func pendingIcon(o CycleOptions) string {
+	if o.PendingIcon != "" {
+		return o.PendingIcon
+	}
+	return "bell"
+}
 
 // stepStyle escalona la entrada de cada paso (60 ms por posición).
 func stepStyle(i int) templ.SafeCSS {

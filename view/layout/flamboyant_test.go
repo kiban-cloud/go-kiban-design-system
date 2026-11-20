@@ -241,3 +241,18 @@ func TestBase_PanelNoSeCierraConElSegundoClicDeUnDobleClic(t *testing.T) {
 	assert.Contains(t, body, "return e.detail > 1;", "el segundo clic de un doble clic no cuenta")
 	assert.Contains(t, body, "ph.querySelector('.kiban-panel-ph-bg').addEventListener('click', function (ev) { if (kibanPanelBackdropClick(ev)) return;", "tampoco en la hoja de carga")
 }
+
+// SubAction: el botón principal arriba del sub-nav, sólo en el shell
+// flamboyant y sólo si viene.
+func TestFlamboyant_SubAction(t *testing.T) {
+	cfg := flamboyantCfg()
+	cfg.SubItems = []layout.SubItem{{Key: "list", Label: "Clientes", Href: "/crm/customers"}}
+	assert.NotContains(t, shell(t, renderLayout(t, flags(layout.FlagShellFlamboyant), cfg)), "fs-sub-cta")
+
+	cfg.SubAction = &layout.SubAction{Label: "Nueva ejecución", Href: "/workfloo/nueva"}
+	body := shell(t, renderLayout(t, flags(layout.FlagShellFlamboyant), cfg))
+	assert.Contains(t, body, `class="fs-sub-cta"`)
+	assert.Contains(t, body, "Nueva ejecución")
+	assert.Contains(t, body, "data-nav-loader", "sin Attrs navega con el loader")
+	assert.NotContains(t, renderLayout(t, context.Background(), cfg), `class="fs-sub-cta"`, "el shell de siempre lo ignora")
+}

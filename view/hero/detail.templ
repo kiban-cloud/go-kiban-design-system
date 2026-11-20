@@ -1,0 +1,74 @@
+package hero
+
+// Detail es el encabezado de una ficha (ver DetailOptions).
+templ Detail(o DetailOptions) {
+	<section class="flex flex-col gap-4 rounded-2xl border border-[#E2E5EC] bg-white px-6 py-5 max-sm:px-4" data-kiban-detail>
+		if o.BackHref != "" {
+			<a href={ templ.SafeURL(o.BackHref) } class="inline-flex w-fit items-center gap-1 text-[13px] font-medium text-kiban-primary hover:underline">
+				<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+				{ o.BackLabel }
+			</a>
+		}
+		<div class="flex flex-wrap items-start justify-between gap-4">
+			<div class="min-w-0 flex-1 basis-[18rem]">
+				if o.Eyebrow != "" {
+					<div class="text-[11px] font-semibold uppercase tracking-[.06em] text-[#9096A3]">{ o.Eyebrow }</div>
+				}
+				if o.Rename != nil {
+					<form class="m-0" { o.Rename.formAttrs()... }>
+						<input
+							name={ o.Rename.Name }
+							value={ o.Title }
+							aria-label={ o.Rename.Label }
+							required
+							autocomplete="off"
+							class="-ml-[7px] block w-full max-w-[720px] rounded-md border border-transparent bg-transparent px-1.5 py-0.5 font-heading text-[22px] font-medium leading-8 text-kiban-ink hover:border-[#E2E5EC] focus:border-kiban-primary focus:outline-none"
+						/>
+					</form>
+				} else {
+					<h1 class="font-heading text-[22px] font-medium leading-8 text-kiban-ink">{ o.Title }</h1>
+				}
+				if len(o.Meta) > 0 {
+					<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#606875]">
+						for i, m := range o.Meta {
+							if i > 0 {
+								<span class="text-[#CDD3DF]" aria-hidden="true">·</span>
+							}
+							@m
+						}
+					</div>
+				}
+			</div>
+			if o.Actions != nil {
+				<div class="flex flex-wrap items-center gap-2">
+					@o.Actions
+				</div>
+			}
+		</div>
+		{ children... }
+	</section>
+}
+
+// DetailChip es un dato con ícono para Meta de Detail.
+templ DetailChip(c Chip) {
+	if c.Href != "" {
+		<a href={ templ.SafeURL(c.Href) } class="inline-flex items-center gap-1 rounded-full bg-[#F1F3F7] px-2 py-px text-xs font-medium text-[#33406B] hover:bg-[#E8EEFF] [&>svg]:h-3 [&>svg]:w-3">
+			if c.Icon != nil {
+				@c.Icon
+			}
+			{ c.Label }
+		</a>
+	} else {
+		<span class="inline-flex items-center gap-1 rounded-full bg-[#F1F3F7] px-2 py-px text-xs font-medium text-[#33406B] [&>svg]:h-3 [&>svg]:w-3">
+			if c.Icon != nil {
+				@c.Icon
+			}
+			{ c.Label }
+		</span>
+	}
+}
+
+// DetailText es un dato de texto para Meta de Detail («Creado el 3 sep»).
+templ DetailText(s string) {
+	<span>{ s }</span>
+}

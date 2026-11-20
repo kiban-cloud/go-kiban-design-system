@@ -38,6 +38,12 @@ type FormPanelConfig struct {
 	Subtitle      templ.Component
 	HeaderActions templ.Component
 	CloseLabel    string
+	// Tabs son las pestañas centradas del encabezado (los paneles de nodo
+	// del editor de workfloo: «Espera» · «Configuración avanzada»). Cada
+	// pestaña muestra el elemento del cuerpo con data-kiban-panel-pane igual
+	// a su Key y esconde los demás; la primera va elegida (el llamador pinta
+	// hidden en los demás). Vacío: sin pestañas.
+	Tabs []PanelTab
 
 	// FormAttrs van en el <form>: method, action, hx-post, hx-target…
 	FormAttrs templ.Attributes
@@ -86,6 +92,13 @@ type FormPanelConfig struct {
 	Static bool
 }
 
+// PanelTab es una pestaña del encabezado de FormPanel. Badge es una marca
+// junto al nombre («!» de algo pendiente); vacío, sin marca. Count es un
+// conteo junto al nombre, en azul tenue («Reglas 4»); vacío, sin conteo.
+type PanelTab struct {
+	Key, Label, Badge, Count string
+}
+
 // TitleInput es el campo del título editable de FormPanel.
 type TitleInput struct {
 	Name, Value, Placeholder string
@@ -114,6 +127,7 @@ type panelHead struct {
 	TitleFrom                                               []string
 	TitleInput                                              *TitleInput
 	Tile, Subtitle, HeaderActions                           templ.Component
+	Tabs                                                    []PanelTab
 }
 
 func (h panelHead) titleFrom() string { return strings.Join(h.TitleFrom, " ") }
@@ -134,7 +148,7 @@ func (c FormPanelConfig) summaryInitial() string {
 
 func (c FormPanelConfig) header() panelHead {
 	return panelHead{ID: c.ID, Eyebrow: c.Eyebrow, Title: c.Title, TitlePlaceholder: c.TitlePlaceholder, CloseLabel: c.CloseLabel,
-		TitleFrom: c.TitleFrom, TitleInput: c.TitleInput, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions, Dirty: c.dirtyLabel()}
+		TitleFrom: c.TitleFrom, TitleInput: c.TitleInput, Tile: c.Tile, Subtitle: c.Subtitle, HeaderActions: c.HeaderActions, Dirty: c.dirtyLabel(), Tabs: c.Tabs}
 }
 
 func (c FormPanelConfig) dirtyLabel() string {
@@ -243,4 +257,11 @@ func (c FormPanelConfig) missingJSON() string {
 	}
 	b, _ := json.Marshal(out)
 	return string(b)
+}
+
+func panelTabSelected(i int) string {
+	if i == 0 {
+		return "true"
+	}
+	return "false"
 }

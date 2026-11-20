@@ -49,6 +49,8 @@ type Config struct {
 	ManySelected string
 }
 
+// Search es el buscador de la barra. Sin Name no hay buscador (una lista que
+// sólo filtra por píldoras).
 type Search struct {
 	Name        string
 	Value       string
@@ -75,6 +77,21 @@ type Filter struct {
 	// Numeric cambia las opciones por un número tecleado con su condición
 	// (Requests, Éxito, Latencia). Con Numeric, Options y Multi no aplican.
 	Numeric *Numeric
+	// Text cambia las opciones por un texto libre (un ID, un folio). Como
+	// Numeric, viaja sólo al aplicar (botón o Enter). Con Text, Options y
+	// Multi no aplican.
+	Text *Text
+}
+
+// Text es un filtro de texto libre: un campo, «Aplicar» y «Quitar filtro».
+// Viaja un campo oculto (Name) sólo cuando hay valor.
+type Text struct {
+	Name        string
+	Value       string // lo aplicado; vacío, sin filtro
+	Placeholder string
+	Apply       string
+	// Mono pinta el campo y la píldora en monoespaciado (ids).
+	Mono bool
 }
 
 // Numeric es un filtro de número: igual a, mayor que, menor que o entre dos
@@ -166,6 +183,9 @@ func (f Filter) selected() []Option {
 
 // on dice si el filtro está aplicado.
 func (f Filter) on() bool {
+	if f.Text != nil {
+		return f.Text.Value != ""
+	}
 	if f.Numeric != nil {
 		return f.Numeric.Value != ""
 	}

@@ -1,0 +1,42 @@
+package chart
+
+// Compare son dos series por categoría, con la leyenda arriba: para cada
+// categoría su nombre (y la diferencia), y debajo una barra por serie con su
+// valor. La estrenó el resultado de una ejecución de backtesting en workfloo
+// flamboyant (salidas del árbol original contra las de la versión).
+templ Compare(o CompareOptions) {
+	{{ max := compareMax(o.Rows) }}
+	<div class="flex flex-col gap-4" data-kiban-compare>
+		<div class="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#606875]">
+			for _, s := range o.Series {
+				<span class="inline-flex items-center gap-1.5">
+					<i class="h-2 w-2 rounded-[3px]" style={ colorStyle(s.Color) }></i>
+					{ s.Label }
+				</span>
+			}
+		</div>
+		for _, r := range o.Rows {
+			<div class="grid grid-cols-[minmax(0,12rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-1 max-sm:grid-cols-1">
+				<div class="flex min-w-0 items-center gap-2">
+					<b class="truncate text-sm font-medium text-[#1A2035]" title={ r.Label }>{ r.Label }</b>
+					if o.Delta {
+						<span class={ "shrink-0 rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums", r.deltaClass() }>{ r.delta() }</span>
+					}
+				</div>
+				<div class="flex min-w-0 flex-col gap-1">
+					@compareBar(r.A, max, o.Series[0].Color, r.ADisplay, o.Series[0].Label)
+					@compareBar(r.B, max, o.Series[1].Color, r.BDisplay, o.Series[1].Label)
+				</div>
+			</div>
+		}
+	</div>
+}
+
+templ compareBar(v, max float64, color, display, label string) {
+	<div class="grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-2" title={ label + ": " + display }>
+		<div class="h-2 overflow-hidden rounded-full bg-[#F1F3F7]">
+			<i class="block h-full rounded-full" style={ pctStyle(v, max) + templ.SafeCSS(";background:"+color) }></i>
+		</div>
+		<span class="text-right text-xs tabular-nums text-[#474F66]">{ display }</span>
+	</div>
+}

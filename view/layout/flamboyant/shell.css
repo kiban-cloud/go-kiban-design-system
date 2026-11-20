@@ -73,6 +73,16 @@
 .mode-seg.is-sbx { background: rgba(255,255,255,.75); border-color: #BFD0FF; }
 .mode-seg.is-sbx > [aria-checked="false"] .mode-dot { background: #9096A3; }
 .mode-seg.is-sbx > [aria-checked="true"] { background: #C7D6FF; color: #0A2A8F; box-shadow: inset 0 0 0 1px #9DB4FF; }
+.mode-seg > [aria-checked="true"] { cursor: default; }
+/* Teléfono: la topbar no cabe con el lockup completo y las dos etiquetas del
+   ambiente. Queda el isotipo, la opción activa con su etiqueta y la otra
+   sólo con su punto (la etiqueta sigue para lectores de pantalla). */
+@media (max-width: 640px) {
+  .fs-top:has(.mode-seg) .fs-word { display: none; }
+  .mode-seg { height: 32px; padding: 2px; }
+  .mode-seg > * { height: 26px; padding: 0 10px; gap: 6px; font-size: 12px; }
+  .mode-seg > [aria-checked="false"] { font-size: 0; gap: 0; padding: 0 9px; }
+}
 .mode-seg.is-sbx > [aria-checked="true"] .mode-dot { background: #3B5BDB; box-shadow: 0 0 0 3px rgba(255,255,255,.6); }
 @keyframes fsModeLive { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.8); } 100% { box-shadow: 0 0 0 7px rgba(255,255,255,0); } }
 @media (max-width: 900px) { .mode-seg > * { padding: 0 10px; } }
@@ -127,6 +137,9 @@
 .fs-sub-on, .fs-sub-on:hover { background: #fff; color: #0047FF; font-weight: 500; box-shadow: 0 1px 2px rgba(0,71,255,.10), 0 0 0 1px rgba(0,71,255,.06); }
 .fs-sub-group { padding: 14px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #6B7AA6; }
 .fs-sub-gap { height: 12px; flex: none; }
+.fs-sub-cta { display: flex; align-items: center; justify-content: center; height: 40px; margin: 0 2px 12px; border-radius: 10px; background: #0047FF; color: #fff; font-size: 14px; font-weight: 500; text-decoration: none; box-shadow: 0 6px 16px -8px rgba(0,71,255,.7); flex: none; transition: background-color .15s; }
+.fs-sub-cta:hover { background: #0036C4; color: #fff; }
+.fs-sub-cta:focus-visible { outline: 2px solid #0047FF; outline-offset: 2px; }
 
 .fs-main { position: relative; flex: 1; min-width: 0; overflow-x: hidden; }
 .fs-backdrop { display: none; }

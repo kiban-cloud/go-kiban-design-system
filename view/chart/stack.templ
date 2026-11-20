@@ -1,0 +1,74 @@
+package chart
+
+// Stack es una barra apilada con su leyenda: cómo se reparte un total entre
+// pocas partes. Los tramos en cero no se pintan. La estrenó el resumen de
+// workfloo flamboyant en kiban-proto (exitosas, en curso, con error).
+templ Stack(o StackOptions) {
+	{{ total := partsTotal(o.Parts) }}
+	<div data-kiban-stack>
+		<div class="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-[#EEF0F4]">
+			for _, p := range o.Parts {
+				if p.Value > 0 {
+					<i class="block h-full" style={ partStyle(p, total) } title={ p.Label + ": " + p.Display }></i>
+				}
+			}
+		</div>
+		if !o.HideLegend {
+			@legend(o.Parts)
+		}
+	</div>
+}
+
+// Rank es un ranking de barras horizontales: nombre y total arriba, la barra
+// debajo, proporcional al renglón más grande y, si el renglón trae tramos,
+// partida en ellos. La leyenda explica los tramos. La estrenó el resumen de
+// workfloo flamboyant en kiban-proto (ejecuciones por workfloo, etiquetas y
+// mensajes de árbol de decisión).
+templ Rank(o RankOptions) {
+	{{ max := rankMax(o.Rows) }}
+	<div class="flex flex-col gap-3.5" data-kiban-rank>
+		for _, r := range o.Rows {
+			<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5">
+				<b class="truncate text-sm font-medium text-[#1A2035]" title={ r.Name }>{ r.Name }</b>
+				<span class="text-sm font-semibold tabular-nums text-[#1A2035]">
+					{ r.Display }
+					if r.Share != "" {
+						<small class="ml-1.5 text-xs font-normal text-[#9096A3]">{ r.Share }</small>
+					}
+				</span>
+				<div class="col-span-2 h-2 overflow-hidden rounded-full bg-[#F1F3F7]">
+					<span class="flex h-full gap-0.5" style={ pctStyle(r.Value, max) }>
+						if len(r.Parts) > 0 {
+							for _, p := range r.Parts {
+								if p.Value > 0 {
+									<i class="block h-full" style={ partStyle(p, r.Value) } title={ p.Label + ": " + p.Display }></i>
+								}
+							}
+						} else {
+							<i class="block h-full w-full" style={ colorStyle(o.Color) }></i>
+						}
+					</span>
+				</div>
+			</div>
+		}
+		if len(o.Legend) > 0 {
+			@legend(o.Legend)
+		}
+	</div>
+}
+
+// legend es la leyenda de Stack y Rank: un punto de color, el nombre y, si
+// viene, el valor en negritas.
+templ legend(parts []StackPart) {
+	<div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#606875]">
+		for _, p := range parts {
+			<span class="inline-flex items-center gap-1.5">
+				<i class="h-2 w-2 rounded-[3px]" style={ colorStyle(p.Color) }></i>
+				{ p.Label }
+				if p.Display != "" {
+					<b class="font-semibold tabular-nums text-[#1A2035]">{ p.Display }</b>
+				}
+			</span>
+		}
+	</div>
+}
