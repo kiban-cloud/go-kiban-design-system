@@ -147,7 +147,15 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		ctx := c.Request.Context()
+		if !flamboyant.AceptaNombresNuevos(ctx) || !flamboyant.On(ctx) {
+			c.Next()
+			return
+		}
+		w := &rutasWriter{ResponseWriter: c.Writer}
+		c.Writer = w
 		c.Next()
+		w.terminar()
 	}
 }
 
