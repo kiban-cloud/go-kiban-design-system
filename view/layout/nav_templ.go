@@ -582,7 +582,7 @@ func topbarUserMenu(cfg Config) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, item := range cfg.UserMenuItems {
+		for _, item := range conNovedades(ctx, cfg.UserMenuItems) {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

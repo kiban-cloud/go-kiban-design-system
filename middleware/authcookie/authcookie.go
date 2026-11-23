@@ -153,18 +153,31 @@ func (m *Middleware) Middleware() gin.HandlerFunc {
 // flamboyant.
 const FeatureShellFlamboyant = "SHELL_FLAMBOYANT"
 
-// shellFlags traduce el feature flag de la compañía y la elección del usuario
-// (cookie kiban_ui) a las banderas del design system. Con el flag, el menú del
-// usuario ofrece el switch; el shell nuevo se pinta sólo si además el usuario
-// lo eligió. Sin cookie se ve el diseño actual.
+// FeatureNovedades es el feature flag de kiban-cloud que prende las novedades
+// de kiban en el shell de la herramienta: «Novedades» en el menú del avatar y
+// el modal de novedades al entrar (view/layout/novedades.go).
+const FeatureNovedades = "NOVEDADES"
+
+// shellFlags traduce los feature flags de la compañía y la elección del
+// usuario (cookie kiban_ui) a las banderas del design system:
+//   - SHELL_FLAMBOYANT: el menú del usuario ofrece el switch; el shell nuevo se
+//     pinta sólo si además el usuario lo eligió. Sin cookie se ve el diseño
+//     actual.
+//   - NOVEDADES: la bandera novedades, en cualquiera de los dos shells.
 func shellFlags(c *gin.Context, authorization domain_core_authorization_model.Authorization) context.Context {
 	ctx := c.Request.Context()
-	if !authorization.HasFeature(FeatureShellFlamboyant) && !localFeature(FeatureShellFlamboyant) {
-		return ctx
+	var names []string
+	if authorization.HasFeature(FeatureShellFlamboyant) || localFeature(FeatureShellFlamboyant) {
+		names = append(names, layout.FlagShellFlamboyantSwitch)
+		if ui, err := c.Cookie(layout.UICookie); err == nil && ui == layout.UIFlamboyant {
+			names = append(names, layout.FlagShellFlamboyant)
+		}
 	}
-	names := []string{layout.FlagShellFlamboyantSwitch}
-	if ui, err := c.Cookie(layout.UICookie); err == nil && ui == layout.UIFlamboyant {
-		names = append(names, layout.FlagShellFlamboyant)
+	if authorization.HasFeature(FeatureNovedades) || localFeature(FeatureNovedades) {
+		names = append(names, layout.FlagNovedades)
+	}
+	if len(names) == 0 {
+		return ctx
 	}
 	return feature.Enable(ctx, names...)
 }
