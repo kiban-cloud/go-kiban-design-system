@@ -228,7 +228,7 @@ templ topbarUserMenu(cfg Config) {
 				}
 				<div class="text-xs text-kiban-ink4 truncate">{ cfg.User.Email }</div>
 			</div>
-			for _, item := range cfg.UserMenuItems {
+			for _, item := range conNovedades(ctx, cfg.UserMenuItems) {
 				<a
 					href={ templ.URL(item.Href) }
 					role="menuitem"

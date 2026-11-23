@@ -1,0 +1,9 @@
+package layout
+
+// novedadesLoader pide el modal de novedades al cargar la pantalla y lo cuelga
+// del body. Si no le toca ninguno, la respuesta viene vacía y no pasa nada.
+templ novedadesLoader(cfg Config) {
+	if u := novedadesModalURL(ctx, cfg); u != "" {
+		<div hx-get={ u } hx-trigger="load" hx-target="body" hx-swap="beforeend"></div>
+	}
+}

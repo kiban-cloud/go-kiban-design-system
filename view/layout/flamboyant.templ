@@ -42,6 +42,7 @@ templ flamboyantLayout(cfg Config) {
 				</main>
 			</div>
 			@fsInbox(cfg)
+			@novedadesLoader(cfg)
 			if cfg.TopbarExtra != nil {
 				<div class="fs-extra">
 					@cfg.TopbarExtra

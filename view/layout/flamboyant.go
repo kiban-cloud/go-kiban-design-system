@@ -431,12 +431,12 @@ func fsSpaceSuffix(id string) string {
 }
 
 // fsUserItems es el menú del avatar: los de la herramienta o, si no manda
-// ninguno, Tu perfil.
+// ninguno, Tu perfil; y Novedades con la bandera (novedades.go).
 func fsUserItems(ctx context.Context, cfg Config) []UserMenuItem {
 	if len(cfg.UserMenuItems) > 0 {
-		return cfg.UserMenuItems
+		return conNovedades(ctx, cfg.UserMenuItems)
 	}
-	return []UserMenuItem{{Label: docsCatalog.T(ctx, "shell.profile"), Href: "/kiban-cloud/profile"}}
+	return conNovedades(ctx, []UserMenuItem{{Label: docsCatalog.T(ctx, "shell.profile"), Href: "/kiban-cloud/profile"}})
 }
 
 // fsURL es un enlace del shell con el nombre de módulo del diseño

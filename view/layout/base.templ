@@ -3635,6 +3635,7 @@ templ Layout(cfg Config) {
 
 templ layoutClasico(cfg Config) {
 	@Base(cfg) {
+		@novedadesLoader(cfg)
 		<div
 			class="min-h-screen flex flex-col"
 			data-sidebar-root
