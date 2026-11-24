@@ -162,25 +162,25 @@ func TestBar_FiltroNumericoSinValor(t *testing.T) {
 	assert.Contains(t, body, `name="req_op" value="" disabled`, "sin valor los ocultos no viajan")
 	assert.Contains(t, body, `name="req" value="" disabled`)
 	assert.Contains(t, body, `data-op="gt"`, "sin filtro, mayor que como el proto")
-	assert.Contains(t, body, `data-kiban-num-opbtn="gt" data-symbol="&gt;" aria-pressed="true"`)
+	assert.Contains(t, body, `data-kiban-fnum-opbtn="gt" data-symbol="&gt;" aria-pressed="true"`)
 	assert.Contains(t, body, `data-kiban-filter-manual`, "lo tecleado no pide la lista")
-	assert.Contains(t, body, `data-kiban-num-preset data-op="gt" data-v="1000">Más de 1,000</button>`)
-	assert.Contains(t, body, `data-kiban-num-clear hidden>Quitar filtro</button>`)
+	assert.Contains(t, body, `data-kiban-fnum-preset data-op="gt" data-v="1000">Más de 1,000</button>`)
+	assert.Contains(t, body, `data-kiban-fnum-clear hidden>Quitar filtro</button>`)
 	assert.NotContains(t, body, `data-kiban-filter-clear>`, "sin filtros, limpiar oculto")
 }
 
 func TestBar_FiltroNumericoAplicado(t *testing.T) {
 	body := render(t, filterbar.Bar(numCfg("1000", "", "gt")))
 	assert.Contains(t, body, `Requests: <b class="font-semibold">&gt; 1,000 ms</b>`)
-	assert.Contains(t, body, `name="req_op" value="gt" data-kiban-num-op`)
-	assert.Contains(t, body, `name="req" value="1000" data-kiban-num-v`)
+	assert.Contains(t, body, `name="req_op" value="gt" data-kiban-fnum-op`)
+	assert.Contains(t, body, `name="req" value="1000" data-kiban-fnum-v`)
 	assert.Contains(t, body, `name="req2" value="" disabled`, "el segundo valor sólo con «entre»")
 	assert.Contains(t, body, `data-kiban-filter-pill data-on`)
-	assert.Contains(t, body, `data-kiban-num-clear>Quitar filtro</button>`)
+	assert.Contains(t, body, `data-kiban-fnum-clear>Quitar filtro</button>`)
 
 	body = render(t, filterbar.Bar(numCfg("2500.5", "1000", "bt")))
 	assert.Contains(t, body, `entre 1,000 y 2,500.5 ms`, "el menor primero")
-	assert.Contains(t, body, `name="req2" value="1000" data-kiban-num-v2`)
+	assert.Contains(t, body, `name="req2" value="1000" data-kiban-fnum-v2`)
 	assert.Contains(t, body, `placeholder="Desde"`)
 }
 

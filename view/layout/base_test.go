@@ -348,3 +348,16 @@ func TestBase_PanelesApilados(t *testing.T) {
 	assert.Contains(t, body, "[data-kiban-panel]:not([data-half]) ~ [data-kiban-panel][data-half] > [role=dialog]", "el de 50 % sobre uno ancho no crece")
 	assert.Contains(t, body, "> .kiban-panel-ph-sheet { width: 45vw; }", "sobre uno de 50 %, 45vw")
 }
+
+// El layout va en todas las páginas de los módulos, así que sus funciones
+// globales y sus atributos no pueden usar nombres que un módulo ya tenga. La
+// máscara de miles de workfloo se monta como `window.kibanNumApply` y marca su
+// campo con `data-kiban-num`: cuando el filtro numérico usó esos mismos nombres,
+// la máscara creyó que ya estaba instalada y ningún campo numérico de la
+// consola mandaba su valor.
+func TestBase_FiltroNumericoNoChocaConLaMascaraDeMiles(t *testing.T) {
+	body := renderBase(t, layout.Config{Title: "T", ProjectName: "kiban"})
+	assert.Contains(t, body, "function kibanFilterNumApply(", "el filtro numérico sigue en el layout")
+	assert.NotContains(t, body, "kibanNumApply")
+	assert.NotRegexp(t, `data-kiban-num[\]\-="]`, body)
+}

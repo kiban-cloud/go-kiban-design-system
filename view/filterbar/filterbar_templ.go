@@ -836,7 +836,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" data-kiban-filter-manual data-kiban-num data-op=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" data-kiban-filter-manual data-kiban-fnum data-op=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -989,7 +989,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, " data-kiban-num-op> <input type=\"hidden\" name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, " data-kiban-fnum-op> <input type=\"hidden\" name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1025,7 +1025,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, " data-kiban-num-v> <input type=\"hidden\" name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, " data-kiban-fnum-v> <input type=\"hidden\" name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1061,19 +1061,19 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, " data-kiban-num-v2><div class=\"grid grid-cols-4 gap-0.5 rounded-lg bg-[#F2F4F8] p-[3px]\" role=\"group\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, " data-kiban-fnum-v2><div class=\"grid grid-cols-4 gap-0.5 rounded-lg bg-[#F2F4F8] p-[3px]\" role=\"group\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, o := range n.Ops {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<button type=\"button\" class=\"whitespace-nowrap rounded-md px-1 py-1.5 text-xs font-medium text-[#606875] aria-pressed:bg-white aria-pressed:text-[#0036C4] aria-pressed:shadow-[0_1px_2px_rgba(26,32,53,0.12)]\" data-kiban-num-opbtn=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<button type=\"button\" class=\"whitespace-nowrap rounded-md px-1 py-1.5 text-xs font-medium text-[#606875] aria-pressed:bg-white aria-pressed:text-[#0036C4] aria-pressed:shadow-[0_1px_2px_rgba(26,32,53,0.12)]\" data-kiban-fnum-opbtn=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var54 string
 			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(o.Value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 165, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 165, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 			if templ_7745c5c3_Err != nil {
@@ -1127,11 +1127,11 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = numInput(n, n.Value, n.placeholder1(), "data-kiban-num-in").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = numInput(n, n.Value, n.placeholder1(), "data-kiban-fnum-in").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<span class=\"text-xs text-[#606875]\" data-kiban-num-and")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<span class=\"text-xs text-[#606875]\" data-kiban-fnum-and")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1148,13 +1148,13 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 		var templ_7745c5c3_Var58 string
 		templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(n.And)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 173, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 173, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</span> <span class=\"contents [&[hidden]]:!hidden\" data-kiban-num-2")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</span> <span class=\"contents [&[hidden]]:!hidden\" data-kiban-fnum-2")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1168,11 +1168,11 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = numInput(n, n.Value2, n.To, "data-kiban-num-in2").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = numInput(n, n.Value2, n.To, "data-kiban-fnum-in2").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "</span></div><p class=\"-mt-1 mb-0 text-xs text-[#B42318]\" data-kiban-num-err hidden></p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "</span></div><p class=\"-mt-1 mb-0 text-xs text-[#B42318]\" data-kiban-fnum-err hidden></p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1201,14 +1201,14 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				}
 			}
 			for _, p := range n.Presets {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<button type=\"button\" class=\"rounded-full border border-[#CDD3DF] bg-white px-2.5 py-1 text-xs text-[#474F66] hover:border-kiban-primary hover:bg-[#F4F7FF] hover:text-[#0036C4]\" data-kiban-num-preset data-op=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<button type=\"button\" class=\"rounded-full border border-[#CDD3DF] bg-white px-2.5 py-1 text-xs text-[#474F66] hover:border-kiban-primary hover:bg-[#F4F7FF] hover:text-[#0036C4]\" data-kiban-fnum-preset data-op=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(p.Op)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 185, Col: 219}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 185, Col: 220}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 				if templ_7745c5c3_Err != nil {
@@ -1221,7 +1221,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				var templ_7745c5c3_Var61 string
 				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(p.Value)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 185, Col: 238}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 185, Col: 239}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 				if templ_7745c5c3_Err != nil {
@@ -1234,7 +1234,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				var templ_7745c5c3_Var62 string
 				templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(p.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 185, Col: 250}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 185, Col: 251}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 				if templ_7745c5c3_Err != nil {
@@ -1255,7 +1255,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if cfg.MenuClear != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<button type=\"button\" class=\"p-1 text-xs font-medium text-[#B42318] hover:underline\" data-kiban-num-clear")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<button type=\"button\" class=\"p-1 text-xs font-medium text-[#B42318] hover:underline\" data-kiban-fnum-clear")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1272,7 +1272,7 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 			var templ_7745c5c3_Var63 string
 			templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.MenuClear)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 191, Col: 151}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 191, Col: 152}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 			if templ_7745c5c3_Err != nil {
@@ -1283,14 +1283,14 @@ func numericMenu(cfg Config, f Filter, n Numeric) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "<span class=\"flex-1\"></span> <button type=\"button\" class=\"rounded-md bg-kiban-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0036C4]\" data-kiban-num-apply>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "<span class=\"flex-1\"></span> <button type=\"button\" class=\"rounded-md bg-kiban-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0036C4]\" data-kiban-fnum-apply>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var64 string
 		templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(n.Apply)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 194, Col: 153}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/filterbar/filterbar.templ`, Line: 194, Col: 154}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 		if templ_7745c5c3_Err != nil {
