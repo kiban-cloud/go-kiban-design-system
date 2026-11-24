@@ -10,8 +10,16 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "github.com/kiban-cloud/go-kiban-design-system/view/icons"
 
-// Password renders a labelled `<input type="password">` with `autocomplete="off"`
-// baked in. Same label / error / hint contract as Text, plus a `placeholder`
+// Password renders a labelled `<input type="password">` with
+// `autocomplete="new-password"` baked in: it is the field of a secret the
+// user is setting (an API key, a provider password, a vault value), never the
+// one they log in with. Chrome and Safari ignore `autocomplete="off"` on a
+// password input and fill the saved credentials of the site into it (and the
+// username into the text input before it), so a vault form opened empty got
+// the user's kiban cloud password silently filled in; `new-password` is the
+// value password managers honour. A login or "re-enter your password" field
+// is not this component (kibancloud has view/credentials for those).
+// Same label / error / hint contract as Text, plus a `placeholder`
 // parameter — used in the kiban backoffice to render the "••••••••" sentinel
 // when the field is already configured server-side and the user can leave it
 // blank to keep the current secret. Pass placeholder="" when there is no
@@ -92,7 +100,7 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("f-" + name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 34, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 42, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -118,7 +126,7 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 35, Col: 11}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 43, Col: 11}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -158,7 +166,7 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("f-" + name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 43, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 51, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -171,7 +179,7 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 45, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 53, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -184,20 +192,20 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 46, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 54, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" autocomplete=\"off\" placeholder=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" autocomplete=\"new-password\" placeholder=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 48, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 56, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -244,7 +252,7 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 70, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 78, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -262,7 +270,7 @@ func Password(name, label, value, errMsg, hint string, required bool, placeholde
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(hint)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 72, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/input/password.templ`, Line: 80, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
