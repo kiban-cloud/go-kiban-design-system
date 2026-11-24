@@ -143,7 +143,7 @@ templ numericMenu(cfg Config, f Filter, n Numeric) {
 		role="dialog"
 		aria-label={ f.Label }
 		data-kiban-filter-manual
-		data-kiban-num
+		data-kiban-fnum
 		data-op={ n.op() }
 		data-unit={ n.Unit }
 		data-max={ n.Max }
@@ -154,44 +154,44 @@ templ numericMenu(cfg Config, f Filter, n Numeric) {
 		data-err-range={ n.ErrRange }
 		data-err-max={ n.ErrMax }
 	>
-		<input type="hidden" name={ n.OpName } value={ n.Op } disabled?={ n.Value == "" } data-kiban-num-op/>
-		<input type="hidden" name={ n.Name } value={ n.Value } disabled?={ n.Value == "" } data-kiban-num-v/>
-		<input type="hidden" name={ n.Name2 } value={ n.Value2 } disabled?={ n.Value == "" || n.Op != "bt" } data-kiban-num-v2/>
+		<input type="hidden" name={ n.OpName } value={ n.Op } disabled?={ n.Value == "" } data-kiban-fnum-op/>
+		<input type="hidden" name={ n.Name } value={ n.Value } disabled?={ n.Value == "" } data-kiban-fnum-v/>
+		<input type="hidden" name={ n.Name2 } value={ n.Value2 } disabled?={ n.Value == "" || n.Op != "bt" } data-kiban-fnum-v2/>
 		<div class="grid grid-cols-4 gap-0.5 rounded-lg bg-[#F2F4F8] p-[3px]" role="group">
 			for _, o := range n.Ops {
 				<button
 					type="button"
 					class="whitespace-nowrap rounded-md px-1 py-1.5 text-xs font-medium text-[#606875] aria-pressed:bg-white aria-pressed:text-[#0036C4] aria-pressed:shadow-[0_1px_2px_rgba(26,32,53,0.12)]"
-					data-kiban-num-opbtn={ o.Value }
+					data-kiban-fnum-opbtn={ o.Value }
 					data-symbol={ o.Symbol }
 					aria-pressed={ boolAttr(o.Value == n.op()) }
 				>{ o.Label }</button>
 			}
 		</div>
 		<div class="flex items-center gap-2">
-			@numInput(n, n.Value, n.placeholder1(), "data-kiban-num-in")
-			<span class="text-xs text-[#606875]" data-kiban-num-and hidden?={ n.op() != "bt" }>{ n.And }</span>
-			<span class="contents [&[hidden]]:!hidden" data-kiban-num-2 hidden?={ n.op() != "bt" }>
-				@numInput(n, n.Value2, n.To, "data-kiban-num-in2")
+			@numInput(n, n.Value, n.placeholder1(), "data-kiban-fnum-in")
+			<span class="text-xs text-[#606875]" data-kiban-fnum-and hidden?={ n.op() != "bt" }>{ n.And }</span>
+			<span class="contents [&[hidden]]:!hidden" data-kiban-fnum-2 hidden?={ n.op() != "bt" }>
+				@numInput(n, n.Value2, n.To, "data-kiban-fnum-in2")
 			</span>
 		</div>
-		<p class="-mt-1 mb-0 text-xs text-[#B42318]" data-kiban-num-err hidden></p>
+		<p class="-mt-1 mb-0 text-xs text-[#B42318]" data-kiban-fnum-err hidden></p>
 		if len(n.Presets) > 0 {
 			<div class="flex flex-wrap items-center gap-1.5">
 				if n.PresetsLabel != "" {
 					<span class="text-xs text-[#606875]">{ n.PresetsLabel }</span>
 				}
 				for _, p := range n.Presets {
-					<button type="button" class="rounded-full border border-[#CDD3DF] bg-white px-2.5 py-1 text-xs text-[#474F66] hover:border-kiban-primary hover:bg-[#F4F7FF] hover:text-[#0036C4]" data-kiban-num-preset data-op={ p.Op } data-v={ p.Value }>{ p.Label }</button>
+					<button type="button" class="rounded-full border border-[#CDD3DF] bg-white px-2.5 py-1 text-xs text-[#474F66] hover:border-kiban-primary hover:bg-[#F4F7FF] hover:text-[#0036C4]" data-kiban-fnum-preset data-op={ p.Op } data-v={ p.Value }>{ p.Label }</button>
 				}
 			</div>
 		}
 		<div class="-mx-3 -mb-3 flex justify-between gap-2 rounded-b-xl border-t border-[#E2E5EC] bg-[#FAFBFF] px-2.5 py-2">
 			if cfg.MenuClear != "" {
-				<button type="button" class="p-1 text-xs font-medium text-[#B42318] hover:underline" data-kiban-num-clear hidden?={ n.Value == "" }>{ cfg.MenuClear }</button>
+				<button type="button" class="p-1 text-xs font-medium text-[#B42318] hover:underline" data-kiban-fnum-clear hidden?={ n.Value == "" }>{ cfg.MenuClear }</button>
 			}
 			<span class="flex-1"></span>
-			<button type="button" class="rounded-md bg-kiban-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0036C4]" data-kiban-num-apply>{ n.Apply }</button>
+			<button type="button" class="rounded-md bg-kiban-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0036C4]" data-kiban-fnum-apply>{ n.Apply }</button>
 		</div>
 	</div>
 }

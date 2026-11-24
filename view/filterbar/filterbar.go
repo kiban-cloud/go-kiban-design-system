@@ -245,7 +245,7 @@ func boolAttr(b bool) string {
 
 // text es lo que dice la píldora con el filtro aplicado: «> 1,000»,
 // «= 100%», «entre 1,000 y 2,000 ms». base.templ lo arma igual en el
-// navegador (kibanNumText).
+// navegador (kibanFilterNumText).
 func (n Numeric) text() string {
 	sym := n.Op
 	for _, o := range n.Ops {

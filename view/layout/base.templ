@@ -2328,7 +2328,7 @@ templ Base(cfg Config) {
 				function kibanFilterClear(form) {
 					var clear = form && form.querySelector('[data-kiban-filter-clear]');
 					if (!clear) return;
-					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""]), [data-kiban-num-v]:not([disabled]), [data-kiban-txt-v]:not([disabled])');
+					var on = !!form.querySelector('[data-kiban-filter] input:checked:not([value=""]), [data-kiban-fnum-v]:not([disabled]), [data-kiban-txt-v]:not([disabled])');
 					var q = form.querySelector('input[type=search]');
 					clear.hidden = !(on || (q && q.value.trim() !== ''));
 				}
@@ -2340,32 +2340,32 @@ templ Base(cfg Config) {
 				// se valida, se copia a los ocultos (deshabilitados sin valor,
 				// para que la URL no lleve filtros vacíos), se rearma la
 				// píldora y se pide la lista.
-				function kibanNumFmt(v) {
+				function kibanFilterNumFmt(v) {
 					return Number(v).toLocaleString('es-MX', { maximumFractionDigits: 2 });
 				}
-				function kibanNumText(box, op, a, b) {
-					var btn = box.querySelector('[data-kiban-num-opbtn="' + op + '"]');
+				function kibanFilterNumText(box, op, a, b) {
+					var btn = box.querySelector('[data-kiban-fnum-opbtn="' + op + '"]');
 					var sym = btn ? btn.getAttribute('data-symbol') : op;
 					var unit = box.getAttribute('data-unit') || '';
 					if (unit && unit !== '%') unit = ' ' + unit;
-					if (op === 'bt') return sym + ' ' + kibanNumFmt(Math.min(a, b)) + ' ' + (box.getAttribute('data-and') || '') + ' ' + kibanNumFmt(Math.max(a, b)) + unit;
-					return sym + ' ' + kibanNumFmt(a) + unit;
+					if (op === 'bt') return sym + ' ' + kibanFilterNumFmt(Math.min(a, b)) + ' ' + (box.getAttribute('data-and') || '') + ' ' + kibanFilterNumFmt(Math.max(a, b)) + unit;
+					return sym + ' ' + kibanFilterNumFmt(a) + unit;
 				}
-				function kibanNumSetOp(box, op) {
+				function kibanFilterNumSetOp(box, op) {
 					box.setAttribute('data-op', op);
-					box.querySelectorAll('[data-kiban-num-opbtn]').forEach(function (b) {
-						b.setAttribute('aria-pressed', b.getAttribute('data-kiban-num-opbtn') === op ? 'true' : 'false');
+					box.querySelectorAll('[data-kiban-fnum-opbtn]').forEach(function (b) {
+						b.setAttribute('aria-pressed', b.getAttribute('data-kiban-fnum-opbtn') === op ? 'true' : 'false');
 					});
 					var bt = op === 'bt';
-					box.querySelector('[data-kiban-num-and]').hidden = !bt;
-					box.querySelector('[data-kiban-num-2]').hidden = !bt;
-					var in1 = box.querySelector('[data-kiban-num-in]');
+					box.querySelector('[data-kiban-fnum-and]').hidden = !bt;
+					box.querySelector('[data-kiban-fnum-2]').hidden = !bt;
+					var in1 = box.querySelector('[data-kiban-fnum-in]');
 					var ph = bt && box.getAttribute('data-from') ? box.getAttribute('data-from') : box.getAttribute('data-ph');
 					in1.placeholder = ph || '';
 					in1.setAttribute('aria-label', ph || '');
-					box.querySelector('[data-kiban-num-err]').hidden = true;
+					box.querySelector('[data-kiban-fnum-err]').hidden = true;
 				}
-				function kibanNumSubmit(d, text) {
+				function kibanFilterNumSubmit(d, text) {
 					var form = d.closest('form');
 					var txt = d.querySelector('[data-kiban-filter-text]');
 					var label = d.getAttribute('data-label') || '';
@@ -2381,65 +2381,65 @@ templ Base(cfg Config) {
 					}
 					var pill = d.querySelector('[data-kiban-filter-pill]');
 					if (pill) pill.toggleAttribute('data-on', !!text);
-					var clr = d.querySelector('[data-kiban-num-clear], [data-kiban-txt-clear]');
+					var clr = d.querySelector('[data-kiban-fnum-clear], [data-kiban-txt-clear]');
 					if (clr) clr.hidden = !text;
 					d.open = false;
 					kibanFilterClear(form);
 					if (window.htmx) window.htmx.trigger(form, 'submit');
 					else form.requestSubmit();
 				}
-				function kibanNumApply(box) {
+				function kibanFilterNumApply(box) {
 					var d = box.closest('[data-kiban-filter]');
 					var op = box.getAttribute('data-op');
-					var a = box.querySelector('[data-kiban-num-in]').value.trim();
-					var b = box.querySelector('[data-kiban-num-in2]').value.trim();
-					var err = box.querySelector('[data-kiban-num-err]');
+					var a = box.querySelector('[data-kiban-fnum-in]').value.trim();
+					var b = box.querySelector('[data-kiban-fnum-in2]').value.trim();
+					var err = box.querySelector('[data-kiban-fnum-err]');
 					var bad = function (m) { err.textContent = m; err.hidden = false; };
 					if (a === '' || isNaN(+a)) return bad(box.getAttribute('data-err-number') || '');
 					if (op === 'bt' && (b === '' || isNaN(+b))) return bad(box.getAttribute('data-err-range') || '');
 					var max = box.getAttribute('data-max');
 					if (max && (+a > +max || (op === 'bt' && +b > +max))) return bad((box.getAttribute('data-err-max') || '').replace('{max}', max));
 					err.hidden = true;
-					var hop = box.querySelector('[data-kiban-num-op]'), hv = box.querySelector('[data-kiban-num-v]'), hv2 = box.querySelector('[data-kiban-num-v2]');
+					var hop = box.querySelector('[data-kiban-fnum-op]'), hv = box.querySelector('[data-kiban-fnum-v]'), hv2 = box.querySelector('[data-kiban-fnum-v2]');
 					hop.value = op; hop.disabled = false;
 					hv.value = a; hv.disabled = false;
 					hv2.value = op === 'bt' ? b : ''; hv2.disabled = op !== 'bt';
-					kibanNumSubmit(d, kibanNumText(box, op, +a, +b));
+					kibanFilterNumSubmit(d, kibanFilterNumText(box, op, +a, +b));
 				}
 				document.addEventListener('click', function (e) {
-					var t = e.target.closest && e.target.closest('[data-kiban-num-opbtn], [data-kiban-num-apply], [data-kiban-num-preset], [data-kiban-num-clear]');
+					var t = e.target.closest && e.target.closest('[data-kiban-fnum-opbtn], [data-kiban-fnum-apply], [data-kiban-fnum-preset], [data-kiban-fnum-clear]');
 					if (!t) return;
-					var box = t.closest('[data-kiban-num]');
-					if (t.hasAttribute('data-kiban-num-opbtn')) {
-						kibanNumSetOp(box, t.getAttribute('data-kiban-num-opbtn'));
-						box.querySelector('[data-kiban-num-in]').focus();
-					} else if (t.hasAttribute('data-kiban-num-preset')) {
-						kibanNumSetOp(box, t.getAttribute('data-op'));
-						box.querySelector('[data-kiban-num-in]').value = t.getAttribute('data-v');
-						box.querySelector('[data-kiban-num-in2]').value = '';
-						kibanNumApply(box);
-					} else if (t.hasAttribute('data-kiban-num-clear')) {
-						box.querySelectorAll('[data-kiban-num-in], [data-kiban-num-in2]').forEach(function (i) { i.value = ''; });
-						box.querySelectorAll('[data-kiban-num-op], [data-kiban-num-v], [data-kiban-num-v2]').forEach(function (i) { i.value = ''; i.disabled = true; });
-						kibanNumSubmit(box.closest('[data-kiban-filter]'), '');
+					var box = t.closest('[data-kiban-fnum]');
+					if (t.hasAttribute('data-kiban-fnum-opbtn')) {
+						kibanFilterNumSetOp(box, t.getAttribute('data-kiban-fnum-opbtn'));
+						box.querySelector('[data-kiban-fnum-in]').focus();
+					} else if (t.hasAttribute('data-kiban-fnum-preset')) {
+						kibanFilterNumSetOp(box, t.getAttribute('data-op'));
+						box.querySelector('[data-kiban-fnum-in]').value = t.getAttribute('data-v');
+						box.querySelector('[data-kiban-fnum-in2]').value = '';
+						kibanFilterNumApply(box);
+					} else if (t.hasAttribute('data-kiban-fnum-clear')) {
+						box.querySelectorAll('[data-kiban-fnum-in], [data-kiban-fnum-in2]').forEach(function (i) { i.value = ''; });
+						box.querySelectorAll('[data-kiban-fnum-op], [data-kiban-fnum-v], [data-kiban-fnum-v2]').forEach(function (i) { i.value = ''; i.disabled = true; });
+						kibanFilterNumSubmit(box.closest('[data-kiban-filter]'), '');
 					} else {
-						kibanNumApply(box);
+						kibanFilterNumApply(box);
 					}
 				});
 				document.addEventListener('keydown', function (e) {
-					if (e.key !== 'Enter' || !e.target.closest || !e.target.closest('[data-kiban-num]') || e.target.tagName !== 'INPUT') return;
+					if (e.key !== 'Enter' || !e.target.closest || !e.target.closest('[data-kiban-fnum]') || e.target.tagName !== 'INPUT') return;
 					e.preventDefault();
-					kibanNumApply(e.target.closest('[data-kiban-num]'));
+					kibanFilterNumApply(e.target.closest('[data-kiban-fnum]'));
 				});
 				// filterbar.Text: el texto viaja sólo al aplicar (botón o Enter),
 				// copiado al oculto; vacío, el oculto se deshabilita y el filtro
-				// se quita. Usa la misma salida que el numérico (kibanNumSubmit).
+				// se quita. Usa la misma salida que el numérico (kibanFilterNumSubmit).
 				function kibanTxtApply(box, value) {
 					var v = box.querySelector('[data-kiban-txt-v]');
 					value = (value || '').trim();
 					v.value = value; v.disabled = value === '';
 					box.querySelector('[data-kiban-txt-in]').value = value;
-					kibanNumSubmit(box.closest('[data-kiban-filter]'), value);
+					kibanFilterNumSubmit(box.closest('[data-kiban-filter]'), value);
 				}
 				document.addEventListener('click', function (e) {
 					var t = e.target.closest && e.target.closest('[data-kiban-txt-apply], [data-kiban-txt-clear]');
