@@ -30,7 +30,8 @@ func TestPassword_RendersInputAndLabel(t *testing.T) {
 	// Input itself: type=password, autocomplete=off, id matches label's for.
 	assert.True(t, strings.Contains(body, `id="f-password"`))
 	assert.True(t, strings.Contains(body, `type="password"`))
-	assert.True(t, strings.Contains(body, `autocomplete="off"`))
+	assert.True(t, strings.Contains(body, `autocomplete="new-password"`), "off no evita que Chrome llene la contraseña guardada del sitio")
+	assert.False(t, strings.Contains(body, `autocomplete="off"`))
 	assert.True(t, strings.Contains(body, `name="password"`))
 }
 
