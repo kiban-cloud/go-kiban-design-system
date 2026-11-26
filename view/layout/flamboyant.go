@@ -64,6 +64,15 @@ const FlagMonitoreo = "modulo-monitoreo"
 // Config.Tools.
 const MonitoreoHref = "/monitoreo"
 
+// FlagCartera muestra Cartera (core) en el menú del shell. Como Monitoreo, entra
+// en una fase propia: el módulo es nuevo y se revisa aparte. La prende el
+// middleware authcookie cuando la compañía tiene el feature flag CREDITO.
+const FlagCartera = "modulo-cartera"
+
+// CarteraHref es la entrada del módulo cuando la herramienta no la declara en
+// Config.Tools.
+const CarteraHref = "/cartera"
+
 // ShellFlamboyant dice si el request pinta el shell flamboyant. En modo
 // Comparar también: el shell envuelve la pantalla entera y no se pueden
 // mostrar los dos lado a lado. Las vistas que se pintan dentro del shell (el
@@ -294,20 +303,24 @@ func FlamboyantModulo(ctx context.Context, key string) (label, icon string, ok b
 // proto, por ejemplo) van al final con su ícono de siempre.
 // fsOcultos son los módulos del menú que por ahora no se muestran: Cartera y
 // Monitoreo todavía no existen. Para volver a mostrarlos, se quitan de aquí.
-// Monitoreo se muestra igual cuando su bandera está prendida (FlagMonitoreo).
+// Monitoreo y Cartera se muestran igual cuando su bandera está prendida
+// (FlagMonitoreo, FlagCartera).
 var fsOcultos = map[string]bool{"core": true, "folo": true}
 
 func fsTools(ctx context.Context, cfg Config) ([]fsModulo, []Tool) {
-	hrefs := map[string]string{"folo": MonitoreoHref}
+	hrefs := map[string]string{"folo": MonitoreoHref, "core": CarteraHref}
 	for _, t := range cfg.Tools {
 		if t.Href != "" {
 			hrefs[t.Key] = t.Href
 		}
 	}
-	monitoreo := feature.Comparing(ctx) || feature.Enabled(ctx, FlagMonitoreo)
+	visibles := map[string]bool{
+		"folo": feature.Comparing(ctx) || feature.Enabled(ctx, FlagMonitoreo),
+		"core": feature.Comparing(ctx) || feature.Enabled(ctx, FlagCartera),
+	}
 	out := make([]fsModulo, 0, len(modulosFlamboyant))
 	for _, m := range modulosFlamboyant {
-		if fsOcultos[m.Key] && !(m.Key == "folo" && monitoreo) {
+		if fsOcultos[m.Key] && !visibles[m.Key] {
 			continue
 		}
 		m.Label = docsCatalog.T(ctx, "shell.module."+m.Key)
@@ -488,4 +501,13 @@ func InboxToggleAttrs(notificationsBaseURL string) templ.Attributes {
 		"hx-swap":              "innerHTML",
 		"hx-trigger":           "click",
 	}
+}
+
+// fsSubBadgeClass es el contador de un SubItem: gris, o la píldora azul si
+// pide atención (BadgeHot).
+func fsSubBadgeClass(item SubItem) string {
+	if item.BadgeHot {
+		return "fs-sub-n fs-sub-n-hot"
+	}
+	return "fs-sub-n"
 }

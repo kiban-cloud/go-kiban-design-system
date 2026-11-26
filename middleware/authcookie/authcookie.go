@@ -158,12 +158,18 @@ const FeatureShellFlamboyant = "SHELL_FLAMBOYANT"
 // el modal de novedades al entrar (view/layout/novedades.go).
 const FeatureNovedades = "NOVEDADES"
 
+// FeatureCredito es el feature flag de kiban-cloud que le da a una compañía el
+// módulo de crédito (Cartera): el menú del shell lo muestra en todas las
+// herramientas (layout.FlagCartera).
+const FeatureCredito = "CREDITO"
+
 // shellFlags traduce los feature flags de la compañía y la elección del
 // usuario (cookie kiban_ui) a las banderas del design system:
 //   - SHELL_FLAMBOYANT: el menú del usuario ofrece el switch; el shell nuevo se
 //     pinta sólo si además el usuario lo eligió. Sin cookie se ve el diseño
 //     actual.
 //   - NOVEDADES: la bandera novedades, en cualquiera de los dos shells.
+//   - CREDITO: Cartera en el menú del shell (layout.FlagCartera).
 func shellFlags(c *gin.Context, authorization domain_core_authorization_model.Authorization) context.Context {
 	ctx := c.Request.Context()
 	var names []string
@@ -175,6 +181,9 @@ func shellFlags(c *gin.Context, authorization domain_core_authorization_model.Au
 	}
 	if authorization.HasFeature(FeatureNovedades) || localFeature(FeatureNovedades) {
 		names = append(names, layout.FlagNovedades)
+	}
+	if authorization.HasFeature(FeatureCredito) || localFeature(FeatureCredito) {
+		names = append(names, layout.FlagCartera)
 	}
 	if len(names) == 0 {
 		return ctx
