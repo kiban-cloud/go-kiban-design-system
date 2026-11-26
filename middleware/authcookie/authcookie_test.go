@@ -236,3 +236,41 @@ func TestMiddleware_FeatureLocalSeIgnoraEnCloudRun(t *testing.T) {
 	assert.False(t, shell, "desplegado, la variable no puede prender nada")
 	assert.False(t, sw)
 }
+
+// cartera corre el middleware con los feature flags dados y dice si la
+// herramienta vio la bandera de Cartera.
+func cartera(t *testing.T, features []string) bool {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	var on bool
+	engine := gin.New()
+	m := authcookie.New(fakeAuthorize{features: features}, "/login")
+	engine.GET("/tool", m.Middleware(), func(c *gin.Context) {
+		on = feature.Enabled(c.Request.Context(), layout.FlagCartera)
+		c.Status(http.StatusOK)
+	})
+	req := httptest.NewRequest(http.MethodGet, "/tool", nil)
+	req.AddCookie(&http.Cookie{Name: authcookie.CookieSession, Value: "jwt"})
+	req.AddCookie(&http.Cookie{Name: authcookie.CookieSpaceID, Value: "space"})
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+	return on
+}
+
+func TestMiddleware_CreditoPrendeCartera(t *testing.T) {
+	assert.True(t, cartera(t, []string{authcookie.FeatureCredito}))
+	assert.True(t, cartera(t, []string{authcookie.FeatureCredito, authcookie.FeatureShellFlamboyant}))
+}
+
+func TestMiddleware_SinCreditoNoHayCartera(t *testing.T) {
+	assert.False(t, cartera(t, nil))
+	assert.False(t, cartera(t, []string{authcookie.FeatureShellFlamboyant}))
+}
+
+func TestMiddleware_CreditoLocalPrendeCartera(t *testing.T) {
+	t.Setenv(authcookie.EnvLocalFeatures, authcookie.FeatureCredito)
+
+	assert.True(t, cartera(t, nil))
+}

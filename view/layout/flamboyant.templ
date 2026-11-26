@@ -289,7 +289,12 @@ templ fsSubnav(cfg Config) {
 			} else if item.Gap {
 				<div class="fs-sub-gap"></div>
 			}
-			<a href={ fsURL(ctx, item.Href) } data-nav-loader class={ fsSubItemClass(cfg, item) }>{ item.Label }</a>
+			<a href={ fsURL(ctx, item.Href) } data-nav-loader class={ fsSubItemClass(cfg, item) }>
+				{ item.Label }
+				if item.Badge != "" {
+					<small class={ fsSubBadgeClass(item) }>{ item.Badge }</small>
+				}
+			</a>
 		}
 	</nav>
 }

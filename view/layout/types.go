@@ -110,6 +110,11 @@ type SubItem struct {
 	// Gap adds vertical space before the item, for an item that stands
 	// alone between groups (no heading of its own).
 	Gap bool
+	// Badge, when set, is a small counter at the right of the item (in the
+	// flamboyant shell): how many credits, how many requests to approve.
+	// BadgeHot paints it as a blue pill, for counts that ask for attention.
+	Badge    string
+	BadgeHot bool
 }
 
 // SubAction is the sub-nav's main action (Config.SubAction): a full-width
