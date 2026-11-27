@@ -185,6 +185,9 @@ type SpaceOption struct {
 type UserMenuItem struct {
 	Label string // user-visible label, e.g. "Perfil"
 	Href  string // destination path or full URL
+	// Icon is the flamboyant shell icon (FlamboyantIcon name). Empty or
+	// unknown falls back to "user".
+	Icon string
 }
 
 // Config carries everything the Layout templ needs. Each consuming project

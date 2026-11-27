@@ -171,7 +171,7 @@ templ fsUserMenu(cfg Config) {
 			<div class="usr-list">
 				for _, item := range fsUserItems(ctx, cfg) {
 					<a href={ fsURL(ctx, item.Href) } role="menuitem" class="usr-it">
-						@FlamboyantIcon("user")
+						@FlamboyantIcon(fsUserItemIcon(item))
 						{ item.Label }
 					</a>
 				}
