@@ -282,3 +282,16 @@ func TestLayout_MenuDelAvatarConIconos(t *testing.T) {
 	assert.Contains(t, icono("/otro"), usuario)
 	assert.Contains(t, icono(layout.NovedadesPath), `<path d="M20 3v4"/>`)
 }
+
+// Con foto de perfil, el avatar del encabezado y el del menú la pintan
+// encima de las iniciales; sin foto, solo iniciales.
+func TestFlamboyant_FotoDePerfilEnElAvatar(t *testing.T) {
+	cfg := flamboyantCfg()
+	cfg.User.Picture = "/kiban-cloud/avatar/u1?v=abc"
+	body := shell(t, renderLayout(t, flags(layout.FlagShellFlamboyant), cfg))
+	assert.Equal(t, 2, strings.Count(body, `<img src="/kiban-cloud/avatar/u1?v=abc" alt="" onerror="this.remove()">`), "botón del menú y cabecera del menú")
+	assert.Contains(t, body, `>A<img`, "la inicial queda debajo, por si la foto no carga")
+
+	sinFoto := shell(t, renderLayout(t, flags(layout.FlagShellFlamboyant), flamboyantCfg()))
+	assert.NotContains(t, sinFoto, "/kiban-cloud/avatar/")
+}

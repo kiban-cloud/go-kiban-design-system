@@ -89,10 +89,11 @@
 @media (prefers-reduced-motion: reduce) { .mode-dot { animation: none !important; } }
 
 /* Avatar y su menú: abren 6 px debajo de la línea azul. */
-.hdr-av { width: 32px; height: 32px; border-radius: 50%; border: 0; background: #0047FF; color: #fff; display: grid; place-items: center; font: 600 13px/1 "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: .02em; cursor: pointer; flex: none; }
+.hdr-av { position: relative; overflow: hidden; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #0047FF; color: #fff; display: grid; place-items: center; font: 600 13px/1 "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: .02em; cursor: pointer; flex: none; }
 .hdr-av:hover, [data-fs-menu]:has([data-fs-menu-panel]:not(.hidden)) > .hdr-av { box-shadow: 0 0 0 3px #D6E1FF; }
 .hdr-av:focus-visible { outline: 2px solid #0047FF; outline-offset: 2px; }
 .hdr-av.is-lg { width: 36px; height: 36px; font-size: 14px; cursor: default; box-shadow: none; }
+.hdr-av > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .hdr-pop { position: absolute; right: 0; top: calc(100% + 18px); z-index: 50; background: #fff; border: 1px solid #E2E5EC; border-radius: 12px; box-shadow: 0 20px 48px -18px rgba(26,32,53,.35); overflow: hidden; }
 .usr-pop { width: 260px; }
 .usr-h { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid #EEF0F4; }
