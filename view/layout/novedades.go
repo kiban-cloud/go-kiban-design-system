@@ -40,7 +40,7 @@ func conNovedades(ctx context.Context, items []UserMenuItem) []UserMenuItem {
 	}
 	out := make([]UserMenuItem, 0, len(items)+1)
 	out = append(out, items...)
-	return append(out, UserMenuItem{Label: docsCatalog.T(ctx, "shell.novedades"), Href: NovedadesPath})
+	return append(out, UserMenuItem{Label: docsCatalog.T(ctx, "shell.novedades"), Href: NovedadesPath, Icon: "sparkles"})
 }
 
 // novedadesHerramienta es la clave de herramienta (HERRAMIENTA_* de los

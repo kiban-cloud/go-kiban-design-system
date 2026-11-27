@@ -256,3 +256,29 @@ func TestFlamboyant_SubAction(t *testing.T) {
 	assert.Contains(t, body, "data-nav-loader", "sin Attrs navega con el loader")
 	assert.NotContains(t, renderLayout(t, context.Background(), cfg), `class="fs-sub-cta"`, "el shell de siempre lo ignora")
 }
+
+// Menú del avatar: cada renglón con el ícono que pide la herramienta; sin
+// ícono o con uno que no existe, el de usuario. Novedades lleva el suyo.
+func TestLayout_MenuDelAvatarConIconos(t *testing.T) {
+	cfg := flamboyantCfg()
+	cfg.UserMenuItems = []layout.UserMenuItem{
+		{Label: "Facturación", Href: "/kiban-cloud/billing", Icon: "receipt"},
+		{Label: "Usuarios", Href: "/kiban-cloud/users", Icon: "users"},
+		{Label: "Perfil", Href: "/kiban-cloud/profile"},
+		{Label: "Otro", Href: "/otro", Icon: "no-existe"},
+	}
+	menu := shell(t, renderLayout(t, flags(layout.FlagShellFlamboyant, layout.FlagNovedades), cfg))
+
+	icono := func(href string) string {
+		i := strings.Index(menu, `href="`+href+`" role="menuitem"`)
+		require.NotEqual(t, -1, i, href)
+		j := strings.Index(menu[i:], "</a>")
+		return menu[i : i+j]
+	}
+	const usuario = `<circle cx="12" cy="8" r="5"/>`
+	assert.Contains(t, icono("/kiban-cloud/billing"), `<path d="M12 17.5v-11"/>`)
+	assert.Contains(t, icono("/kiban-cloud/users"), `<path d="M16 3.13a4 4 0 0 1 0 7.75"/>`)
+	assert.Contains(t, icono("/kiban-cloud/profile"), usuario)
+	assert.Contains(t, icono("/otro"), usuario)
+	assert.Contains(t, icono(layout.NovedadesPath), `<path d="M20 3v4"/>`)
+}
