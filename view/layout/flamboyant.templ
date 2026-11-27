@@ -157,10 +157,14 @@ templ fsUserMenu(cfg Config) {
 	<div class="relative" data-fs-menu>
 		<button type="button" class="hdr-av" data-fs-menu-trigger aria-haspopup="true" aria-expanded="false" aria-label={ docsCatalog.Tf(ctx, "shell.user.menu", map[string]any{"User": topbarUserMenuLabel(cfg.User)}) } data-tooltip={ topbarUserMenuLabel(cfg.User) }>
 			{ userInitials(cfg.User) }
+			@fsUserPicture(cfg.User)
 		</button>
 		<div class="hdr-pop usr-pop hidden" data-fs-menu-panel role="menu">
 			<div class="usr-h">
-				<span class="hdr-av is-lg" aria-hidden="true">{ userInitials(cfg.User) }</span>
+				<span class="hdr-av is-lg" aria-hidden="true">
+					{ userInitials(cfg.User) }
+					@fsUserPicture(cfg.User)
+				</span>
 				<div class="min-w-0">
 					if cfg.User.Name != "" {
 						<b>{ cfg.User.Name }</b>
@@ -362,4 +366,12 @@ templ IconTile(name string, size int) {
 // FlamboyantModuloColor).
 templ ModuleIcon(key string) {
 	@FlamboyantIcon(moduleIcon(key))
+}
+
+// fsUserPicture pone la foto de perfil encima de las iniciales del avatar,
+// como avatar.Avatar: si la imagen no carga se quita y quedan las iniciales.
+templ fsUserPicture(u User) {
+	if u.Picture != "" {
+		<img src={ u.Picture } alt="" onerror="this.remove()"/>
+	}
 }

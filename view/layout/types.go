@@ -57,9 +57,9 @@ func notificationsBaseURL(explicit string) string {
 
 // User is the minimal identity displayed in the topbar's avatar dropdown.
 //
-// Picture is optional. The customer-facing Layout doesn't render it
-// today (its topbar shows initials only); AdminLayout shows the photo
-// when present and falls back to initials when empty. Adding the
+// Picture is optional (the src of the user's profile photo). AdminLayout
+// and the flamboyant shell show it over the initials when present; the
+// customer-facing Layout shows initials only. Adding the
 // field here keeps a single User source-of-truth across both shells.
 type User struct {
 	Email   string
